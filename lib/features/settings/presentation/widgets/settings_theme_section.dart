@@ -10,10 +10,10 @@ import 'settings_theme_widgets.dart';
 
 /// 设置-主题区块
 ///
-/// 提供亮暗主题切换、分组强调色选择与自定义取色功能。
+/// 提供浅色、深色、跟随系统模式与强调色选择功能。
 class SettingsThemeSection extends ConsumerWidget {
-  /// 亮度变更回调
-  final ValueChanged<Brightness> onBrightnessChanged;
+  /// 外观模式变更回调
+  final ValueChanged<ThemeMode> onModeChanged;
 
   /// 强调色变更回调
   final ValueChanged<int> onAccentChanged;
@@ -23,14 +23,14 @@ class SettingsThemeSection extends ConsumerWidget {
 
   const SettingsThemeSection({
     super.key,
-    required this.onBrightnessChanged,
+    required this.onModeChanged,
     required this.onAccentChanged,
     required this.onCustomColorChanged,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedBrightness = ref.watch(themeModeProvider);
+    final selectedMode = ref.watch(themeModeProvider);
     final selectedAccentIndex = ref.watch(themeAccentProvider);
     final customColor = ref.watch(customAccentColorProvider);
     final grouped = AppTheme.groupedAccentIndices;
@@ -42,25 +42,33 @@ class SettingsThemeSection extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: BrightnessTile(
+              child: ThemeModeTile(
                 label: 'settings_theme_light'.tr(),
                 icon: HugeIcons.strokeRoundedSun03,
-                brightness: Brightness.light,
-                selectedBrightness: selectedBrightness,
-                onChanged: onBrightnessChanged,
+                mode: ThemeMode.light,
+                selectedMode: selectedMode,
+                onChanged: onModeChanged,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: BrightnessTile(
+              child: ThemeModeTile(
                 label: 'settings_theme_dark'.tr(),
                 icon: HugeIcons.strokeRoundedMoon02,
-                brightness: Brightness.dark,
-                selectedBrightness: selectedBrightness,
-                onChanged: onBrightnessChanged,
+                mode: ThemeMode.dark,
+                selectedMode: selectedMode,
+                onChanged: onModeChanged,
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 10),
+        ThemeModeTile(
+          label: 'settings_theme_system'.tr(),
+          icon: HugeIcons.strokeRoundedComputer,
+          mode: ThemeMode.system,
+          selectedMode: selectedMode,
+          onChanged: onModeChanged,
         ),
         const SizedBox(height: 18),
         SectionLabel(text: 'settings_theme_accent_color'.tr()),

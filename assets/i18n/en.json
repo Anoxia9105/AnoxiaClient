@@ -207,6 +207,7 @@
   "settings_web_notification_enable": "Enable",
   "settings_page_theme_title": "Appearance Theme",
   "settings_page_theme_subtitle": "Choose light or dark mode and an accent color made for chat",
+  "settings_theme_system": "Follow system",
   "settings_theme_mode": "Appearance mode",
   "settings_theme_light": "Light",
   "settings_theme_dark": "Dark",

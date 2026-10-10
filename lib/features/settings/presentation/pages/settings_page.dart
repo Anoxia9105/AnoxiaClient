@@ -280,10 +280,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             builder: (_) => Column(
               children: [
                 SettingsThemeSection(
-                  onBrightnessChanged: (brightness) {
-                    ref.read(themeModeProvider.notifier).setMode(brightness);
+                  onModeChanged: (mode) {
+                    ref.read(themeModeProvider.notifier).setMode(mode);
                     final compatibilityIndex = AppTheme.compatibilityThemeIndex(
-                      brightness: brightness,
+                      brightness: ref.read(effectiveBrightnessProvider),
                       accentIndex: ref.read(themeAccentProvider),
                     );
                     ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
@@ -295,9 +295,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   onAccentChanged: (index) {
                     ref.read(customAccentColorProvider.notifier).setCustomColor(null);
                     ref.read(themeAccentProvider.notifier).setAccent(index);
-                    final brightness = ref.read(themeModeProvider);
                     final compatibilityIndex = AppTheme.compatibilityThemeIndex(
-                      brightness: brightness,
+                      brightness: ref.read(effectiveBrightnessProvider),
                       accentIndex: index,
                     );
                     ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
@@ -307,7 +306,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     if (color != null) {
                       // 自定义色不依赖 accentIndex，兼容索引仍以当前预设为准
                       final compatibilityIndex = AppTheme.compatibilityThemeIndex(
-                        brightness: ref.read(themeModeProvider),
+                        brightness: ref.read(effectiveBrightnessProvider),
                         accentIndex: ref.read(themeAccentProvider),
                       );
                       ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);

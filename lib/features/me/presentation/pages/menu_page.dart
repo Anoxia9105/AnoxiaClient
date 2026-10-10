@@ -371,7 +371,7 @@ class MenuPage extends ConsumerWidget {
   /// 与设置页行为一致：切换亮度并同步兼容主题索引（保留强调色）。
   Widget _buildDarkModeTile(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = ref.watch(themeModeProvider) == Brightness.dark;
+    final isDark = ref.watch(effectiveBrightnessProvider) == Brightness.dark;
     return ListTile(
       dense: true,
       visualDensity: const VisualDensity(vertical: -1),
@@ -406,10 +406,10 @@ class MenuPage extends ConsumerWidget {
 
   /// 切换亮/暗模式
   void _toggleDarkMode(WidgetRef ref) {
-    final next = ref.read(themeModeProvider) == Brightness.dark
+    final next = ref.read(effectiveBrightnessProvider) == Brightness.dark
         ? Brightness.light
         : Brightness.dark;
-    ref.read(themeModeProvider.notifier).setMode(next);
+    ref.read(themeModeProvider.notifier).setMode(next == Brightness.dark ? ThemeMode.dark : ThemeMode.light);
     final accentIndex = ref.read(themeAccentProvider);
     ref
         .read(themeIndexProvider.notifier)

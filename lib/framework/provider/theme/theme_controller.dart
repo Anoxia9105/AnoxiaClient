@@ -14,30 +14,57 @@ import '../../theme/app_theme.dart';
 
 part 'theme_controller.g.dart';
 
-class ThemeModeController extends legacy.StateNotifier<Brightness> {
+class ThemeModeController extends legacy.StateNotifier<ThemeMode> {
   static const String _storageKey = 'theme_brightness';
 
   ThemeModeController() : super(_load());
 
-  static Brightness _load() {
+  static ThemeMode _load() {
     final saved = SPUtil.instance.get(_storageKey, defValue: 'light');
-    return saved == 'dark' ? Brightness.dark : Brightness.light;
+    return switch (saved) {
+      'dark' => ThemeMode.dark,
+      'system' => ThemeMode.system,
+      _ => ThemeMode.light,
+    };
   }
 
-  void setMode(Brightness brightness) {
-    if (state == brightness) return;
-    state = brightness;
-    SPUtil.instance.set(
-      _storageKey,
-      brightness == Brightness.dark ? 'dark' : 'light',
-    );
+  void setMode(ThemeMode mode) {
+    if (state == mode) return;
+    state = mode;
+    SPUtil.instance.set(_storageKey, mode.name);
   }
 }
 
 final themeModeProvider =
-    legacy.StateNotifierProvider<ThemeModeController, Brightness>(
+    legacy.StateNotifierProvider<ThemeModeController, ThemeMode>(
       (ref) => ThemeModeController(),
     );
+
+/// 监听系统外观变化，避免只在启动时读取一次亮度。
+@Riverpod(keepAlive: true)
+class SystemBrightness extends _$SystemBrightness with WidgetsBindingObserver {
+  @override
+  Brightness build() {
+    WidgetsBinding.instance.addObserver(this);
+    ref.onDispose(() => WidgetsBinding.instance.removeObserver(this));
+    return WidgetsBinding.instance.platformDispatcher.platformBrightness;
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    state = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+  }
+}
+
+/// 实际渲染亮度；用户选择与系统解析结果分开保存。
+@riverpod
+Brightness effectiveBrightness(Ref ref) {
+  return switch (ref.watch(themeModeProvider)) {
+    ThemeMode.light => Brightness.light,
+    ThemeMode.dark => Brightness.dark,
+    ThemeMode.system => ref.watch(systemBrightnessProvider),
+  };
+}
 
 class ThemeAccentController extends legacy.StateNotifier<int> {
   static const String _storageKey = 'theme_accent_index';
@@ -124,7 +151,7 @@ class ThemeIndex extends _$ThemeIndex {
 /// 若存在自定义强调色则优先使用。
 @riverpod
 ThemeData appTheme(Ref ref) {
-  final brightness = ref.watch(themeModeProvider);
+  final brightness = ref.watch(effectiveBrightnessProvider);
   final customColor = ref.watch(customAccentColorProvider);
   if (customColor != null) {
     return AppTheme.getThemeForCustomColor(

@@ -8,6 +8,111 @@ part of 'theme_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 监听系统外观变化，避免只在启动时读取一次亮度。
+
+@ProviderFor(SystemBrightness)
+final systemBrightnessProvider = SystemBrightnessProvider._();
+
+/// 监听系统外观变化，避免只在启动时读取一次亮度。
+final class SystemBrightnessProvider
+    extends $NotifierProvider<SystemBrightness, Brightness> {
+  /// 监听系统外观变化，避免只在启动时读取一次亮度。
+  SystemBrightnessProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'systemBrightnessProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$systemBrightnessHash();
+
+  @$internal
+  @override
+  SystemBrightness create() => SystemBrightness();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Brightness value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Brightness>(value),
+    );
+  }
+}
+
+String _$systemBrightnessHash() => r'708805857f48dc137fe8354b247f308c63754f56';
+
+/// 监听系统外观变化，避免只在启动时读取一次亮度。
+
+abstract class _$SystemBrightness extends $Notifier<Brightness> {
+  Brightness build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<Brightness, Brightness>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<Brightness, Brightness>,
+              Brightness,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
+/// 实际渲染亮度；用户选择与系统解析结果分开保存。
+
+@ProviderFor(effectiveBrightness)
+final effectiveBrightnessProvider = EffectiveBrightnessProvider._();
+
+/// 实际渲染亮度；用户选择与系统解析结果分开保存。
+
+final class EffectiveBrightnessProvider
+    extends $FunctionalProvider<Brightness, Brightness, Brightness>
+    with $Provider<Brightness> {
+  /// 实际渲染亮度；用户选择与系统解析结果分开保存。
+  EffectiveBrightnessProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'effectiveBrightnessProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$effectiveBrightnessHash();
+
+  @$internal
+  @override
+  $ProviderElement<Brightness> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  Brightness create(Ref ref) {
+    return effectiveBrightness(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Brightness value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Brightness>(value),
+    );
+  }
+}
+
+String _$effectiveBrightnessHash() =>
+    r'65621ab804126d6b6bada0f0fcbebe7a969ef596';
+
 /// 主题索引 Provider
 ///
 /// 持久化存储用户选择的主题索引（0=浅色，1=深色等）。
@@ -126,4 +231,4 @@ final class AppThemeProvider
   }
 }
 
-String _$appThemeHash() => r'ffe0bff5fc90aec0bc7edfa33c450038197e7ae7';
+String _$appThemeHash() => r'6934ea1d58f71d9ea365c58f8f1bd1510c27e7f1';

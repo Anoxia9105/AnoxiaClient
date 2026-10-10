@@ -207,6 +207,7 @@
   "settings_web_notification_enable": "有効にする",
   "settings_page_theme_title": "テーマ設定",
   "settings_page_theme_subtitle": "アプリのテーマを選択",
+  "settings_theme_system": "システムに合わせる",
   "settings_theme_mode": "外観モード",
   "settings_theme_light": "ライト",
   "settings_theme_dark": "ダーク",

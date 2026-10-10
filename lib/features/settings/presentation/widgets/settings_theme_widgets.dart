@@ -20,29 +20,29 @@ class SectionLabel extends StatelessWidget {
   }
 }
 
-/// 亮度选择卡片
-class BrightnessTile extends StatelessWidget {
+/// 外观模式选择卡片
+class ThemeModeTile extends StatelessWidget {
   final String label;
   final List<List<dynamic>> icon;
-  final Brightness brightness;
-  final Brightness selectedBrightness;
-  final ValueChanged<Brightness> onChanged;
-  const BrightnessTile({
+  final ThemeMode mode;
+  final ThemeMode selectedMode;
+  final ValueChanged<ThemeMode> onChanged;
+  const ThemeModeTile({
     super.key,
     required this.label,
     required this.icon,
-    required this.brightness,
-    required this.selectedBrightness,
+    required this.mode,
+    required this.selectedMode,
     required this.onChanged,
   });
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final selected = brightness == selectedBrightness;
+    final selected = mode == selectedMode;
     return InkWell(
       borderRadius: BorderRadius.circular(RadiusToken.md),
       mouseCursor: SystemMouseCursors.click,
-      onTap: () => onChanged(brightness),
+      onTap: () => onChanged(mode),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
