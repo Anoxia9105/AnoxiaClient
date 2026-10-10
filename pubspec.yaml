@@ -53,6 +53,7 @@ dependencies:
   html: ^0.15.6 # HTML 解析（富文本/粘贴场景）
 
   # —— UI 基础组件 ——
+  cupertino_icons: ^1.0.8 # Flutter/依赖中的 Cupertino 图标字体
   flutter_screenutil: ^5.9.3 # 屏幕适配
   hugeicons: ^1.1.5 # 图标库
   bot_toast: ^4.1.3 # Toast/loading 提示
@@ -101,7 +102,7 @@ dependencies:
   flutter_webrtc: ^1.4.0 # WebRTC 底层
 
   # —— 推送 + 通知 + 后台 ——
-  jpush_flutter: ^3.4.5 # 极光推送（国内）
+  jpush_flutter: 3.5.8 # 极光推送；修复 Gradle 9 的 jcenter 兼容问题，Android SDK 6.2.1
   firebase_core: ^4.10.0 # FCM 前置（海外推送）
   firebase_messaging: ^16.0.2 # FCM 消息
   flutter_local_notifications: ^21.0.0 # 本地通知

@@ -1,4 +1,4 @@
-import com.android.build.gradle.BaseExtension
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -15,7 +15,7 @@ buildscript {
         maven("https://developer.huawei.com/repo/")
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:8.11.1")
+        classpath("com.android.tools.build:gradle:9.0.1")
         classpath("com.huawei.agconnect:agcp:1.5.2.300")
     }
 }
@@ -43,27 +43,19 @@ subprojects {
 
 subprojects {
     plugins.withId("com.android.library") {
-        val androidExt = extensions.findByName("android") ?: return@withId
-
-        (androidExt as? BaseExtension)?.apply {
-            compileOptions {
-                sourceCompatibility = JavaVersion.VERSION_17
-                targetCompatibility = JavaVersion.VERSION_17
-            }
+        // file_picker 11.0.2 仅按 AGP 主版本跳过 KGP，未考虑关闭内置 Kotlin 的兼容模式。
+        if (project.name == "file_picker" &&
+            project.findProperty("android.builtInKotlin")?.toString() == "false") {
+            pluginManager.apply("org.jetbrains.kotlin.android")
         }
-
-        val getNamespace = androidExt.javaClass.methods.firstOrNull {
-            it.name == "getNamespace" && it.parameterCount == 0
-        }
-        val setNamespace = androidExt.javaClass.methods.firstOrNull {
-            it.name == "setNamespace" && it.parameterCount == 1
-        }
-
-        if (getNamespace != null && setNamespace != null) {
-            val current = getNamespace.invoke(androidExt) as? String
-            if (current.isNullOrBlank()) {
-                val fallback = "cn.anoxia.${project.name.replace('-', '_')}"
-                setNamespace.invoke(androidExt, fallback)
+        // 等插件自己的 DSL 配置结束后统一目标版本，避免被 Java 8 配置覆盖。
+        extensions.configure<LibraryAndroidComponentsExtension> {
+            finalizeDsl { android ->
+                android.compileOptions.sourceCompatibility = JavaVersion.VERSION_17
+                android.compileOptions.targetCompatibility = JavaVersion.VERSION_17
+                if (android.namespace.isNullOrBlank()) {
+                    android.namespace = "cn.anoxia.${project.name.replace('-', '_')}"
+                }
             }
         }
     }
