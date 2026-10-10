@@ -138,10 +138,7 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
   }
 
   void _maybeResolveIntrinsicSize() {
-    if ((widget.attachment.width ?? 0) > 0 &&
-        (widget.attachment.height ?? 0) > 0) {
-      return;
-    }
+    if (widget.isGrid) return;
     if (_intrinsicSize != null || _dimensionListener != null) return;
     final url = widget.attachment.url;
     if (url == null || url.isEmpty) return;
@@ -152,14 +149,21 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
       bytes: _localBytes,
     );
     if (provider == null) return;
-    final stream = provider.resolve(const ImageConfiguration());
+    // 只需宽高比，限制解码尺寸，避免相机原图为尺寸校正额外占用大量内存。
+    final stream = ResizeImage(
+      provider,
+      width: 640,
+      height: 640,
+      policy: ResizeImagePolicy.fit,
+    ).resolve(const ImageConfiguration());
     _dimensionStream = stream;
     final listener = ImageStreamListener((ImageInfo info, bool _) {
-      if (!mounted) return;
       final decoded = Size(
         info.image.width.toDouble(),
         info.image.height.toDouble(),
       );
+      info.dispose();
+      if (!mounted) return;
       _removeDimensionListener();
       if (decoded.width <= 0 || decoded.height <= 0) return;
       setState(() => _intrinsicSize = decoded);
@@ -380,18 +384,18 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
           );
         }
 
-        final borderRadius = BorderRadius.circular(widget.isGrid ? RadiusToken.sm : RadiusToken.md);
+        final borderRadius = BorderRadius.circular(
+          widget.isGrid ? RadiusToken.sm : RadiusToken.md,
+        );
         // Hero 仅在非静态 GIF 时启用，避免首帧 RawImage 与 PhotoView hero 不一致；
         // 本地待上传阶段也不启用（详情页按网络地址加载，此时还没有地址）。
         // 减少动效时关闭 Hero，路由本身已零时长即时呈现。
-        final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+        final reduceMotion =
+            MediaQuery.maybeOf(context)?.disableAnimations ?? false;
         final useHero = !showStaticGif && !isPendingUpload && !reduceMotion;
         Widget heroWrapped = RepaintBoundary(
           child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-              borderRadius: borderRadius,
-            ),
+            decoration: BoxDecoration(borderRadius: borderRadius),
             child: ClipRRect(
               borderRadius: borderRadius,
               child: useHero
@@ -488,7 +492,11 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [cs.surfaceContainerHigh, cs.surfaceContainerLow, cs.surfaceContainerHigh],
+          colors: [
+            cs.surfaceContainerHigh,
+            cs.surfaceContainerLow,
+            cs.surfaceContainerHigh,
+          ],
         ),
       ),
     );

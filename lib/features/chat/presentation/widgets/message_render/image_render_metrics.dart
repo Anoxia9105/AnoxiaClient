@@ -16,8 +16,9 @@ Size resolveImageMessageDisplaySize(
   double? intrinsicWidth,
   double? intrinsicHeight,
 }) {
-  final rawWidth = attachment.width?.toDouble() ?? intrinsicWidth;
-  final rawHeight = attachment.height?.toDouble() ?? intrinsicHeight;
+  // 实际解码尺寸包含相机方向信息，优先于上传接口的原始像素尺寸。
+  final rawWidth = intrinsicWidth ?? attachment.width?.toDouble();
+  final rawHeight = intrinsicHeight ?? attachment.height?.toDouble();
   if (rawWidth == null ||
       rawHeight == null ||
       rawWidth <= 0 ||

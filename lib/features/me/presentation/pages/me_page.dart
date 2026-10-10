@@ -82,7 +82,9 @@ class _MyPageState extends ConsumerState<MyPage> {
         centerTitle: DeviceUtil.isMobile(context),
         title: Text('me_page_title'.tr()),
       ),
-      backgroundColor: Colors.transparent,
+      backgroundColor: DeviceUtil.useSingleColumnPush(context)
+          ? Theme.of(context).colorScheme.surface
+          : Colors.transparent,
       body: authAsync.when(
         loading: () => const MePageSkeleton(),
         error: (_, _) => Center(child: Text('chat_load_failed'.tr())),

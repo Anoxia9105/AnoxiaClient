@@ -12,6 +12,8 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:video_player/video_player.dart';
 
 import 'video_message_controls.dart';
+import 'image_render_metrics.dart';
+import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'attachment_upload_overlay.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
@@ -227,7 +229,6 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
     final colorScheme = theme.colorScheme;
     final coverUrl = widget.coverUrl;
     final hasCover = coverUrl != null && coverUrl.isNotEmpty;
-    final displaySize = _displaySize();
     final durationText = widget.durationMs == null || widget.durationMs! <= 0
         ? ''
         : _formatDuration(Duration(milliseconds: widget.durationMs!));
@@ -237,7 +238,8 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
     // 与图片详情保持一致：仅在非对话框链路（手机 / Web-SP）启用 Hero，
     // 这样移动端点击展开后可丝滑越界到 VideoViewerPage。
     // 减少动效时关闭 Hero，路由本身已零时长即时呈现。
-    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final useHero = !shouldUseDialogForMedia(context) && !reduceMotion;
 
     Widget buildHeroWrapper(Widget child) {
@@ -256,143 +258,144 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
       );
     }
 
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: displaySize.width,
-        maxHeight: displaySize.height + 48,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          RepaintBoundary(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(RadiusToken.lg),
-              child: SizedBox(
-                width: displaySize.width,
-                height: displaySize.height,
-                child: ColoredBox(
-                  color: colorScheme.surfaceContainerHighest,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (_initialized && _controller != null)
-                        GestureDetector(
-                          onTap: () =>
-                              setState(() => _showControls = !_showControls),
-                          child: buildHeroWrapper(
-                            FittedBox(
-                              fit: BoxFit.contain,
-                              clipBehavior: Clip.hardEdge,
-                              child: SizedBox(
-                                width: _controller!.value.size.width,
-                                height: _controller!.value.size.height,
-                                child: VideoPlayer(_controller!),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final displaySize = _displaySize(constraints.maxWidth);
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: displaySize.width,
+            maxHeight: displaySize.height + 48,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RepaintBoundary(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
+                  child: SizedBox(
+                    width: displaySize.width,
+                    height: displaySize.height,
+                    child: ColoredBox(
+                      color: colorScheme.surfaceContainerHighest,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          if (_initialized && _controller != null)
+                            GestureDetector(
+                              onTap: () => setState(
+                                () => _showControls = !_showControls,
+                              ),
+                              child: buildHeroWrapper(
+                                FittedBox(
+                                  fit: BoxFit.contain,
+                                  clipBehavior: Clip.hardEdge,
+                                  child: SizedBox(
+                                    width: _controller!.value.size.width,
+                                    height: _controller!.value.size.height,
+                                    child: VideoPlayer(_controller!),
+                                  ),
+                                ),
+                              ),
+                            )
+                          else if (hasCover)
+                            GestureDetector(
+                              onTap: _togglePlay,
+                              child: buildHeroWrapper(
+                                CachedNetworkImageView(
+                                  imageUrl: coverUrl,
+                                  width: displaySize.width,
+                                  height: displaySize.height,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, _) => ColoredBox(
+                                    color: colorScheme.surfaceContainerHighest,
+                                  ),
+                                  errorWidget: (_, _, _) =>
+                                      _placeholder(colorScheme),
+                                ),
+                              ),
+                            )
+                          else
+                            GestureDetector(
+                              onTap: _togglePlay,
+                              child: buildHeroWrapper(
+                                _placeholder(colorScheme),
                               ),
                             ),
-                          ),
-                        )
-                      else if (hasCover)
-                        GestureDetector(
-                          onTap: _togglePlay,
-                          child: buildHeroWrapper(
-                            CachedNetworkImageView(
-                              imageUrl: coverUrl,
-                              width: displaySize.width,
-                              height: displaySize.height,
-                              fit: BoxFit.cover,
-                              placeholder: (_, _) => ColoredBox(
-                                color: colorScheme.surfaceContainerHighest,
-                              ),
-                              errorWidget: (_, _, _) =>
-                                  _placeholder(colorScheme),
-                            ),
-                          ),
-                        )
-                      else
-                        GestureDetector(
-                          onTap: _togglePlay,
-                          child: buildHeroWrapper(_placeholder(colorScheme)),
-                        ),
-                      _bottomGradient(),
-                      if (!_initializing && !_isPendingUpload) _playButton(),
-                      if (_initializing)
-                        const Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.6,
-                            color: Colors.white,
-                          ),
-                        ),
-                      if (_showControls && !_isPendingUpload) _topControls(),
-                      _mediaInfo(durationText, sizeText),
-                      if (_initialized && _controller != null)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: VideoProgressIndicator(
-                            _controller!,
-                            allowScrubbing: true,
-                            colors: VideoProgressColors(
-                              playedColor: colorScheme.primary,
-                              bufferedColor: Colors.white.withValues(
-                                alpha: 0.35,
-                              ),
-                              backgroundColor: Colors.white.withValues(
-                                alpha: 0.22,
+                          _bottomGradient(),
+                          if (!_initializing && !_isPendingUpload)
+                            _playButton(),
+                          if (_initializing)
+                            const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.6,
+                                color: Colors.white,
                               ),
                             ),
-                            padding: const EdgeInsets.only(top: 8),
+                          if (_showControls && !_isPendingUpload)
+                            _topControls(),
+                          _mediaInfo(durationText, sizeText),
+                          if (_initialized && _controller != null)
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: VideoProgressIndicator(
+                                _controller!,
+                                allowScrubbing: true,
+                                colors: VideoProgressColors(
+                                  playedColor: colorScheme.primary,
+                                  bufferedColor: Colors.white.withValues(
+                                    alpha: 0.35,
+                                  ),
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.22,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.only(top: 8),
+                              ),
+                            ),
+                          if (_hasError && !_isPendingUpload) _errorOverlay(),
+                          // 上传中：遮罩 + 进度环（本地视频没有可播放地址，不显示播放器态）
+                          AttachmentUploadOverlay(
+                            attachmentId: widget.attachmentId,
                           ),
-                        ),
-                      if (_hasError && !_isPendingUpload) _errorOverlay(),
-                      // 上传中：遮罩 + 进度环（本地视频没有可播放地址，不显示播放器态）
-                      AttachmentUploadOverlay(
-                        attachmentId: widget.attachmentId,
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+              if (widget.fileName != null &&
+                  widget.fileName!.trim().isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  widget.fileName!.trim(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
           ),
-          if (widget.fileName != null &&
-              widget.fileName!.trim().isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              widget.fileName!.trim(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Size _displaySize() {
-    if (widget.videoWidth == null ||
-        widget.videoHeight == null ||
-        widget.videoWidth! <= 0 ||
-        widget.videoHeight! <= 0) {
-      return const Size(280, 160);
-    }
-    final aspect = widget.videoWidth! / widget.videoHeight!;
-    var width = 280.0;
-    var height = width / aspect;
-    if (height > 380) {
-      height = 380;
-      width = height * aspect;
-    }
-    if (height < 160) {
-      height = 160;
-      width = (height * aspect).clamp(0, 280);
-    }
-    return Size(width, height);
+  Size _displaySize(double availableWidth) {
+    // 播放器尺寸包含相机旋转后的方向，比上传元数据更可靠。
+    final actual = _initialized ? _controller?.value.size : null;
+    return resolveImageMessageDisplaySize(
+      Attachment(width: widget.videoWidth, height: widget.videoHeight),
+      intrinsicWidth: actual?.width,
+      intrinsicHeight: actual?.height,
+      maxWidth: availableWidth.isFinite ? availableWidth.clamp(0, 280) : 280,
+      maxHeight: 380,
+    );
   }
 
   Widget _placeholder(ColorScheme scheme) => Container(

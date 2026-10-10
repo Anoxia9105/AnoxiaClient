@@ -66,6 +66,7 @@ class _ChatContentPickerState extends ConsumerState<ChatContentPicker> {
                     .toList(),
               );
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(
           (widget.favorites ? 'chat_share_favorite' : 'chat_share_contact')
