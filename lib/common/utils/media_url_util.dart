@@ -28,6 +28,21 @@ bool isPendingLocalMediaUrl(String? url) =>
 /// 它只存在于内存中的乐观消息里（不会落库、上传完成前不会发给服务端）。
 String localPendingMediaUrl(String id) => 'local-pending://$id';
 
+/// 系统选择器返回的 file URI 需先解码，不能直接交给 File/XFile。
+String? localMediaFilePath(String? value) {
+  if (value == null || value.isEmpty) return null;
+  if (value.startsWith('file:')) {
+    try {
+      return Uri.parse(value).toFilePath();
+    } on FormatException {
+      return null;
+    } on UnsupportedError {
+      return null;
+    }
+  }
+  return isLocalMediaFilePath(value) ? value : null;
+}
+
 /// 可直接交给 XFile 读取的磁盘路径；待上传占位串并不是文件路径。
 bool isLocalMediaFilePath(String? path) =>
     path != null &&

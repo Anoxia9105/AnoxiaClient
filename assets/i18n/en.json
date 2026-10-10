@@ -1561,6 +1561,8 @@
   "chat_forward_resume_previous": "Check previous forward",
   "chat_forward_record_unavailable": "This record is unavailable or no longer visible.",
   "chat_forward_retry": "Retry",
-  "chat_forward_load_more": "Load more"
+  "chat_forward_load_more": "Load more",
+  "chat_delete_failed_message": "Delete message",
+  "chat_upload_failed_actions": "Long press to retry or delete"
 
 }

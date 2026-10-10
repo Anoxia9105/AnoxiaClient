@@ -68,13 +68,8 @@ class AttachmentImageView extends StatelessWidget {
     if (kIsWeb) {
       return null;
     }
-    if (url == null ||
-        url.isEmpty ||
-        url.startsWith('blob:') ||
-        url.startsWith('local-pending://')) {
-      return null;
-    }
-    return FileImage(File(url));
+    final path = localMediaFilePath(url);
+    return path == null ? null : FileImage(File(path));
   }
 
   @override
@@ -121,11 +116,8 @@ class AttachmentImageView extends StatelessWidget {
       );
     }
 
-    final path = url;
-    if (path == null ||
-        path.isEmpty ||
-        path.startsWith('blob:') ||
-        path.startsWith('local-pending://')) {
+    final path = localMediaFilePath(url);
+    if (path == null) {
       return _buildError(context, StateError('图片地址为空'));
     }
     return Image.file(

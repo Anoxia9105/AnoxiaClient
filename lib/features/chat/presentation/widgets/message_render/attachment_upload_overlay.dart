@@ -110,7 +110,7 @@ class AttachmentUploadOverlay extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'upload_failed_retry'.tr(),
+            'chat_upload_failed_actions'.tr(),
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.85),
               fontSize: 10,

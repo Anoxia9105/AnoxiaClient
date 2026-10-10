@@ -191,10 +191,10 @@ class ChatFileUploadController extends _$ChatFileUploadController {
           ),
         );
         pendingAttachments.add(a);
-      } else if (isLocalMediaFilePath(local?.path ?? a.url)) {
+      } else if (localMediaFilePath(local?.path ?? a.url) != null) {
         pendingFiles.add(
           XFile(
-            (local?.path ?? a.url)!,
+            localMediaFilePath(local?.path ?? a.url)!,
             name: a.name,
             mimeType: mediaMimeTypeForName(
               a.name ?? a.url!,

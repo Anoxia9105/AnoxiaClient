@@ -21,6 +21,7 @@ import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.da
 
 import 'ai_ask_bubble.dart';
 import '../forward/forward_message_dialog.dart';
+import '../message_bubble/message_resender.dart';
 import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
@@ -57,11 +58,6 @@ class _ChatMessageContextMenuState
 
   @override
   Widget build(BuildContext context) {
-    // 失败状态下不显示上下文菜单
-    if (widget.message.deliveryStatus == DeliveryStatus.failed) {
-      return widget.child;
-    }
-
     // 全平台注册右键和长按：
     // - 鼠标右键直接弹菜单（用原始指针监听而非 onSecondaryTapDown）
     // - 移动端 / 触屏 Web 长按弹出菜单
@@ -116,6 +112,16 @@ class _ChatMessageContextMenuState
   }
 
   List<PopupMenuEntry<String>> _buildMenuItems(BuildContext context) {
+    if (widget.message.deliveryStatus == DeliveryStatus.failed) {
+      return [
+        _buildItem('retry', HugeIcons.strokeRoundedRefresh, 'retry'.tr()),
+        _buildItem(
+          'deleteFailed',
+          HugeIcons.strokeRoundedDelete02,
+          'chat_delete_failed_message'.tr(),
+        ),
+      ];
+    }
     final currentUser = ref.read(authControllerProvider).value;
     final bool isMe = widget.message.senderId == currentUser?.userId;
     final items = <PopupMenuEntry<String>>[];
@@ -227,6 +233,19 @@ class _ChatMessageContextMenuState
 
   void _handleAction(BuildContext context, String action) {
     switch (action) {
+      case 'retry':
+        MessageResender.resend(ref, widget.message);
+        break;
+      case 'deleteFailed':
+        final roomId = widget.message.roomId;
+        if (roomId != null && roomId.isNotEmpty) {
+          unawaited(
+            ref
+                .read(chatInputControllerProvider(roomId).notifier)
+                .discardFailedMessage(widget.message),
+          );
+        }
+        break;
       case 'forward':
         unawaited(
           showForwardMessages(context, ref, [widget.message], merged: false),

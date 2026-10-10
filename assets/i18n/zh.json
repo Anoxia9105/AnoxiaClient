@@ -1561,6 +1561,8 @@
   "chat_forward_resume_previous": "查询上次转发",
   "chat_forward_record_unavailable": "聊天记录暂时无法读取或已不可见。",
   "chat_forward_retry": "重试",
-  "chat_forward_load_more": "加载更多"
+  "chat_forward_load_more": "加载更多",
+  "chat_delete_failed_message": "删除消息",
+  "chat_upload_failed_actions": "长按可重试或删除"
 
 }

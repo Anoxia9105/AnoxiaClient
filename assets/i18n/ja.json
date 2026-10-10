@@ -1561,6 +1561,8 @@
   "chat_forward_resume_previous": "前回の転送を確認",
   "chat_forward_record_unavailable": "履歴を読み込めないか、閲覧できなくなりました。",
   "chat_forward_retry": "再試行",
-  "chat_forward_load_more": "さらに読み込む"
+  "chat_forward_load_more": "さらに読み込む",
+  "chat_delete_failed_message": "メッセージを削除",
+  "chat_upload_failed_actions": "長押しで再試行または削除"
 
 }

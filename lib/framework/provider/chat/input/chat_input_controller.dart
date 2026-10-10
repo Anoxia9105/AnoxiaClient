@@ -633,6 +633,10 @@ class ChatInputController extends _$ChatInputController {
     if (id == null || id.isEmpty) return false;
     final draft = _pendingMedia[id];
     if (draft == null) return false;
+    final upload =
+        ref.read(chatImageUploadControllerProvider)[id] ??
+        ref.read(chatFileUploadControllerProvider)[id];
+    if (upload?.isUploading == true) return true;
 
     ref
         .read(chatMessagesProvider.notifier)
@@ -640,6 +644,21 @@ class ChatInputController extends _$ChatInputController {
     await _uploadLocalMediaBatch([draft]);
     _finalizeLocalMediaDraft(draft);
     return true;
+  }
+
+  /// 删除失败占位时同时释放本地源文件和上传状态，避免重试后复活。
+  Future<void> discardFailedMessage(ChatMessage message) async {
+    if (message.deliveryStatus != DeliveryStatus.failed) return;
+    final id = message.clientMsgId ?? message.messageId;
+    if (id == null || id.isEmpty) return;
+    _pendingMedia.remove(id);
+    ref.read(chatImageUploadControllerProvider.notifier).cancelUpload(id);
+    ref.read(chatFileUploadControllerProvider.notifier).cancelUpload(id);
+    ref.read(chatImageUploadControllerProvider.notifier).release(id);
+    ref.read(chatFileUploadControllerProvider.notifier).release(id);
+    await ref
+        .read(chatMessagesProvider.notifier)
+        .removeMessage(message.messageId ?? id, roomId);
   }
 
   /// 构建本地媒体草稿（本地文件 + 附件 + 目标消息类型）
@@ -777,6 +796,7 @@ class ChatInputController extends _$ChatInputController {
   /// 单个草稿的上传结果落地
   void _finalizeLocalMediaDraft(_LocalMediaDraft draft) {
     final id = draft.clientMsgId;
+    if (!identical(_pendingMedia[id], draft)) return;
     final isImage = draft.messageType == MessageType.image;
     final imageUploader = ref.read(chatImageUploadControllerProvider.notifier);
     final fileUploader = ref.read(chatFileUploadControllerProvider.notifier);
