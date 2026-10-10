@@ -20,10 +20,13 @@ class SortedContactGroupsWidget extends ConsumerWidget {
   /// 联系人点击回调（可选）
   final VoidCallback? onContactTap;
 
+  final VoidCallback? onRetry;
+
   const SortedContactGroupsWidget({
     super.key,
     this.itemBuilder,
     this.onContactTap,
+    this.onRetry,
   });
 
   @override
@@ -93,6 +96,7 @@ class SortedContactGroupsWidget extends ConsumerWidget {
             items: items,
             options: AlphabetListViewOptions(
               listOptions: ListOptions(
+                physics: const AlwaysScrollableScrollPhysics(),
                 listHeaderBuilder: (context, tag) =>
                     ContactGroupHeader(tag: tag),
               ),
@@ -114,20 +118,31 @@ class SortedContactGroupsWidget extends ConsumerWidget {
         );
       },
       loading: () => const ContactGroupsSkeleton(),
-      error: (err, stack) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('chat_load_failed'.tr()),
-            const SizedBox(height: 12),
-            FilledButton.tonalIcon(
-              onPressed: () =>
-                  ref.read(contactListServiceProvider.notifier).refresh(),
-              icon: const Icon(Icons.refresh),
-              label: Text('call_window_retry'.tr()),
+      error: (err, stack) => CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('chat_load_failed'.tr()),
+                  const SizedBox(height: 12),
+                  FilledButton.tonalIcon(
+                    onPressed:
+                        onRetry ??
+                        () => ref
+                            .read(contactListServiceProvider.notifier)
+                            .refresh(),
+                    icon: const Icon(Icons.refresh),
+                    label: Text('call_window_retry'.tr()),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

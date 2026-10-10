@@ -1,5 +1,6 @@
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/list_retry_banner.dart';
+import 'package:anoxia/common/widgets/list_refresh.dart';
 import 'package:anoxia/common/widgets/online_status_pill.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
@@ -18,8 +19,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// 显示新朋友、群组列表和联系人分组列表
 /// 支持下拉刷新和移动端/桌面端适配
-class ContactList extends ConsumerWidget {
+class ContactList extends ConsumerStatefulWidget {
   const ContactList({super.key});
+
+  @override
+  ConsumerState<ContactList> createState() => _ContactListState();
+}
+
+class _ContactListState extends ConsumerState<ContactList> {
+  Future<void>? _refreshFuture;
+
+  Future<void> _refresh() {
+    if (_refreshFuture case final pending?) return pending;
+    final future = ref.read(contactListServiceProvider.notifier).refresh();
+    setState(() {
+      _refreshFuture = future;
+    });
+    return future.whenComplete(() {
+      if (mounted) setState(() => _refreshFuture = null);
+    });
+  }
 
   /// 在移动端打开详情页面
   ///
@@ -30,7 +49,7 @@ class ContactList extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final pendingRequests = ref.watch(pendingRequestCountProvider).value ?? 0;
     final (onlineCount, totalCount) = ref.watch(
       contactListServiceProvider.select((s) {
@@ -52,11 +71,17 @@ class ContactList extends ConsumerWidget {
               ? '${'contact_contacts'.tr()} · $totalCount'
               : 'contact_contacts'.tr(),
         ),
+        actions: [
+          if (DeviceUtil.isRealDesktop() ||
+              (DeviceUtil.isRealWeb() && DeviceUtil.isDesktop(context)))
+            ListRefreshButton(
+              onRefresh: _refresh,
+              isRefreshing: _refreshFuture != null,
+            ),
+        ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await ref.read(contactListServiceProvider.notifier).refresh();
-        },
+      body: ListRefreshIndicator(
+        onRefresh: _refresh,
         // 与聊天列表的水平节奏对齐（列表外 12 + 列表项内 16 = 28），
         // 保证「新朋友」未读徽标与聊天会话未读徽标距右缘距离一致。
         child: Padding(
@@ -115,13 +140,10 @@ class ContactList extends ConsumerWidget {
                   children: [
                     if (ref.watch(contactRefreshFailedProvider) &&
                         ref.watch(contactListServiceProvider).hasValue)
-                      ListRetryBanner(
-                        onRetry: () => ref
-                            .read(contactListServiceProvider.notifier)
-                            .refresh(),
-                      ),
+                      ListRetryBanner(onRetry: _refresh),
                     Expanded(
                       child: SortedContactGroupsWidget(
+                        onRetry: _refresh,
                         onContactTap: () {
                           if (DeviceUtil.useSingleColumnPush(context)) {
                             _openMobileDetail(context, const ContactDetail());

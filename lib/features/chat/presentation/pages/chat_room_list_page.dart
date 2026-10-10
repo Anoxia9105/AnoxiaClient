@@ -1,5 +1,6 @@
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/list_retry_banner.dart';
+import 'package:anoxia/common/widgets/list_refresh.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_dialog_menus.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_item.dart';
@@ -26,6 +27,19 @@ class ChatRoomList extends ConsumerStatefulWidget {
 }
 
 class _ChatRoomListState extends ConsumerState<ChatRoomList> {
+  Future<void>? _refreshFuture;
+
+  Future<void> _refresh() {
+    if (_refreshFuture case final pending?) return pending;
+    final future = ref.read(roomListServiceProvider.notifier).refresh();
+    setState(() {
+      _refreshFuture = future;
+    });
+    return future.whenComplete(() {
+      if (mounted) setState(() => _refreshFuture = null);
+    });
+  }
+
   /// 搜索框控制器
   final TextEditingController _searchController = TextEditingController();
 
@@ -116,6 +130,12 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
         // }(),
         title: Text('sidebar_chat'.tr()),
         actions: [
+          if (DeviceUtil.isRealDesktop() ||
+              (DeviceUtil.isRealWeb() && DeviceUtil.isDesktop(context)))
+            ListRefreshButton(
+              onRefresh: _refresh,
+              isRefreshing: _refreshFuture != null,
+            ),
           // 添加房间/好友按钮
           Builder(
             builder: (context) {
@@ -147,9 +167,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
         if (showSearch) _buildSearchBar(context, ref),
         if (ref.watch(roomListRefreshFailedProvider) &&
             ref.watch(roomListServiceProvider).hasValue)
-          ListRetryBanner(
-            onRetry: () => ref.read(roomListServiceProvider.notifier).refresh(),
-          ),
+          ListRetryBanner(onRetry: _refresh),
         Expanded(child: _buildRoomList(context, ref)),
       ],
     );
@@ -233,10 +251,8 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
         if (rooms.isEmpty) {
           return _buildEmptyState(context, ref, query);
         }
-        return RefreshIndicator(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          color: Theme.of(context).colorScheme.primary,
-          onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
+        return ListRefreshIndicator(
+          onRefresh: _refresh,
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -257,10 +273,8 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   /// 构建空状态视图
   Widget _buildEmptyState(BuildContext context, WidgetRef ref, String query) {
     final theme = Theme.of(context);
-    return RefreshIndicator(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      color: theme.colorScheme.primary,
-      onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
+    return ListRefreshIndicator(
+      onRefresh: _refresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -286,8 +300,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                   ),
                   const SizedBox(height: 16),
                   FilledButton.tonalIcon(
-                    onPressed: () =>
-                        ref.read(roomListServiceProvider.notifier).refresh(),
+                    onPressed: _refresh,
                     icon: HugeIcon(
                       icon: HugeIcons.strokeRoundedRefresh,
                       size: 16,
@@ -307,10 +320,8 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   /// 构建错误状态视图
   Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error) {
     final theme = Theme.of(context);
-    return RefreshIndicator(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      color: theme.colorScheme.primary,
-      onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
+    return ListRefreshIndicator(
+      onRefresh: _refresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -336,8 +347,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                     ),
                     const SizedBox(height: 16),
                     FilledButton.tonalIcon(
-                      onPressed: () =>
-                          ref.read(roomListServiceProvider.notifier).refresh(),
+                      onPressed: _refresh,
                       icon: HugeIcon(
                         icon: HugeIcons.strokeRoundedReload,
                         size: 16,
