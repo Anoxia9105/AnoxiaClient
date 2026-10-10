@@ -41,14 +41,17 @@ class SettingsGeneralSection extends ConsumerWidget {
         _GroupLabel(icon: HugeIcons.strokeRoundedComputer, title: 'settings_general_group_interface'.tr()),
         _SettingsCard(
           children: [
-            _SwitchTile(
-              icon: HugeIcons.strokeRoundedMinimizeScreen,
-              title: 'settings_window_minimize_to_tray'.tr(),
-              subtitle: 'settings_window_minimize_to_tray_desc'.tr(),
-              value: minimizeToTray,
-              onChanged: (v) => ref.read(windowMinimizeToTrayProvider.notifier).setEnabled(v),
-            ),
-            _Divider(),
+            // 托盘仅原生桌面端支持，与窗口宽度无关。
+            if (DeviceUtil.isRealDesktop()) ...[
+              _SwitchTile(
+                icon: HugeIcons.strokeRoundedMinimizeScreen,
+                title: 'settings_window_minimize_to_tray'.tr(),
+                subtitle: 'settings_window_minimize_to_tray_desc'.tr(),
+                value: minimizeToTray,
+                onChanged: (v) => ref.read(windowMinimizeToTrayProvider.notifier).setEnabled(v),
+              ),
+              _Divider(),
+            ],
             _SwitchTile(
               icon: HugeIcons.strokeRoundedSparkles,
               title: 'settings_reduce_motion'.tr(),

@@ -22,7 +22,6 @@ class SettingsAccountSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _divider(context),
         _AccountTile(
           icon: HugeIcons.strokeRoundedQrCode01,
           title: 'me_my_qr'.tr(),
