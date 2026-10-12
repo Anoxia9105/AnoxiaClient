@@ -1,5 +1,5 @@
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
-import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
+import 'package:anoxia/features/chat/application/message_preview_formatter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';

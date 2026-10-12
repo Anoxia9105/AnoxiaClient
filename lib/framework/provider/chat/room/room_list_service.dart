@@ -6,6 +6,7 @@ import 'package:anoxia/framework/provider/core/chat_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/sync_conversations_usecase_provider.dart';
 import 'package:anoxia/framework/provider/core/room_repository_provider.dart';
 import 'package:anoxia/features/chat/application/system_message_formatter.dart';
+import 'package:anoxia/features/chat/application/message_preview_formatter.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
@@ -266,7 +267,7 @@ class RoomListService extends _$RoomListService {
                   // 通话系统消息文案区分单聊/群聊（发起了通话 / 开启了会议）
                   isGroup: oldRoom.roomType == RoomType.groupChat.index,
                 ).text
-              : newMessage.content;
+              : MessagePreviewFormatter.format(newMessage);
           NotificationHelper().show(
             id: newMessage.roomId.hashCode,
             title: oldRoom.roomName ?? tr('chat_new_message'),

@@ -2,7 +2,7 @@ import 'package:anoxia/common/utils/date_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
-import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
+import 'package:anoxia/features/chat/application/message_preview_formatter.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/contact/presentation/widgets/group_room/group_room_tile.dart';

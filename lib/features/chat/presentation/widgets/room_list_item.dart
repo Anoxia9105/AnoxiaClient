@@ -5,7 +5,7 @@ import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
 import 'package:anoxia/common/widgets/simple_list_tile.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
-import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
+import 'package:anoxia/features/chat/application/message_preview_formatter.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
