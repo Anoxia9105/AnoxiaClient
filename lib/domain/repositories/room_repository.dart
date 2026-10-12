@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
+import 'package:cross_file/cross_file.dart';
 
 /// 房间仓库抽象接口
 ///
@@ -37,6 +38,11 @@ abstract interface class RoomRepository {
   ///
   /// 返回是否操作成功。
   Future<bool> updateGroupName(String roomId, String roomName);
+
+  /// 上传已裁剪的静态群头像。
+  Future<String?> uploadGroupAvatar(XFile file);
+
+  Future<bool> updateGroupAvatar(String roomId, String avatarUrl);
 
   /// 修改群公告
   ///

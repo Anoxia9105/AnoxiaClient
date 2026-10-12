@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:anoxia/common/utils/static_avatar_image.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/constants/api.dart';
@@ -54,22 +55,24 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
     _picking = true;
     try {
       final result = await FilePicker.pickFiles(
-        type: FileType.image,
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp'],
         withData: true,
       );
       if (result == null || result.files.isEmpty) return;
       final bytes = result.files.single.bytes;
       if (bytes == null || bytes.isEmpty) return;
       if (!mounted) return;
+      if (!isStaticAvatarImage(bytes)) {
+        Toast.showToast('avatar_static_only'.tr(), type: ToastType.warning);
+        return;
+      }
       setState(() {
         _pickedBytes = bytes;
       });
     } catch (_) {
       if (mounted) {
-        Toast.showToast(
-          'me_avatar_load_failed'.tr(),
-          type: ToastType.error,
-        );
+        Toast.showToast('me_avatar_load_failed'.tr(), type: ToastType.error);
       }
     } finally {
       _picking = false;
@@ -80,16 +83,15 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
     final editor = _editorKey.currentState;
     if (editor == null || _uploading) return;
 
-    final bytes = editor.cropSquare();
+    setState(() => _uploading = true);
+    final bytes = await editor.cropSquare();
+    if (!mounted) return;
     if (bytes == null) {
-      Toast.showToast(
-        'me_avatar_crop_failed'.tr(),
-        type: ToastType.error,
-      );
+      setState(() => _uploading = false);
+      Toast.showToast('me_avatar_crop_failed'.tr(), type: ToastType.error);
       return;
     }
 
-    setState(() => _uploading = true);
     try {
       final file = XFile.fromData(
         bytes,
@@ -116,10 +118,7 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
         type: ToastType.error,
       );
     } catch (_) {
-      Toast.showToast(
-        'me_avatar_upload_failed'.tr(),
-        type: ToastType.error,
-      );
+      Toast.showToast('me_avatar_upload_failed'.tr(), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -128,11 +127,9 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
   @override
   Widget build(BuildContext context) {
     final bytes = _pickedBytes;
-    final user = ref.watch(authControllerProvider).when(
-          data: (u) => u,
-          loading: () => null,
-          error: (_, _) => null,
-        );
+    final user = ref
+        .watch(authControllerProvider)
+        .when(data: (u) => u, loading: () => null, error: (_, _) => null);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -152,7 +149,10 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: _uploading ? null : _pickImage,
-                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedImage01, size: 18),
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedImage01,
+                    size: 18,
+                  ),
                   label: Text('me_avatar_reselect'.tr()),
                 ),
               ),
@@ -165,7 +165,10 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
                           dimension: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 18),
+                      : const HugeIcon(
+                          icon: HugeIcons.strokeRoundedTick01,
+                          size: 18,
+                        ),
                   label: Text('me_avatar_confirm'.tr()),
                 ),
               ),
@@ -186,7 +189,10 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
           const SizedBox(height: 18),
           FilledButton.icon(
             onPressed: _pickImage,
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedGalleryHorizontalEnd, size: 18),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedGalleryHorizontalEnd,
+              size: 18,
+            ),
             label: Text('me_avatar_choose'.tr()),
           ),
         ],

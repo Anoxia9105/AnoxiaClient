@@ -1,5 +1,7 @@
-import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:anoxia/common/utils/static_avatar_image.dart';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
@@ -12,7 +14,7 @@ import 'package:anoxia/framework/theme/spacing_token.dart';
 ///
 /// 提供方形裁剪预览：
 /// - 拖动平移 / 双指或鼠标滚轮缩放，图片始终覆盖裁剪区域
-/// - [cropSquare] 按当前可视区域裁剪出正方形头像（使用纯 Dart 图像处理，Web/Wasm 兼容）
+/// - [cropSquare] 使用 Flutter 画布裁剪，仅对最终小图进行 JPEG 编码（Web/Wasm 兼容）
 class AvatarCropEditor extends StatefulWidget {
   const AvatarCropEditor({
     super.key,
@@ -36,10 +38,7 @@ class AvatarCropEditor extends StatefulWidget {
 
 class AvatarCropEditorState extends State<AvatarCropEditor> {
   /// 用于裁剪的解码图片（大图先降采样，限制内存占用）
-  img.Image? _decoded;
-
-  /// 用于预览显示的图片字节
-  Uint8List? _displayBytes;
+  ui.Image? _decoded;
 
   bool _loading = true;
   bool _failed = false;
@@ -53,7 +52,7 @@ class AvatarCropEditorState extends State<AvatarCropEditor> {
 
   static const double _minScale = 1.0;
   static const double _maxScale = 6.0;
-  static const double _maxSide = 2048.0;
+  int _loadVersion = 0;
 
   @override
   void initState() {
@@ -74,37 +73,35 @@ class AvatarCropEditorState extends State<AvatarCropEditor> {
   }
 
   Future<void> _load() async {
+    final version = ++_loadVersion;
+    _decoded?.dispose();
+    _decoded = null;
     try {
-      final decoded = img.decodeImage(widget.imageBytes);
-      if (decoded == null) {
-        throw StateError('decode failed');
+      final image = await decodeStaticAvatarImage(widget.imageBytes);
+      if (!mounted || version != _loadVersion) {
+        image.dispose();
+        return;
       }
-      img.Image image = decoded;
-      final maxSide = math.max(image.width, image.height);
-      if (maxSide > _maxSide) {
-        final ratio = _maxSide / maxSide;
-        image = img.copyResize(
-          image,
-          width: (image.width * ratio).round(),
-          height: (image.height * ratio).round(),
-          interpolation: img.Interpolation.linear,
-        );
-      }
-      if (!mounted) return;
       setState(() {
         _decoded = image;
-        _displayBytes = img.encodePng(image);
         _scale = 1.0;
         _offset = _centeredOffset(image.width, image.height);
         _loading = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || version != _loadVersion) return;
       setState(() {
         _loading = false;
         _failed = true;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _loadVersion++;
+    _decoded?.dispose();
+    super.dispose();
   }
 
   /// 计算缩放为 1 时的显示尺寸（cover 填充预览区）
@@ -140,39 +137,48 @@ class AvatarCropEditorState extends State<AvatarCropEditor> {
   /// 按当前可视区域裁剪出正方形头像
   ///
   /// 返回裁剪后的 JPG 字节；失败返回 null。
-  Uint8List? cropSquare() {
+  Future<Uint8List?> cropSquare() async {
     final decoded = _decoded;
     if (decoded == null || _loading || _failed) return null;
 
     final (baseW, baseH) = _baseSize();
     final (dx, dy) = _clampedOffset(baseW, baseH);
-    final s = widget.size;
-
-    final idxW = baseW * _scale;
-    final idxH = baseH * _scale;
-    final factorX = decoded.width / idxW;
-    final factorY = decoded.height / idxH;
-
-    final x = (-dx * factorX).round().clamp(0, decoded.width - 1);
-    final y = (-dy * factorY).round().clamp(0, decoded.height - 1);
-    final w = math.min((s * factorX).round(), decoded.width - x);
-    final h = math.min((s * factorY).round(), decoded.height - y);
-    if (w <= 0 || h <= 0) return null;
-
+    final factor = decoded.width / (baseW * _scale);
+    final source = Rect.fromLTWH(
+      -dx * factor,
+      -dy * factor,
+      widget.size * factor,
+      widget.size * factor,
+    );
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final outputSize = widget.outputSize;
+    canvas.drawColor(Colors.white, BlendMode.src);
+    canvas.drawImageRect(
+      decoded,
+      source,
+      Rect.fromLTWH(0, 0, outputSize.toDouble(), outputSize.toDouble()),
+      Paint()..filterQuality = FilterQuality.high,
+    );
+    final picture = recorder.endRecording();
+    ui.Image? output;
     try {
-      var cropped = img.copyCrop(decoded, x: x, y: y, width: w, height: h);
-      if (cropped.width != widget.outputSize ||
-          cropped.height != widget.outputSize) {
-        cropped = img.copyResize(
-          cropped,
-          width: widget.outputSize,
-          height: widget.outputSize,
-          interpolation: img.Interpolation.cubic,
-        );
-      }
-      return Uint8List.fromList(img.encodeJpg(cropped, quality: 92));
+      output = await picture.toImage(outputSize, outputSize);
+      final data = await output.toByteData(format: ui.ImageByteFormat.rawRgba);
+      if (data == null) return null;
+      final image = img.Image.fromBytes(
+        width: outputSize,
+        height: outputSize,
+        bytes: data.buffer,
+        bytesOffset: data.offsetInBytes,
+        numChannels: 4,
+      );
+      return Uint8List.fromList(img.encodeJpg(image, quality: 92));
     } catch (_) {
       return null;
+    } finally {
+      output?.dispose();
+      picture.dispose();
     }
   }
 
@@ -187,8 +193,8 @@ class AvatarCropEditorState extends State<AvatarCropEditor> {
       _scale = (_gestureStartScale * details.scale)
           .clamp(_minScale, _maxScale)
           .toDouble();
-      _offset = _gestureStartOffset +
-          (details.localFocalPoint - _gestureStartFocal);
+      _offset =
+          _gestureStartOffset + (details.localFocalPoint - _gestureStartFocal);
     });
   }
 
@@ -196,8 +202,7 @@ class AvatarCropEditorState extends State<AvatarCropEditor> {
     if (event is! PointerScrollEvent) return;
     final factor = event.scrollDelta.dy < 0 ? 1.15 : (1 / 1.15);
     setState(() {
-      final newScale =
-          (_scale * factor).clamp(_minScale, _maxScale).toDouble();
+      final newScale = (_scale * factor).clamp(_minScale, _maxScale).toDouble();
       if (newScale == _scale) return;
       final ratio = newScale / _scale;
       final point = event.localPosition;
@@ -252,12 +257,11 @@ class AvatarCropEditorState extends State<AvatarCropEditor> {
                     Positioned(
                       left: dx,
                       top: dy,
-                      child: Image.memory(
-                        _displayBytes!,
+                      child: RawImage(
+                        image: _decoded,
                         width: baseW * _scale,
                         height: baseH * _scale,
                         fit: BoxFit.fill,
-                        gaplessPlayback: true,
                       ),
                     ),
                     Positioned.fill(
@@ -279,7 +283,9 @@ class AvatarCropEditorState extends State<AvatarCropEditor> {
         const SizedBox(height: SpacingToken.sm),
         Text(
           'me_avatar_upload_hint'.tr(),
-          style: Theme.of(context).textTheme.bodySmall!.copyWith( color: cs.onSurfaceVariant),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall!.copyWith(color: cs.onSurfaceVariant),
         ),
       ],
     );

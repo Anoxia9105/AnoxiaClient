@@ -1594,5 +1594,17 @@
   "call_media_connection_failed": "音视频连接中断，请检查网络后重新连接。",
   "call_room_ended_hint": "此通话已结束，请关闭窗口后重新发起。",
   "call_reconnect_exhausted": "暂时无法恢复连接。请检查网络后重新尝试。",
-  "call_server_restarting_hint": "通话服务正在恢复，请稍后重新连接。"
+  "call_server_restarting_hint": "通话服务正在恢复，请稍后重新连接。",
+  "avatar_static_only": "请选择静态图片，不支持 GIF 或其他动图",
+  "avatar_static_hint": "支持 JPG、PNG、WebP、BMP，仅限静态图片",
+  "create_group_join_label": "加入方式",
+  "create_group_join_free_hint": "通过群名片或二维码即可直接加入",
+  "create_group_join_approval_hint": "新成员加入前需要管理员审核",
+  "create_group_select_members_hint": "从左侧选择联系人加入群聊",
+  "chat_contact_info_hint": "查看联系人的个人资料与备注",
+  "group_join_requests_hint": "审核新成员的入群申请",
+  "chat_mute_all_hint": "开启后，普通成员将无法发送消息",
+  "chat_group_avatar": "群头像",
+  "chat_group_avatar_hint": "选择静态图片，裁剪后更新群头像",
+  "chat_group_avatar_success": "群头像已更新"
 }

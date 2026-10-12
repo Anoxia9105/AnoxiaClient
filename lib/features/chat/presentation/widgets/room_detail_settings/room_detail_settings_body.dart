@@ -1,4 +1,6 @@
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:anoxia/framework/provider/core/room_repository_provider.dart';
+import 'package:anoxia/features/chat/presentation/widgets/group_avatar_picker.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -92,7 +94,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
         if (isGroup) RoomSectionCaption('chat_detail_members'.tr()),
         if (isGroup)
           RoomCard(
-          child: Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 MemberListSection(
@@ -205,6 +207,14 @@ class RoomDetailSettingsBody extends ConsumerWidget {
           RoomSectionCaption('chat_detail_group_management'.tr()),
           RoomCard(
             children: _withDividers(context, [
+              if (isAdmin)
+                RoomSettingTile(
+                  icon: HugeIcons.strokeRoundedImage01,
+                  tint: SettingIconTint.blue,
+                  title: Text('chat_group_avatar'.tr()),
+                  subtitle: Text('chat_group_avatar_hint'.tr()),
+                  onTap: () => _editGroupAvatar(context, ref, currentRoom),
+                ),
               RoomSettingTile(
                 icon: HugeIcons.strokeRoundedComment01,
                 tint: SettingIconTint.blue,
@@ -272,6 +282,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   icon: HugeIcons.strokeRoundedUserCheck01,
                   tint: SettingIconTint.violet,
                   title: Text('group_join_requests_title'.tr()),
+                  subtitle: Text('group_join_requests_hint'.tr()),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -311,6 +322,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 icon: HugeIcons.strokeRoundedUserMultiple02,
                 tint: SettingIconTint.blue,
                 title: Text('chat_contact_info'.tr()),
+                subtitle: Text('chat_contact_info_hint'.tr()),
                 onTap: () => _openPeerContact(context, ref, currentRoom),
               ),
               _pinTile(context, ref),
@@ -329,6 +341,56 @@ class RoomDetailSettingsBody extends ConsumerWidget {
           currentRoom.roomStatus ?? -1,
         ),
       ],
+    );
+  }
+
+  Future<void> _editGroupAvatar(
+    BuildContext context,
+    WidgetRef ref,
+    ChatRoomVO room,
+  ) async {
+    var busy = false;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => PopScope(
+          canPop: !busy,
+          child: AlertDialog(
+            title: Text('chat_group_avatar'.tr()),
+            content: SizedBox(
+              width: 360,
+              child: GroupAvatarPicker(
+                initialUrl: room.roomAvatar,
+                allowRemove: false,
+                onBusyChanged: (value) => setDialogState(() => busy = value),
+                onSave: (url) async {
+                  final ok = await ref
+                      .read(roomRepositoryProvider)
+                      .updateGroupAvatar(roomId, url);
+                  if (ok) {
+                    await ref
+                        .read(roomListServiceProvider.notifier)
+                        .refresh(silent: true);
+                  }
+                  return ok;
+                },
+                onChanged: (_) {
+                  Toast.showToast(
+                    'chat_group_avatar_success'.tr(),
+                    type: ToastType.success,
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: busy ? null : () => Navigator.pop(dialogContext),
+                child: Text('dialog_done'.tr()),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -378,10 +440,9 @@ class RoomDetailSettingsBody extends ConsumerWidget {
       subtitle: Text('chat_do_not_disturb_hint'.tr()),
       value: ref.watch(doNotDisturbRoomsProvider).contains(roomId),
       onChanged: (value) async {
-        await ref.read(doNotDisturbRoomsProvider.notifier).setEnabled(
-              roomId,
-              value,
-            );
+        await ref
+            .read(doNotDisturbRoomsProvider.notifier)
+            .setEnabled(roomId, value);
       },
     );
   }
@@ -397,6 +458,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
         tint: SettingIconTint.teal,
       ),
       title: Text('chat_mute_all'.tr()),
+      subtitle: Text('chat_mute_all_hint'.tr()),
       value: currentRoom.roomStatus == 1,
       onChanged: (value) async {
         final success = await ref
@@ -422,18 +484,12 @@ class RoomDetailSettingsBody extends ConsumerWidget {
   void _openSearch(BuildContext context, ChatRoomVO room) {
     presentAdaptivePage(
       context,
-      builder: (_) => SearchContextPage(
-        roomId: roomId,
-        roomName: room.roomName ?? '',
-      ),
+      builder: (_) =>
+          SearchContextPage(roomId: roomId, roomName: room.roomName ?? ''),
     );
   }
 
-  void _openAnnouncement(
-    BuildContext context,
-    ChatRoomVO room,
-    bool isAdmin,
-  ) {
+  void _openAnnouncement(BuildContext context, ChatRoomVO room, bool isAdmin) {
     presentAdaptivePage(
       context,
       builder: (_) => isAdmin
@@ -470,9 +526,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
       },
     );
     final sent = ref
-        .read(
-          chatInputControllerProvider(destination!.roomId!).notifier,
-        )
+        .read(chatInputControllerProvider(destination!.roomId!).notifier)
         .sendCardMessage(card);
     Toast.showToast(
       sent ? 'group_card_shared'.tr() : 'contact_recommend_send_failed'.tr(),
@@ -512,10 +566,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
 
     ref.read(contactSelectionProvider.notifier).selectContact(contact);
     if (context.mounted) {
-      await presentAdaptivePage(
-        context,
-        builder: (_) => const ContactDetail(),
-      );
+      await presentAdaptivePage(context, builder: (_) => const ContactDetail());
     }
   }
 
@@ -564,40 +615,39 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     if (isGroup && isAdmin && roomStatus == 0) {
       actionLabel = 'chat_dissolve_group'.tr();
       onTap = () => _runDangerAction(
-            context,
-            ref,
-            icon: HugeIcons.strokeRoundedCancel01,
-            title: 'chat_dissolve_group'.tr(),
-            content: 'chat_dissolve_group_confirm_hint'.tr(),
-            confirmLabel: 'chat_dissolve_group'.tr(),
-            action: () => ref
-                .read(roomListServiceProvider.notifier)
-                .dissolveGroup(roomId),
-          );
+        context,
+        ref,
+        icon: HugeIcons.strokeRoundedCancel01,
+        title: 'chat_dissolve_group'.tr(),
+        content: 'chat_dissolve_group_confirm_hint'.tr(),
+        confirmLabel: 'chat_dissolve_group'.tr(),
+        action: () =>
+            ref.read(roomListServiceProvider.notifier).dissolveGroup(roomId),
+      );
     } else if (isGroup) {
       actionLabel = 'chat_exit_group'.tr();
       onTap = () => _runDangerAction(
-            context,
-            ref,
-            icon: HugeIcons.strokeRoundedLogout01,
-            title: 'chat_exit_group'.tr(),
-            content: 'chat_exit_group_confirm_hint'.tr(),
-            confirmLabel: 'chat_exit_group'.tr(),
-            action: () =>
-                ref.read(roomListServiceProvider.notifier).leaveRoom(roomId),
-          );
+        context,
+        ref,
+        icon: HugeIcons.strokeRoundedLogout01,
+        title: 'chat_exit_group'.tr(),
+        content: 'chat_exit_group_confirm_hint'.tr(),
+        confirmLabel: 'chat_exit_group'.tr(),
+        action: () =>
+            ref.read(roomListServiceProvider.notifier).leaveRoom(roomId),
+      );
     } else {
       actionLabel = 'chat_delete_conversation'.tr();
       onTap = () => _runDangerAction(
-            context,
-            ref,
-            icon: HugeIcons.strokeRoundedDelete02,
-            title: 'chat_delete_conversation'.tr(),
-            content: 'chat_delete_conversation_confirm_hint'.tr(),
-            confirmLabel: 'chat_delete_conversation'.tr(),
-            action: () =>
-                ref.read(roomListServiceProvider.notifier).leaveRoom(roomId),
-          );
+        context,
+        ref,
+        icon: HugeIcons.strokeRoundedDelete02,
+        title: 'chat_delete_conversation'.tr(),
+        content: 'chat_delete_conversation_confirm_hint'.tr(),
+        confirmLabel: 'chat_delete_conversation'.tr(),
+        action: () =>
+            ref.read(roomListServiceProvider.notifier).leaveRoom(roomId),
+      );
     }
 
     // 危险区：左右留边距的居中长按钮，淡红底 + 红字
@@ -663,11 +713,14 @@ class RoomDetailSettingsBody extends ConsumerWidget {
   /// （indent 62 = 左右边距 14 + 图标块 36 + 间距 12，与标题左对齐）
   List<Widget> _withDividers(BuildContext context, List<Widget> tiles) {
     if (tiles.length < 2) return tiles;
-    final dividerColor =
-        Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5);
+    final dividerColor = Theme.of(
+      context,
+    ).colorScheme.outlineVariant.withValues(alpha: 0.5);
     final result = <Widget>[tiles.first];
     for (var i = 1; i < tiles.length; i++) {
-      result.add(Divider(height: 1, indent: 62, endIndent: 14, color: dividerColor));
+      result.add(
+        Divider(height: 1, indent: 62, endIndent: 14, color: dividerColor),
+      );
       result.add(tiles[i]);
     }
     return result;
@@ -725,10 +778,10 @@ class _ViewAllFooter extends StatelessWidget {
                 Text(
                   'chat_view_all_members'.tr(),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(width: 4),
                 HugeIcon(
@@ -817,7 +870,9 @@ class _QuickToolButton extends StatelessWidget {
                 message: data.label,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Center(child: _toolIcon(context, background, foreground)),
+                  child: Center(
+                    child: _toolIcon(context, background, foreground),
+                  ),
                 ),
               )
             : Padding(
@@ -831,10 +886,9 @@ class _QuickToolButton extends StatelessWidget {
                       data.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -843,11 +897,7 @@ class _QuickToolButton extends StatelessWidget {
     );
   }
 
-  Widget _toolIcon(
-    BuildContext context,
-    Color background,
-    Color foreground,
-  ) {
+  Widget _toolIcon(BuildContext context, Color background, Color foreground) {
     return Container(
       width: 36,
       height: 36,
@@ -856,11 +906,7 @@ class _QuickToolButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(RadiusToken.lg),
       ),
       alignment: Alignment.center,
-      child: HugeIcon(
-        icon: data.icon,
-        size: 19,
-        color: foreground,
-      ),
+      child: HugeIcon(icon: data.icon, size: 19, color: foreground),
     );
   }
 }

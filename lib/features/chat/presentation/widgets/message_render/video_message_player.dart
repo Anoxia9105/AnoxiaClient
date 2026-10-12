@@ -12,8 +12,6 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:video_player/video_player.dart';
 
 import 'video_message_controls.dart';
-import 'image_render_metrics.dart';
-import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'attachment_upload_overlay.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
@@ -306,7 +304,7 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
                                   imageUrl: coverUrl,
                                   width: displaySize.width,
                                   height: displaySize.height,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.contain,
                                   placeholder: (_, _) => ColoredBox(
                                     color: colorScheme.surfaceContainerHighest,
                                   ),
@@ -387,15 +385,11 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
   }
 
   Size _displaySize(double availableWidth) {
-    // 播放器尺寸包含相机旋转后的方向，比上传元数据更可靠。
-    final actual = _initialized ? _controller?.value.size : null;
-    return resolveImageMessageDisplaySize(
-      Attachment(width: widget.videoWidth, height: widget.videoHeight),
-      intrinsicWidth: actual?.width,
-      intrinsicHeight: actual?.height,
-      maxWidth: availableWidth.isFinite ? availableWidth.clamp(0, 280) : 280,
-      maxHeight: 380,
-    );
+    // 外框固定横向比例，实际画面等比完整显示，播放前后不改变消息高度。
+    final width = availableWidth.isFinite
+        ? availableWidth.clamp(0.0, 280.0).toDouble()
+        : 280.0;
+    return Size(width, width * 9 / 16);
   }
 
   Widget _placeholder(ColorScheme scheme) => Container(

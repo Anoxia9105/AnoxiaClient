@@ -1,7 +1,6 @@
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/toast.dart';
-import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/contact/presentation/widgets/sorted_contacts/sorted_contact_groups_widget.dart';
 import 'package:anoxia/framework/provider/chat/room/create_new_group_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -60,104 +59,102 @@ class _CreateChatDialogWidgetState
     final selectedIds = ref.watch(selectedContactIdsProvider);
     final createStatus = ref.watch(createGroupControllerProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isMobileLayout =
-        widget.asPage ||
-        DeviceUtil.isRealMobile() ||
-        MediaQuery.of(context).size.width < 760;
-
-    final content = Column(
-      children: [
-        _buildAppBar(context, selectedIds, createStatus),
-        GroupAvatarPicker(
-          disabled: createStatus.isLoading,
-          onChanged: (url) => setState(() => _avatarUrl = url),
-          onBusyChanged: (busy) => setState(() => _avatarBusy = busy),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
-          child: TextField(
-            controller: _nameController,
-            maxLength: 30,
-            style: textTheme.bodyLarge,
-            onTap: () {
-              if (_showNameError) {
-                setState(() => _showNameError = false);
-              }
-            },
-            decoration: InputDecoration(
-              hintText: 'create_group_name_hint'.tr(),
-              errorText: (_showNameError && _isNameEmpty)
-                  ? 'create_group_name_empty'.tr()
-                  : null,
-              helperText: ' ',
-              helperStyle: const TextStyle(height: 0.8),
-              isDense: true,
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.35,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 13,
-              ),
-              prefixIcon: SizedBox(
-                width: 22,
-                height: 22,
-                child: Center(
-                  child: HugeIcon(
-                    icon: HugeIcons.strokeRoundedEdit02,
-                    color: colorScheme.primary,
-                    size: 14,
-                  ),
+    final content = LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 760 || widget.asPage;
+        final short = constraints.maxHeight < 500;
+        return Column(
+          children: [
+            _buildAppBar(context, selectedIds, createStatus),
+            Flexible(
+              flex: short ? 2 : 0,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(compact ? 12 : 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    GroupAvatarPicker(
+                      disabled: createStatus.isLoading,
+                      onChanged: (url) => setState(() => _avatarUrl = url),
+                      onBusyChanged: (busy) =>
+                          setState(() => _avatarBusy = busy),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _nameController,
+                      enabled: !createStatus.isLoading,
+                      maxLength: 30,
+                      decoration: InputDecoration(
+                        labelText: 'chat_group_name'.tr(),
+                        hintText: 'create_group_name_hint'.tr(),
+                        errorText: _showNameError && _isNameEmpty
+                            ? 'create_group_name_empty'.tr()
+                            : null,
+                        filled: true,
+                        fillColor: colorScheme.surfaceContainerLow,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'create_group_join_label'.tr(),
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final policy in [0, 1])
+                          ChoiceChip(
+                            label: Text(
+                              (policy == 0
+                                      ? 'create_group_join_free'
+                                      : 'create_group_join_approval')
+                                  .tr(),
+                            ),
+                            labelStyle: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: _joinPolicy == policy
+                                      ? colorScheme.onSecondaryContainer
+                                      : colorScheme.onSurfaceVariant,
+                                ),
+                            selectedColor: colorScheme.secondaryContainer,
+                            backgroundColor: colorScheme.surfaceContainerLow,
+                            checkmarkColor: colorScheme.onSecondaryContainer,
+                            selected: _joinPolicy == policy,
+                            onSelected: createStatus.isLoading
+                                ? null
+                                : (_) => setState(() => _joinPolicy = policy),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      (_joinPolicy == 0
+                              ? 'create_group_join_free_hint'
+                              : 'create_group_join_approval_hint')
+                          .tr(),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              prefixIconConstraints: const BoxConstraints.tightFor(
-                width: 22,
-                height: 22,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(RadiusToken.xl),
-                borderSide: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.8),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(RadiusToken.xl),
-                borderSide: BorderSide(color: colorScheme.primary, width: 1.2),
-              ),
             ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-          child: SegmentedButton<int>(
-            segments: [
-              ButtonSegment(
-                value: 0,
-                label: Text('create_group_join_free'.tr()),
-              ),
-              ButtonSegment(
-                value: 1,
-                label: Text('create_group_join_approval'.tr()),
-              ),
-            ],
-            style: SegmentedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(RadiusToken.md),
-              ),
+            Divider(height: 1, color: colorScheme.outlineVariant),
+            Expanded(
+              flex: short ? 3 : 1,
+              child: compact
+                  ? _buildMobileContent(context, ref, selectedIds)
+                  : _buildDesktopContent(context, ref, selectedIds),
             ),
-            selected: {_joinPolicy},
-            onSelectionChanged: (value) =>
-                setState(() => _joinPolicy = value.first),
-          ),
-        ),
-        Expanded(
-          child: isMobileLayout
-              ? _buildMobileContent(context, ref, selectedIds)
-              : _buildDesktopContent(context, ref, selectedIds),
-        ),
-      ],
+          ],
+        );
+      },
     );
 
     if (widget.asPage) {
@@ -166,15 +163,15 @@ class _CreateChatDialogWidgetState
         body: SafeArea(child: content),
       );
     }
-
     return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(RadiusToken.md),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
       ),
       clipBehavior: Clip.antiAlias,
       elevation: 0,
       backgroundColor: colorScheme.surface,
-      child: SizedBox(width: 900, height: 650, child: content),
+      child: SizedBox(width: 1040, height: 760, child: content),
     );
   }
 
@@ -286,13 +283,18 @@ class _CreateChatDialogWidgetState
       ),
       child: Row(
         children: [
-          Text(
-            'create_group_title'.tr(),
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          Expanded(
+            child: Text(
+              'create_group_title'.tr(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
-          const Spacer(),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: isLoading || _avatarBusy
+                ? null
+                : () => Navigator.pop(context),
             child: Text('dialog_cancel'.tr()),
           ),
           const SizedBox(width: 8),
@@ -301,7 +303,7 @@ class _CreateChatDialogWidgetState
                 (selectedIds.isEmpty ||
                     _avatarBusy ||
                     isLoading ||
-                    _nameController.text.isEmpty)
+                    _isNameEmpty)
                 ? null
                 : _submit,
             style: FilledButton.styleFrom(
@@ -401,7 +403,7 @@ class _CreateChatDialogWidgetState
             child: selectedIds.isEmpty
                 ? Center(
                     child: Text(
-                      'chat_no_conversations'.tr(),
+                      'create_group_select_members_hint'.tr(),
                       style: textTheme.bodyMedium?.copyWith(
                         color: colorScheme.outline,
                       ),

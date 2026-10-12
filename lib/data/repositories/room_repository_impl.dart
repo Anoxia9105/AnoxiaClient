@@ -1,4 +1,5 @@
 import 'package:anoxia/common/constants/api.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:anoxia/domain/repositories/room_repository.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
@@ -69,6 +70,29 @@ class RoomRepositoryImpl implements RoomRepository {
       return res.data['code'] == 200;
     } catch (e, st) {
       debugLog('[Room] 修改群聊名称失败', e, st);
+      return false;
+    }
+  }
+
+  @override
+  Future<String?> uploadGroupAvatar(XFile file) async {
+    final res = await DioClient().uploadFile(API.groupAvatarUpload, file: file);
+    final body = res.data;
+    return body is Map && body['code'] == 200 && body['data'] is String
+        ? body['data'] as String
+        : null;
+  }
+
+  @override
+  Future<bool> updateGroupAvatar(String roomId, String avatarUrl) async {
+    try {
+      final res = await DioClient().post(
+        API.chatRoomUpdateAvatar,
+        data: {'roomId': roomId, 'avatarUrl': avatarUrl},
+      );
+      return res.data is Map && res.data['code'] == 200;
+    } catch (e, st) {
+      debugLog('[Room] 修改群头像失败', e, st);
       return false;
     }
   }

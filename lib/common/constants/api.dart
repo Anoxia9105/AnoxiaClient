@@ -144,6 +144,10 @@ class API {
   /// 添加群成员
   static const String chatRoomAddMembers = '/chat/room/addMembers';
 
+  /// 静态群头像上传与更新
+  static const String groupAvatarUpload = '/file/avatar';
+  static const String chatRoomUpdateAvatar = '/chat/room/updateAvatar';
+
   /// 修改群聊名称
   static const String chatRoomUpdateName = '/chat/room/updateName';
 
