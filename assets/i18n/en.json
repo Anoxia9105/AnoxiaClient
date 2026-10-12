@@ -41,7 +41,6 @@
   "call_diagnostic_send": "Sending",
   "call_diagnostic_receive": "Receiving",
   "call_diagnostic_connect_time": "Connection time: {} ms",
-  "call_diagnostic_hint": "Uses SDK statistics, refreshed every 3 seconds. Missing data and the first interval show —. Static screen content may produce lower FPS.",
   "call_diagnostic_empty": "No active video tracks.",
   "call_share_ios_in_app": "This iOS build shares content inside this app only.",
   "header_minimize": "Minimize",

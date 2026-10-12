@@ -41,7 +41,6 @@
   "call_diagnostic_send": "送信",
   "call_diagnostic_receive": "受信",
   "call_diagnostic_connect_time": "接続所要時間：{} ms",
-  "call_diagnostic_hint": "SDK統計を3秒ごとに更新します。初回区間や未取得の値は—で表示します。静止画面ではFPSが低くなる場合があります。",
   "call_diagnostic_empty": "アクティブな映像トラックはありません。",
   "call_share_ios_in_app": "このiOS版はアプリ内の画面のみ共有します。",
   "header_minimize": "最小化",

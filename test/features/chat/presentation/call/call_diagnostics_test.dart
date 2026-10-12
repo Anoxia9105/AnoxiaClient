@@ -23,6 +23,7 @@ class _Video extends Fake implements lk.LocalVideoTrack {
       for (final id in ['high', 'low'])
         VideoSenderStats(id, sample * 3000000)
           ..bytesSent = (idle ? 2 : sample) * 187500
+          ..framesSent = (idle ? 2 : sample) * 90
           ..frameWidth = 1280
           ..frameHeight = 720,
     ];
@@ -104,10 +105,13 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pump();
     expect(find.text('1.00 Mbps'), findsOneWidget);
+    expect(find.text('30.0'), findsOneWidget);
+    expect(find.textContaining('SDK'), findsNothing);
     video.idle = true;
     await tester.pump(const Duration(seconds: 3));
     await tester.pump();
     expect(find.text('0.0 kbps'), findsOneWidget);
+    expect(find.text('0.0'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();

@@ -41,7 +41,6 @@
   "call_diagnostic_send": "发送",
   "call_diagnostic_receive": "接收",
   "call_diagnostic_connect_time": "本次建连耗时：{} ms",
-  "call_diagnostic_hint": "复用 SDK 实时统计，每 3 秒刷新。首个采样区间或未提供的数据显示 —；静态共享的实际 FPS 可能较低。",
   "call_diagnostic_empty": "暂无活跃视频轨道。",
   "call_share_ios_in_app": "当前 iOS 版本仅共享本应用内画面。",
   "header_minimize": "最小化",

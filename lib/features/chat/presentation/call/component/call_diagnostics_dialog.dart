@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:anoxia/framework/domain/rtp_interval.dart';
 import 'package:anoxia/framework/domain/rtp_bitrate.dart';
+import 'package:anoxia/framework/domain/rtp_frame_rate.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:flutter/foundation.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -37,6 +38,10 @@ class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
   final _bitrates = RtpBitrateWindow(ticksPerSecond: kIsWeb ? 1000 : 1000000);
   final _senders = <String, List<VideoSenderStats>>{};
   final _receivers = <String, VideoReceiverStats>{};
+  final _frameWindow = RtpFrameRateWindow(
+    ticksPerSecond: kIsWeb ? 1000 : 1000000,
+  );
+  final _frameRates = <String, double?>{};
   bool _sampling = false;
   @override
   void initState() {
@@ -76,7 +81,33 @@ class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
             }),
       );
       if (!mounted) return;
+      final frameRates = <String, double?>{};
+      for (final entry in senders.entries) {
+        for (final stats in entry.value) {
+          final key = '${entry.key}:${stats.streamId}';
+          frameRates[key] = _frameWindow.observe(
+            key,
+            stats.timestamp,
+            stats.framesSent,
+            stats.framesPerSecond,
+          );
+        }
+      }
+      for (final entry in receivers.entries) {
+        final stats = entry.value;
+        final key = '${entry.key}:${stats.streamId}';
+        frameRates[key] = _frameWindow.observe(
+          key,
+          stats.timestamp,
+          stats.framesDecoded,
+          stats.framesPerSecond,
+        );
+      }
+      _frameWindow.retainOnly(frameRates.keys.toSet());
       setState(() {
+        _frameRates
+          ..clear()
+          ..addAll(frameRates);
         _senders
           ..clear()
           ..addAll(senders);
@@ -131,7 +162,9 @@ class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
             final stats = layers.first;
             values['call_diagnostic_resolution'] =
                 '${stats.frameWidth ?? '—'} × ${stats.frameHeight ?? '—'}';
-            values['call_diagnostic_fps'] = _number(stats.framesPerSecond);
+            values['call_diagnostic_fps'] = _number(
+              _frameRates['${publication.sid}:${stats.streamId}'],
+            );
             values['call_diagnostic_rtt'] = stats.roundTripTime == null
                 ? '—'
                 : '${(stats.roundTripTime! * 1000).round()} ms';
@@ -163,7 +196,9 @@ class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
             values['call_diagnostic_codec'] = stats.mimeType ?? '—';
             values['call_diagnostic_resolution'] =
                 '${stats.frameWidth ?? '—'} × ${stats.frameHeight ?? '—'}';
-            values['call_diagnostic_fps'] = _number(stats.framesPerSecond);
+            values['call_diagnostic_fps'] = _number(
+              _frameRates['${publication.sid}:${stats.streamId}'],
+            );
             values['call_diagnostic_loss'] = _percent(interval?.lossRate);
             values['call_diagnostic_drop'] = _percent(interval?.dropRate);
             values['call_diagnostic_implementation'] =
@@ -224,11 +259,6 @@ class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
                     widget.connectionDuration?.inMilliseconds.toString() ?? '—',
                   ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'call_diagnostic_hint'.tr(),
-                style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
               if (rows.isEmpty) Text('call_diagnostic_empty'.tr()),

@@ -58,3 +58,12 @@
 Windows 在线接收消息时，通知原先直接显示协议 content，导致图片、语音暴露英文占位符。将已有消息摘要格式化器移到 application 层，供系统通知与会话列表共用；按应用当前语言展示图片、语音、视频、文件等摘要，保留媒体说明与文件名，不替换普通文本里用户输入的 `[image]`。兼容历史 `[voice]` / `[voide]` 语音占位。
 
 新增中、英、日摘要及实际内容保留的回归用例。本次只做格式化、静态分析与 diff 检查，不编译、不运行用例或设备联调。
+
+### 群通话邀请名称、成员退出与诊断帧率
+
+- LiveKit `Room.name` 是聊天室 ID，不能作为展示名称。独立窗口的展示标题现在传到邀请按钮；手机使用通话会话标题。主窗口发送定向邀请时优先查会话资料，接收群邀请时也优先采用本地会话名称，兼容旧端把 ID 写入 title 的情况。
+- 普通挂断统一区分群聊与私聊：群成员退出只由调用方释放本端媒体，不发送 `CALL_END` / `CALL_CANCEL` 广播，不标记整个房间结束。接收端忽略旧客户端发送的群 `CALL_END`，避免一人退出关闭其他成员窗口。私聊仍发送一次挂断信令。服务端 Webhook 的 participant_left / track_unpublished 只记录事件，不会主动结束群会议；会议状态仍由真实 room_finished 更新。
+- 删除诊断中的「复用 SDK…」说明及三个语言包的对应文案。SDK 未返回 FPS 时按相邻 framesSent / framesDecoded 与统计时间戳计算区间 FPS，区分原生微秒和 Web 毫秒；重复样本、计数重置、共享流切换及清理都单独处理。SDK 返回的 2 FPS 或 0 FPS 保留，不用设置中的帧率上限替代实际统计。
+- 排查已安装 LiveKit 2.13.1 / flutter_webrtc 1.6.2+hotfix.4 源码：共享采集和发布使用相同的 15 / 30 FPS 上限，Windows 采集桥接会读取 mandatory.frameRate。截图里的 VP8 报告 bandwidth，AV1 使用 libaom；低 RTT 不能证明带宽或编码吞吐充足，截图也不足以确认动态内容持续低帧率的根因。本次没有依据截图强制更换编码器或伪造高帧率，需要动态视频画面与接收端实测才能确认性能。
+
+统计语义参考 [W3C WebRTC Stats](https://www.w3.org/TR/webrtc-stats/)；保持分辨率时可能降低帧率的策略参考 [LiveKit 发布选项](https://docs.livekit.io/reference/client-sdk-js/interfaces/TrackPublishDefaults.html)。验证仍限于源码审查、Dart 静态分析、语言包解析与 diff 检查；新增及更新的回归用例未执行，不编译。
