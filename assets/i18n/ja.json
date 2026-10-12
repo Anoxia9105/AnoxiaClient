@@ -1583,5 +1583,16 @@
   "chat_capture_failed": "撮影またはプレビューに失敗しました",
   "chat_capture_flash_unavailable": "フラッシュを利用できません",
   "chat_capture_mobile_only": "撮影はモバイル端末でご利用ください",
-  "chat_capture_call_busy": "通話を終了してから撮影してください"
+  "chat_capture_call_busy": "通話を終了してから撮影してください",
+  "group_avatar_remove": "グループ画像を削除",
+  "call_share_ended": "画面共有が終了しました",
+  "group_avatar_choose": "グループ画像を設定",
+  "call_share_landscape": "横向きで表示",
+  "group_chat": "グループチャット",
+  "call_share_exit_landscape": "横向き表示を終了",
+  "call_connection_other_device": "このアカウントは別の端末で通話に参加しました。その端末で続けるか、再参加してください。",
+  "call_media_connection_failed": "音声・映像の接続が中断されました。ネットワークを確認して再接続してください。",
+  "call_room_ended_hint": "この通話は終了しました。画面を閉じて新しい通話を開始してください。",
+  "call_reconnect_exhausted": "接続を復旧できません。ネットワークを確認して再試行してください。",
+  "call_server_restarting_hint": "通話サービスを復旧中です。しばらくしてから再接続してください。"
 }

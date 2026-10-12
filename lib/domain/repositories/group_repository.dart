@@ -19,6 +19,7 @@ abstract interface class GroupRepository {
     required String name,
     required List<int> userIds,
     required int joinPolicy,
+    String? avatarUrl,
   });
 
   /// 预览群组信息
@@ -30,10 +31,7 @@ abstract interface class GroupRepository {
   /// [verificationMessage] 验证消息，默认为空字符串
   ///
   /// 返回加入结果字符串，如 'SUCCESS' 或 'FAILED'。
-  Future<String> joinGroup(
-    String roomId, {
-    String verificationMessage = '',
-  });
+  Future<String> joinGroup(String roomId, {String verificationMessage = ''});
 
   /// 获取群组入群申请列表
   Future<List<Map<String, dynamic>>> fetchJoinRequests(String roomId);

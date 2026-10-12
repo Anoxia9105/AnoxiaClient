@@ -1,5 +1,3 @@
-﻿import 'dart:ui';
-
 import 'package:anoxia/framework/provider/core/group_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -40,20 +38,25 @@ class CreateGroupController extends _$CreateGroupController {
     required String name,
     required List<int> userIds,
     required int joinPolicy,
-    required VoidCallback onSuccess,
+    String? avatarUrl,
+    required Future<void> Function(ChatRoomVO room) onSuccess,
   }) async {
     // 1. 进入加载状态
     state = const AsyncLoading();
 
     // 2. 使用 AsyncValue.guard 捕获异常
     state = await AsyncValue.guard(() async {
-      final vo = await ref.read(groupRepositoryProvider).createGroup(
+      final vo = await ref
+          .read(groupRepositoryProvider)
+          .createGroup(
             name: name,
             userIds: userIds,
             joinPolicy: joinPolicy,
+            avatarUrl: avatarUrl,
           );
-      onSuccess(); // 成功回调
       return vo;
     });
+    final room = state.value;
+    if (room != null) await onSuccess(room);
   }
 }

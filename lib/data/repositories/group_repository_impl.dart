@@ -17,10 +17,16 @@ class GroupRepositoryImpl implements GroupRepository {
     required String name,
     required List<int> userIds,
     required int joinPolicy,
+    String? avatarUrl,
   }) async {
     final res = await DioClient().post(
       API.chatCreateGroup,
-      data: {'name': name, 'ids': userIds, 'joinPolicy': joinPolicy},
+      data: {
+        'name': name,
+        'ids': userIds,
+        'joinPolicy': joinPolicy,
+        if (avatarUrl != null && avatarUrl.isNotEmpty) 'avatarUrl': avatarUrl,
+      },
     );
 
     // 根据后端 AjaxResult 的结构解析

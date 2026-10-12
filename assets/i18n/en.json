@@ -1583,5 +1583,16 @@
   "chat_capture_failed": "Capture or preview failed. Please retry",
   "chat_capture_flash_unavailable": "Flash is unavailable on this camera",
   "chat_capture_mobile_only": "Use a mobile device to capture",
-  "chat_capture_call_busy": "Finish your call before capturing"
+  "chat_capture_call_busy": "Finish your call before capturing",
+  "group_avatar_remove": "Remove group avatar",
+  "call_share_ended": "Screen sharing has ended",
+  "group_avatar_choose": "Set group avatar",
+  "call_share_landscape": "Landscape view",
+  "group_chat": "Group chat",
+  "call_share_exit_landscape": "Exit landscape view",
+  "call_connection_other_device": "This account joined the call on another device. Continue there or rejoin here.",
+  "call_media_connection_failed": "The media connection was interrupted. Check your network and reconnect.",
+  "call_room_ended_hint": "This call has ended. Close this window to start a new call.",
+  "call_reconnect_exhausted": "Unable to restore the connection. Check your network and try again.",
+  "call_server_restarting_hint": "The call service is recovering. Please reconnect shortly."
 }

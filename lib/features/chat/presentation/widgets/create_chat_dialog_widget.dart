@@ -10,6 +10,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'group_avatar_picker.dart';
 
 /// 创建群聊对话框组件
 ///
@@ -34,6 +35,8 @@ class _CreateChatDialogWidgetState
   bool _isNameEmpty = true;
   bool _showNameError = false;
   int _joinPolicy = 1;
+  String? _avatarUrl;
+  bool _avatarBusy = false;
 
   @override
   void initState() {
@@ -66,6 +69,11 @@ class _CreateChatDialogWidgetState
     final content = Column(
       children: [
         _buildAppBar(context, selectedIds, createStatus),
+        GroupAvatarPicker(
+          disabled: createStatus.isLoading,
+          onChanged: (url) => setState(() => _avatarUrl = url),
+          onBusyChanged: (busy) => setState(() => _avatarBusy = busy),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
           child: TextField(
@@ -160,7 +168,9 @@ class _CreateChatDialogWidgetState
     }
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(RadiusToken.md),
+      ),
       clipBehavior: Clip.antiAlias,
       elevation: 0,
       backgroundColor: colorScheme.surface,
@@ -289,6 +299,7 @@ class _CreateChatDialogWidgetState
           FilledButton(
             onPressed:
                 (selectedIds.isEmpty ||
+                    _avatarBusy ||
                     isLoading ||
                     _nameController.text.isEmpty)
                 ? null
@@ -316,6 +327,9 @@ class _CreateChatDialogWidgetState
   }
 
   void _submit() {
+    if (_avatarBusy || ref.read(createGroupControllerProvider).isLoading) {
+      return;
+    }
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       setState(() => _showNameError = true);
@@ -328,18 +342,18 @@ class _CreateChatDialogWidgetState
           name: name,
           userIds: ref.read(selectedContactIdsProvider).toList(),
           joinPolicy: _joinPolicy,
-          onSuccess: () async {
+          avatarUrl: _avatarUrl,
+          onSuccess: (newRoom) async {
+            if (!mounted) return;
             await ref
                 .read(roomListServiceProvider.notifier)
                 .refresh(silent: true);
 
-            final newRoom = ref.read(createGroupControllerProvider).value;
-
             if (context.mounted) {
-              if (newRoom?.roomId != null) {
+              if (newRoom.roomId != null) {
                 ref
                     .read(activeRoomIdProvider.notifier)
-                    .setActive(newRoom!.roomId!);
+                    .setActive(newRoom.roomId!);
               }
               ref.read(selectedContactIdsProvider.notifier).clear();
               Toast.showToast(

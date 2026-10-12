@@ -1583,5 +1583,16 @@
   "chat_capture_failed": "拍摄或预览失败，请重试",
   "chat_capture_flash_unavailable": "当前摄像头不支持闪光灯",
   "chat_capture_mobile_only": "请在手机端使用拍摄功能",
-  "chat_capture_call_busy": "通话中无法拍摄，请结束通话后重试"
+  "chat_capture_call_busy": "通话中无法拍摄，请结束通话后重试",
+  "group_avatar_remove": "移除群头像",
+  "call_share_ended": "屏幕共享已结束",
+  "group_avatar_choose": "设置群头像",
+  "call_share_landscape": "横屏查看",
+  "group_chat": "群聊",
+  "call_share_exit_landscape": "退出横屏查看",
+  "call_connection_other_device": "此账号已在另一设备加入通话。可在该设备继续，或重新加入。",
+  "call_media_connection_failed": "音视频连接中断，请检查网络后重新连接。",
+  "call_room_ended_hint": "此通话已结束，请关闭窗口后重新发起。",
+  "call_reconnect_exhausted": "暂时无法恢复连接。请检查网络后重新尝试。",
+  "call_server_restarting_hint": "通话服务正在恢复，请稍后重新连接。"
 }
