@@ -372,12 +372,16 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
   /// 结束通话（挂断 / 桌面关窗）。
   ///
   /// 若仍处于呼出振铃态，则发 CALL_CANCEL（取消呼叫）；
-  /// 已接通后调用则发 CALL_END（正常挂断）。
+  /// 私聊接通后发送 CALL_END；群聊只退出本端媒体，不能结束其他成员的通话。
   Future<void> endRoom(String roomId, {String? title}) async {
     if (roomId.isEmpty || _endedRooms.contains(roomId)) return;
+    final current = state;
+    if (_isGroupRoom(roomId)) {
+      if (current?.roomId == roomId) state = null;
+      return;
+    }
     _endedRooms.add(roomId);
     _ringTimer?.cancel();
-    final current = state;
     final invite = CallInvitationState(
       inviteId: (current != null && current.roomId == roomId)
           ? current.inviteId
@@ -456,6 +460,8 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
         _clearIncomingNotifications();
         break;
       case HighMessageType.CALL_END:
+        // 兼容旧客户端：群成员挂断只代表其本人离开，不是会议结束。
+        if (_isGroupRoom(invite.roomId) || invite.isGroup) return;
         _handleTerminalSignal(
           invite,
           fromSelf: fromSelf,
@@ -729,10 +735,15 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     Map<String, dynamic> payload,
     String roomId,
   ) {
+    final isGroup = payload['isGroup'] == true || payload['isGroup'] == 'true';
+    final room = isGroup ? ref.read(currentRoomProvider(roomId)) : null;
+    final roomName = room?.roomName?.trim();
     return CallInvitationState(
       inviteId: payload['inviteId']?.toString() ?? _newInviteId(roomId),
       roomId: roomId,
-      title: payload['title']?.toString() ?? '',
+      title: roomName?.isNotEmpty == true
+          ? roomName!
+          : payload['title']?.toString() ?? '',
       callerId: msg.senderId,
       targetId: msg.targetId,
       createdAt:
@@ -741,12 +752,17 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
           DateTime.now().millisecondsSinceEpoch,
       phase: CallInvitationPhase.incoming,
       initialMedia: CallInitialMedia.fromValue(payload['initialMedia']),
-      isGroup: payload['isGroup'] == true || payload['isGroup'] == 'true',
+      isGroup: isGroup,
       callerName: payload['callerName']?.toString() ?? '',
       callerAvatar: payload['callerAvatar']?.toString() ?? '',
-      roomAvatar: payload['roomAvatar']?.toString() ?? '',
+      roomAvatar: room?.roomAvatar ?? payload['roomAvatar']?.toString() ?? '',
     );
   }
+
+  bool _isGroupRoom(String roomId) =>
+      ref.read(callIsGroupProvider(roomId)) ||
+      (state?.roomId == roomId && state?.isGroup == true) ||
+      ref.read(currentRoomProvider(roomId))?.roomType == 1;
 
   Map<String, dynamic> _decodePayload(HighMessage msg) {
     final content = msg.content;

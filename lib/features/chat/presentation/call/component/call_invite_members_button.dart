@@ -23,7 +23,13 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 /// 在群组通话中显示，点击后弹出成员选择对话框，支持多选并发送邀请。
 /// 桌面端通过 [Channel] 调用原生方法，移动端通过 [callInvitationControllerProvider] 处理。
 class CallInviteMembersButton extends ConsumerWidget {
-  const CallInviteMembersButton({super.key, required this.state});
+  const CallInviteMembersButton({
+    super.key,
+    required this.state,
+    required this.title,
+  });
+
+  final String title;
 
   /// 当前房间状态
   final RoomState state;
@@ -137,7 +143,7 @@ class CallInviteMembersButton extends ConsumerWidget {
                         Channel.callChannel
                             .invokeMethod('invite_call_members', {
                               'roomId': roomId,
-                              'title': state.room.name ?? '',
+                              'title': title,
                               'initialMedia': media.value,
                               'userIds': selected.toList(),
                             });
@@ -147,7 +153,7 @@ class CallInviteMembersButton extends ConsumerWidget {
                             .inviteMembers(
                               ChatRoomVO(
                                 roomId: roomId,
-                                roomName: state.room.name,
+                                roomName: title,
                                 roomType: 1,
                               ),
                               selected,

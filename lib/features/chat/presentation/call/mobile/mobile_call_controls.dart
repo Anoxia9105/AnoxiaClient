@@ -107,7 +107,7 @@ class MobileCallControls extends ConsumerWidget {
       ],
       if (isGroup) ...[
         const SizedBox(width: 7),
-        CallInviteMembersButton(state: state),
+        CallInviteMembersButton(state: state, title: title),
       ],
       const SizedBox(width: 20),
       _CallControlButton(

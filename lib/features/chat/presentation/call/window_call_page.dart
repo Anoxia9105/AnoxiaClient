@@ -196,7 +196,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     }
   }
 
-  /// 先通知主窗口结束通话，再清理媒体并退出。
+  /// 先通知主窗口本端退出，再清理媒体并退出。
   ///
   /// **必须在关窗之前断开 LiveKit 媒体连接**：桌面端子窗口销毁时
   /// desktop_multi_window 会直接释放该窗口的 FlutterViewController（引擎），
@@ -209,8 +209,8 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     // 先进入关闭态，防止系统关闭事件和挂断按钮同时触发两套清理流程。
     setState(() => _closing = true);
 
-    // CALL_END 不能等待媒体清理：disconnect 可能耗时较长，甚至释放失败。
-    // 先让对端立即结束通话，媒体清理完成后再通知主窗口清除窗口状态。
+    // 私聊的结束信令不能等待媒体清理：disconnect 可能耗时较长或失败。
+    // 主窗口区分群聊/私聊；群聊只清理本端，媒体释放后再清除窗口状态。
     try {
       await Channel.callChannel.invokeMethod(Channel.callWindowEndingMethod);
     } catch (e) {
@@ -333,7 +333,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
             }
             return true;
           },
-          child: CallRoomPage(token: token, roomId: _roomId),
+          child: CallRoomPage(token: token, roomId: _roomId, title: _title),
         );
       },
       error: (err, stack) => CallErrorState(

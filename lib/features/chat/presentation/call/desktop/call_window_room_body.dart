@@ -19,11 +19,13 @@ class CallWindowRoomBody extends ConsumerStatefulWidget {
 
   /// 房间令牌
   final String token;
+  final String title;
 
   const CallWindowRoomBody({
     super.key,
     required this.roomState,
     required this.token,
+    required this.title,
   });
 
   @override
@@ -64,7 +66,7 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
       children: [
         Column(
           children: [
-            CommandBar(state: roomState),
+            CommandBar(state: roomState, title: widget.title),
             Expanded(
               child: participants.isEmpty
                   ? Center(child: Text('call_waiting_to_join'.tr()))

@@ -17,6 +17,7 @@ import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'channel.dart';
 import 'call_initial_media.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 
 part 'call_window_controller.g.dart';
 
@@ -26,7 +27,7 @@ part 'call_window_controller.g.dart';
 /// 通过 [WindowController] 实现多窗口通信。
 @Riverpod(keepAlive: true)
 class CallWindowController extends _$CallWindowController {
-  /// 当前通话窗口绑定的房间 ID，用于窗口关闭时补发 CALL_END。
+  /// 当前通话窗口绑定的房间 ID，用于窗口关闭时处理本端退出（私聊补发 CALL_END）。
   String? _activeRoomId;
   String? _windowSession;
   bool _windowReady = false;
@@ -93,12 +94,14 @@ class CallWindowController extends _$CallWindowController {
         .map((id) => int.tryParse(id.toString()))
         .whereType<int>()
         .toSet();
-    if (roomId.isEmpty || userIds.isEmpty) return;
+    if (roomId.isEmpty || userIds.isEmpty || roomId != _activeRoomId) return;
+    final room = ref.read(currentRoomProvider(roomId));
     final user = ref.read(authControllerProvider).value;
     final content = jsonEncode({
       'inviteId': '${roomId}_${DateTime.now().microsecondsSinceEpoch}',
       'roomId': roomId,
-      'title': payload['title']?.toString() ?? '',
+      'title': room?.roomName ?? payload['title']?.toString() ?? '',
+      'roomAvatar': room?.roomAvatar ?? '',
       'createdAt': DateTime.now().millisecondsSinceEpoch,
       'initialMedia': payload['initialMedia']?.toString() ?? 'audio',
       'isGroup': true,

@@ -34,7 +34,9 @@ class CommandBar extends ConsumerWidget {
   /// 房间状态
   final RoomState state;
 
-  const CommandBar({super.key, required this.state});
+  final String title;
+
+  const CommandBar({super.key, required this.state, required this.title});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -191,7 +193,7 @@ class CommandBar extends ConsumerWidget {
                     const SizedBox(width: 2),
 
                     if (isGroup) ...[
-                      CallInviteMembersButton(state: state),
+                      CallInviteMembersButton(state: state, title: title),
                       const SizedBox(width: 2),
                     ],
 

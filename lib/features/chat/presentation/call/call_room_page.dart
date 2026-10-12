@@ -28,7 +28,14 @@ class CallRoomPage extends ConsumerWidget {
   /// 房间 ID（用于重新拉取 token 与结束通话信令）
   final String roomId;
 
-  const CallRoomPage({super.key, required this.token, required this.roomId});
+  final String? title;
+
+  const CallRoomPage({
+    super.key,
+    required this.token,
+    required this.roomId,
+    this.title,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -79,7 +86,14 @@ class CallRoomPage extends ConsumerWidget {
           );
         } else {
           // 桌面/Web 宽屏：走桌面布局
-          return CallWindowRoomBody(roomState: roomState, token: token);
+          return CallWindowRoomBody(
+            roomState: roomState,
+            token: token,
+            title:
+                title ??
+                ref.read(mobileCallSessionControllerProvider)?.title ??
+                '',
+          );
         }
       },
     );
