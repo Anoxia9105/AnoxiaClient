@@ -99,13 +99,11 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return Align(
-                  alignment: invite.isGroup
-                      ? Alignment.topCenter
-                      : Alignment.center,
+                  alignment: Alignment.center,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 440),
+                      constraints: const BoxConstraints(maxWidth: 360),
                       child: FocusScope(
                         autofocus: !invite.isGroup,
                         child: Semantics(
@@ -127,7 +125,7 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                             ),
                             clipBehavior: Clip.antiAlias,
                             child: Padding(
-                              padding: const EdgeInsets.all(24),
+                              padding: const EdgeInsets.all(20),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -159,15 +157,15 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 16),
                                   AvatarWidget(
-                                    size: 80,
+                                    size: 56,
                                     url: invite.isGroup
                                         ? invite.roomAvatar
                                         : invite.callerAvatar,
                                     name: name,
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 12),
                                   Text(
                                     name,
                                     maxLines: 2,
@@ -175,7 +173,7 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                     textAlign: TextAlign.center,
                                     style: Theme.of(context)
                                         .textTheme
-                                        .headlineSmall
+                                        .titleLarge
                                         ?.copyWith(fontWeight: FontWeight.w700),
                                   ),
                                   const SizedBox(height: 8),
@@ -199,7 +197,7 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                           color: colors.onSurfaceVariant,
                                         ),
                                   ),
-                                  const SizedBox(height: 28),
+                                  const SizedBox(height: 20),
                                   ConstrainedBox(
                                     constraints: const BoxConstraints(
                                       maxWidth: 304,

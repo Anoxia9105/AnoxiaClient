@@ -22,6 +22,7 @@ import '../../../domain/call_media_preferences.dart';
 import 'call_screen_share.dart';
 import 'call_connection_warmup.dart';
 import 'call_media_lifecycle.dart';
+import 'call_recovery_policy.dart';
 import 'mobile_call_session_provider.dart';
 
 part 'room_controller.g.dart';
@@ -66,6 +67,10 @@ class RoomController extends _$RoomController {
 
   /// 防止 leave() 重入
   bool _isLeaving = false;
+  final _recoveryPolicy = CallRecoveryPolicy();
+  Timer? _recoveryTimer;
+  bool _recoveringConnection = false;
+  DisconnectReason? _lastDisconnectReason;
 
   /// 进行中的「离开房间」过程。
   ///
@@ -168,6 +173,8 @@ class RoomController extends _$RoomController {
       /// 房间连接成功
       /// 通常在 build 中 connect 之后就会触发，这里主要用于清除之前的错误状态
       ..on<RoomConnectedEvent>((event) {
+        _recoveryPolicy.markConnected(DateTime.now());
+        if (_recoveringConnection) return;
         final current = _currentState;
         if (current != null && current.connectionError != null) {
           state = AsyncData(
@@ -184,6 +191,12 @@ class RoomController extends _$RoomController {
       /// 重连逻辑由 SDK 自动处理，不需要手动干预
       ..on<RoomDisconnectedEvent>((event) {
         if (_isLeaving || lifecycle.isClosing) return;
+        _lastDisconnectReason = event.reason;
+        _recoveryTimer?.cancel();
+        debugLog(
+          'LiveKit 意外断开: reason=${event.reason?.name ?? 'unknown'}, '
+          'room=${room.name}, remoteCount=${room.remoteParticipants.length}',
+        );
         if (event.reason == DisconnectReason.participantRemoved) {
           unawaited(_handleRemovedFromCall('call_host'.tr()));
           return;
@@ -195,6 +208,7 @@ class RoomController extends _$RoomController {
             connectionError: event.reason?.name ?? 'connectionLost',
           ),
         );
+        if (!_recoveringConnection) _scheduleConnectionRecovery(event.reason);
       })
       /// 房间正在重连中（网络抖动时触发）
       /// 更新 isReconnecting 状态，UI 层展示重连遮罩
@@ -213,6 +227,8 @@ class RoomController extends _$RoomController {
       /// 房间重连成功
       /// 清除重连状态和错误信息
       ..on<RoomReconnectedEvent>((event) {
+        _recoveryTimer?.cancel();
+        _recoveryPolicy.markConnected(DateTime.now());
         final current = _currentState;
         if (current != null) {
           state = AsyncData(
@@ -415,6 +431,7 @@ class RoomController extends _$RoomController {
   }
 
   Future<void> _setCameraEnabled(Room room, bool enabled) async {
+    _mediaLifecycle?.ensureOpen();
     final participant = room.localParticipant;
     if (participant == null) return;
     if (!enabled ||
@@ -835,6 +852,8 @@ class RoomController extends _$RoomController {
   /// 释放 listener 和设备订阅等本地资源，不访问 provider state。
   /// 幂等操作，可安全重复调用。
   Future<void> _disposeResources() async {
+    _recoveryTimer?.cancel();
+    _recoveryTimer = null;
     _peerGoneTimer?.cancel();
     _peerGoneTimer = null;
     final listener = _listener;
@@ -887,7 +906,9 @@ class RoomController extends _$RoomController {
   /// 切换麦克风开关
   /// 使用独立防抖锁 _isTogglingMic，避免快速连点
   Future<void> toggleMic() =>
-      _runMediaOperation(_toggleMic, lane: CallMediaLane.microphone);
+      _currentState?.isReconnecting == true || _recoveringConnection
+      ? Future<void>.value()
+      : _runMediaOperation(_toggleMic, lane: CallMediaLane.microphone);
 
   Future<void> _toggleMic() async {
     if (_isTogglingMic) return;
@@ -922,7 +943,9 @@ class RoomController extends _$RoomController {
   /// 切换摄像头开关
   /// 使用独立防抖锁 _isTogglingCamera，避免快速连点
   Future<void> toggleCamera() =>
-      _runMediaOperation(_toggleCamera, lane: CallMediaLane.camera);
+      _currentState?.isReconnecting == true || _recoveringConnection
+      ? Future<void>.value()
+      : _runMediaOperation(_toggleCamera, lane: CallMediaLane.camera);
 
   Future<void> _toggleCamera() async {
     if (_isTogglingCamera) return;
@@ -1343,6 +1366,60 @@ class RoomController extends _$RoomController {
     final currentState = _currentState;
     if (currentState == null) return;
     await _connectRoom(currentState.room, currentState.token);
+    _mediaLifecycle?.ensureOpen();
+    // 完全断开后 SDK 已清理发布；恢复断线前的开关，不能把静音用户重新开麦。
+    await _runMediaOperation(() async {
+      final latest = _currentState;
+      if (latest == null) return;
+      await latest.room.localParticipant?.setMicrophoneEnabled(
+        latest.micEnabled,
+      );
+    }, lane: CallMediaLane.microphone);
+    _mediaLifecycle?.ensureOpen();
+    await _runMediaOperation(() async {
+      final latest = _currentState;
+      if (latest == null) return;
+      await _setCameraEnabled(latest.room, latest.cameraEnabled);
+    }, lane: CallMediaLane.camera);
+    _mediaLifecycle?.ensureOpen();
+    if (currentState.room.connectionState != ConnectionState.connected) {
+      throw StateError('恢复媒体期间连接已断开');
+    }
+    _updateParticipants();
+    _updateState(
+      (latest) => latest.copyWith(
+        connectionState: ConnectionState.connected,
+        isReconnecting: false,
+        clearConnectionError: true,
+      ),
+    );
+  }
+
+  /// SDK 已耗尽自动重连后再做有限恢复；终止类原因不会重新加入。
+  void _scheduleConnectionRecovery(DisconnectReason? reason) {
+    _recoveryTimer?.cancel();
+    final delay = _recoveryPolicy.nextDelay(reason, now: DateTime.now());
+    if (delay == null || _currentState == null) return;
+    _updateState((current) => current.copyWith(isReconnecting: true));
+    _recoveryTimer = Timer(delay, () async {
+      if (_currentState == null) return;
+      _recoveringConnection = true;
+      try {
+        await reconnect();
+      } catch (error, stack) {
+        debugLog('通话有限恢复失败', error, stack);
+        _updateState(
+          (current) => current.copyWith(
+            connectionState: ConnectionState.disconnected,
+            isReconnecting: false,
+            connectionError: reason?.name ?? 'unknown',
+          ),
+        );
+        _scheduleConnectionRecovery(_lastDisconnectReason);
+      } finally {
+        _recoveringConnection = false;
+      }
+    });
   }
 
   // ================= 自定义数据通道 API =================

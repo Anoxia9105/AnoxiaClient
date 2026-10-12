@@ -24,6 +24,7 @@ class CallErrorState extends ConsumerStatefulWidget {
     this.detail,
     this.onRetry,
     this.onCancel,
+    this.recovering = false,
   });
 
   /// 房间 ID（重新拉取 token / 结束通话信令用）
@@ -43,6 +44,7 @@ class CallErrorState extends ConsumerStatefulWidget {
 
   /// 自定义取消逻辑（默认：结束通话并关闭悬浮窗 / 窗口）
   final Future<void> Function()? onCancel;
+  final bool recovering;
 
   @override
   ConsumerState<CallErrorState> createState() => _CallErrorStateState();
@@ -52,7 +54,7 @@ class _CallErrorStateState extends ConsumerState<CallErrorState> {
   bool _retrying = false;
 
   Future<void> _retry() async {
-    if (_retrying) return;
+    if (_retrying || widget.recovering) return;
     setState(() => _retrying = true);
     try {
       if (widget.onRetry != null) {
@@ -107,66 +109,82 @@ class _CallErrorStateState extends ConsumerState<CallErrorState> {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedAlertCircle,
-              color: theme.colorScheme.error,
-              size: 44,
-            ),
-            const SizedBox(height: 20),
-            Text(
-              widget.errorText ?? 'call_connection_failed'.tr(),
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: theme.colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            if (widget.detail != null && widget.detail!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                widget.detail!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-            const SizedBox(height: 24),
-            Row(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _retrying ? null : _cancel,
-                    child: Text('cancel'.tr()),
+                if (widget.recovering)
+                  const SizedBox.square(
+                    dimension: 44,
+                    child: CircularProgressIndicator(strokeWidth: 3),
+                  )
+                else
+                  HugeIcon(
+                    icon: HugeIcons.strokeRoundedAlertCircle,
+                    color: theme.colorScheme.error,
+                    size: 44,
+                  ),
+                const SizedBox(height: 20),
+                Text(
+                  widget.errorText ?? 'call_connection_failed'.tr(),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _retrying ? null : _retry,
-                    child: _retrying
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          )
-                        : Text(
-                            'call_retry'.tr(),
-                            style: Theme.of(context).textTheme.titleMedium!
-                                .copyWith(fontWeight: FontWeight.w500),
-                          ),
+                if (widget.detail != null && widget.detail!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.detail!,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
+                ],
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _retrying ? null : _cancel,
+                        child: Text('call_hangup_tooltip'.tr()),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: _retrying || widget.recovering
+                            ? null
+                            : _retry,
+                        child: _retrying || widget.recovering
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
+                              )
+                            : Text(
+                                'call_retry'.tr(),
+                                style: Theme.of(context).textTheme.titleMedium!
+                                    .copyWith(fontWeight: FontWeight.w500),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

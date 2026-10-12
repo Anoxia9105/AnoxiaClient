@@ -248,6 +248,13 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
 
     return AnimatedBuilder(
       animation: _speakingController,
+      child: track != null
+          ? VideoTrackRenderer(track, fit: widget.fit)
+          : ParticipantPlaceholder(
+              name: meta.name,
+              avatar: meta.avatar,
+              compact: widget.compact,
+            ),
       builder: (context, child) {
         final speakingStrength = participant.isSpeaking
             ? 0.45 + (_speakingController.value * 0.55)
@@ -278,14 +285,7 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (track != null)
-                VideoTrackRenderer(track, fit: widget.fit)
-              else
-                ParticipantPlaceholder(
-                  name: meta.name,
-                  avatar: meta.avatar,
-                  compact: widget.compact,
-                ),
+              child!,
               if (track != null)
                 const DecoratedBox(
                   decoration: BoxDecoration(

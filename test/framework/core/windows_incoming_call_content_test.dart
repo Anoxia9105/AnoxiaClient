@@ -42,6 +42,8 @@ void main() {
     expect(xml.indexOf('content="拒绝"'), lessThan(xml.indexOf('content="接听"')));
     expect(RegExp('<action ').allMatches(xml).length, 2);
     expect(xml, isNot(contains('appLogoOverride')));
+    expect(xml, contains('<subgroup hint-weight="1"><image'));
+    expect(xml, contains('hint-crop="circle"'));
   });
 
   test('转义姓名和 JSON 载荷，按钮保留原始邀请信息', () {

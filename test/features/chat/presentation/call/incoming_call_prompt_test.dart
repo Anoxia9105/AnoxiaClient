@@ -8,6 +8,7 @@ import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.d
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,6 +22,15 @@ class _Translations extends AssetLoader {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    if (Platform.environment['ANOXIA_CAPTURE_UI'] != '1') return;
+    await (FontLoader(
+      'NotoSansSC',
+    )..addFont(rootBundle.load('assets/fonts/NotoSansSC[wght].ttf'))).load();
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+  });
   const invitation = CallInvitationState(
     inviteId: 'invite',
     roomId: 'room',
@@ -57,6 +67,7 @@ void main() {
             supportedLocales: context.supportedLocales,
             localizationsDelegates: context.localizationDelegates,
             theme: ThemeData(
+              fontFamily: 'NotoSansSC',
               colorSchemeSeed: Colors.teal,
               brightness: brightness,
             ),
@@ -102,7 +113,8 @@ void main() {
       find.byKey(const ValueKey('incoming-call-card')),
     );
     expect(rect.center.dx, closeTo(640, 1));
-    expect(rect.width, 440);
+    expect(rect.width, 360);
+    expect(rect.center.dy, closeTo((800 + kToolbarHeight) / 2, 1));
     expect(rect.top, greaterThan(kToolbarHeight));
     final reject = find.byKey(const ValueKey('incoming-call-reject'));
     final rejectStyle = tester.widget<FilledButton>(reject).style!;
@@ -193,5 +205,10 @@ void main() {
     );
     expect(find.byKey(const ValueKey('incoming-call-backdrop')), findsNothing);
     expect(find.byKey(const ValueKey('incoming-call-accept')), findsOneWidget);
+    final rect = tester.getRect(
+      find.byKey(const ValueKey('incoming-call-card')),
+    );
+    expect(rect.center.dx, closeTo(640, 1));
+    expect(rect.center.dy, closeTo((800 + kToolbarHeight) / 2, 1));
   });
 }

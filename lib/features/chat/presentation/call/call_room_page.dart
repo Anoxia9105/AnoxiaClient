@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
 import 'package:easy_localization/easy_localization.dart';
+import 'component/call_disconnection_message.dart';
 
 /// 通话房间页面
 ///
@@ -47,8 +48,13 @@ class CallRoomPage extends ConsumerWidget {
         if (roomState.connectionState == lk.ConnectionState.disconnected) {
           return CallErrorState(
             roomId: roomId,
-            errorText: 'call_connection_failed'.tr(),
-            detail: 'call_connection_lost'.tr(),
+            recovering: roomState.isReconnecting,
+            errorText:
+                (roomState.isReconnecting
+                        ? 'call_reconnecting'
+                        : 'call_connection_failed')
+                    .tr(),
+            detail: callDisconnectionMessageKey(roomState.connectionError).tr(),
             onRetry: () => _retry(context, ref),
             onCancel: () => _cancelCall(context, ref),
           );

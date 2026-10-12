@@ -17,10 +17,12 @@ class DraggableSelfView extends StatefulWidget {
     this.width = 104,
     this.height = 150,
     this.edgePadding = 12,
+    this.onTap,
   });
 
   /// 本地参与者
   final Participant participant;
+  final VoidCallback? onTap;
 
   /// 小窗宽度
   final double width;
@@ -41,6 +43,41 @@ class _DraggableSelfViewState extends State<DraggableSelfView> {
 
   /// 拖拽中关闭位移动画，跟手；松手后再开启动画吸边
   bool _dragging = false;
+  late Widget _surface;
+
+  @override
+  void initState() {
+    super.initState();
+    _cacheSurface();
+  }
+
+  @override
+  void didUpdateWidget(covariant DraggableSelfView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.participant != widget.participant) _cacheSurface();
+  }
+
+  void _cacheSurface() {
+    // 拖动只改变位置，视频纹理和参与者事件监听沿用同一个子树。
+    _surface = RepaintBoundary(
+      child: MobileParticipantSurface(
+        participant: widget.participant,
+        compact: true,
+        borderRadius: 16,
+      ),
+    );
+  }
+
+  void _snap(double areaWidth, double maxX, double maxY) {
+    final current = _offset ?? Offset(maxX, maxY);
+    final snappedX = current.dx + widget.width / 2 < areaWidth / 2
+        ? widget.edgePadding
+        : maxX - widget.edgePadding;
+    setState(() {
+      _dragging = false;
+      _offset = Offset(snappedX.clamp(0.0, maxX), current.dy.clamp(0.0, maxY));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,33 +112,22 @@ class _DraggableSelfViewState extends State<DraggableSelfView> {
               curve: Curves.easeOutCubic,
               child: GestureDetector(
                 behavior: HitTestBehavior.deferToChild,
-                onPanStart: (_) {
-                  if (!_dragging) setState(() => _dragging = true);
-                },
+                onTap: widget.onTap,
+                onPanStart: (_) => setState(() {
+                  _offset = Offset(dx, dy);
+                  _dragging = true;
+                }),
                 onPanUpdate: (details) {
                   setState(() {
                     _offset = Offset(
-                      (dx + details.delta.dx).clamp(0.0, maxX),
-                      (dy + details.delta.dy).clamp(0.0, maxY),
+                      (_offset!.dx + details.delta.dx).clamp(0.0, maxX),
+                      (_offset!.dy + details.delta.dy).clamp(0.0, maxY),
                     );
                   });
                 },
-                onPanEnd: (_) {
-                  // 按中心点判断靠近左侧还是右侧，吸附到对应边缘
-                  final centerX = (_offset?.dx ?? dx) + widget.width / 2;
-                  final snappedX = centerX < areaWidth / 2
-                      ? widget.edgePadding
-                      : maxX - widget.edgePadding;
-                  setState(() {
-                    _dragging = false;
-                    _offset = Offset(snappedX.clamp(0.0, maxX), dy);
-                  });
-                },
-                child: MobileParticipantSurface(
-                  participant: widget.participant,
-                  compact: true,
-                  borderRadius: 16,
-                ),
+                onPanEnd: (_) => _snap(areaWidth, maxX, maxY),
+                onPanCancel: () => _snap(areaWidth, maxX, maxY),
+                child: _surface,
               ),
             ),
           ],

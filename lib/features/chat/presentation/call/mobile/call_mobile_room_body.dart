@@ -14,6 +14,7 @@ import 'package:livekit_client/livekit_client.dart';
 import 'draggable_self_view.dart';
 import 'mobile_call_controls.dart';
 import 'mobile_participant_surface.dart';
+import 'screen_share_viewer.dart';
 
 class CallMobileRoomBody extends ConsumerStatefulWidget {
   const CallMobileRoomBody({
@@ -66,11 +67,14 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(mobileCallSessionControllerProvider);
-    final isVideoCall = session?.initialMedia == CallInitialMedia.video;
+    final isVideoCall =
+        session?.initialMedia == CallInitialMedia.video ||
+        _participants.any((p) => p.isCameraEnabled());
     final isInPipMode = session?.isInPipMode ?? false;
     final title = session?.title ?? '';
     final roomId = session?.roomId ?? '';
     final participants = _participants;
+    final isGroup = ref.watch(callIsGroupProvider(roomId));
     // 有人在共享屏幕（含语音通话中被共享的场景）
     final screenSharer = participants.where(_isSharingScreen).firstOrNull;
     // 音频通话页中央头像：取房间头像（1:1 即对方头像，群聊为群头像）
@@ -83,7 +87,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
     }
 
     // 语音通话下有人共享屏幕时也要展示共享内容，不能只画音频背景。
-    final showVideoSurface = isVideoCall || screenSharer != null;
+    final showVideoSurface = isVideoCall || isGroup || screenSharer != null;
     // 底部控制区预留高度：手机 Web 横屏等矮屏场景收紧，避免画面被压扁
     final bottomInset = _controlsReservedHeight(context);
     final compactControls = bottomInset < _controlsInsetDefault;
@@ -98,6 +102,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
             padding: EdgeInsets.fromLTRB(10, 8, 10, bottomInset),
             child: MobileVideoLayout(
               participants: participants,
+              isGroup: isGroup,
               focusedParticipantIdentity: _focusedParticipantIdentity,
               onFocusChanged: (identity) {
                 setState(() => _focusedParticipantIdentity = identity);
@@ -114,6 +119,16 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
         // （顶部由 AppBar 所在的渐变外壳承接，无需重复遮罩）
         if (showVideoSurface)
           _CallEdgeScrim(top: false, height: bottomInset + 24),
+        if (screenSharer != null)
+          Positioned(
+            top: 16,
+            right: 18,
+            child: FilledButton.tonalIcon(
+              onPressed: () => showScreenShareViewer(context, screenSharer),
+              icon: const Icon(Icons.screen_rotation, size: 18),
+              label: Text('call_share_landscape'.tr()),
+            ),
+          ),
         Align(
           alignment: Alignment.bottomCenter,
           child: MobileCallControls(
@@ -236,9 +251,11 @@ class MobileVideoLayout extends StatelessWidget {
     required this.participants,
     required this.focusedParticipantIdentity,
     required this.onFocusChanged,
+    this.isGroup = false,
   });
 
   final List<Participant> participants;
+  final bool isGroup;
   final String? focusedParticipantIdentity;
   final void Function(String? identity) onFocusChanged;
 
@@ -268,7 +285,7 @@ class MobileVideoLayout extends StatelessWidget {
       );
     }
 
-    if (participants.length <= 2) {
+    if (!isGroup && participants.length <= 2) {
       return _buildOneToOneLayout();
     }
 
@@ -350,6 +367,12 @@ class MobileVideoLayout extends StatelessWidget {
     } else if (local != null) {
       primary = local;
     }
+    primary =
+        participants
+            .where((p) => p.identity == focusedParticipantIdentity)
+            .firstOrNull ??
+        primary;
+    final secondary = participants.where((p) => p != primary).firstOrNull;
 
     return Stack(
       fit: StackFit.expand,
@@ -360,10 +383,11 @@ class MobileVideoLayout extends StatelessWidget {
           borderRadius: 22,
         ),
         // 自己的小窗：默认右下角，可拖拽滑动并自动吸边
-        if (local != null && local != primary)
+        if (secondary != null)
           DraggableSelfView(
-            key: ValueKey('mobile-local-${local.sid}'),
-            participant: local,
+            key: const ValueKey('mobile-secondary'),
+            participant: secondary,
+            onTap: () => onFocusChanged(secondary.identity),
           ),
       ],
     );
