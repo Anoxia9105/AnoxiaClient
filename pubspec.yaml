@@ -1,7 +1,7 @@
 name: anoxia
 description: "A high-performance, real-time IM (Instant Messaging) solution built with Flutter and Dart. Supports low-latency message delivery and robust state synchronization."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 2.4.8+54
+version: 2.4.9+55
 
 environment:
   sdk: ^3.10.1
