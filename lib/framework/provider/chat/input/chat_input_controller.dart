@@ -395,6 +395,9 @@ class ChatInputController extends _$ChatInputController {
         final duration = uploaded?.durationMs ?? meta?.durationMs ?? 1000;
         final enhanced = video.copyWith(
           url: uploaded?.url,
+          size: uploaded?.sizeBytes,
+          name: uploaded?.name,
+          type: uploaded?.mimeType,
           width: uploaded?.width ?? meta?.width,
           height: uploaded?.height ?? meta?.height,
           bitrate: uploaded?.bitrate,
@@ -831,6 +834,9 @@ class ChatInputController extends _$ChatInputController {
         : null;
     final enhanced = draft.attachment.copyWith(
       url: serverUrl,
+      size: result?.sizeBytes,
+      name: result?.name,
+      type: result?.mimeType,
       width: result?.width ?? videoMeta?.width,
       height: result?.height ?? videoMeta?.height,
       bitrate: result?.bitrate,

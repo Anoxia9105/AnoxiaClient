@@ -6,7 +6,7 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 统一的时间格式化：`mm:ss` 或 `hh:mm:ss`，零时长返回 `--:--`。
 String formatVideoDuration(Duration duration) {
-  if (duration == Duration.zero || duration.isNegative) return '--:--';
+  if (duration.isNegative) return '--:--';
   final hours = duration.inHours;
   final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
   final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
@@ -24,6 +24,8 @@ class VideoControlBar extends StatelessWidget {
   final VoidCallback onToggleMute;
   final VideoPlayerController? controller;
   final Color surfaceColor;
+  final Duration durationHint;
+  final bool initializing;
 
   const VideoControlBar({
     required this.initialized,
@@ -34,12 +36,14 @@ class VideoControlBar extends StatelessWidget {
     required this.onToggleMute,
     required this.controller,
     this.surfaceColor = Colors.black54,
+    this.durationHint = Duration.zero,
+    this.initializing = false,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    final duration = controller?.value.duration ?? Duration.zero;
+    final duration = controller?.value.duration ?? durationHint;
     final screenW = MediaQuery.sizeOf(context).width;
     final maxBarW = (screenW - 32).clamp(120.0, 520.0);
 
@@ -56,15 +60,27 @@ class VideoControlBar extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.max,
             children: [
-              VideoControlButton(
-                icon: hasError
-                    ? HugeIcons.strokeRoundedRefresh
-                    : isPlaying && initialized
-                    ? HugeIcons.strokeRoundedPause
-                    : HugeIcons.strokeRoundedPlay,
-                label: hasError ? 'retry'.tr() : null,
-                onTap: onTogglePlay,
-              ),
+              if (initializing)
+                const Padding(
+                  padding: EdgeInsets.all(10),
+                  child: SizedBox.square(
+                    dimension: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                )
+              else
+                VideoControlButton(
+                  icon: hasError
+                      ? HugeIcons.strokeRoundedRefresh
+                      : isPlaying && initialized
+                      ? HugeIcons.strokeRoundedPause
+                      : HugeIcons.strokeRoundedPlay,
+                  label: hasError ? 'retry'.tr() : null,
+                  onTap: onTogglePlay,
+                ),
               if (initialized)
                 VideoControlButton(
                   icon: isMuted
@@ -75,6 +91,24 @@ class VideoControlBar extends StatelessWidget {
                 ),
             ],
           ),
+          if (!initialized || duration == Duration.zero)
+            Row(
+              children: [
+                const Text(
+                  '00:00',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+                const SizedBox(width: 8),
+                const Expanded(child: Slider(value: 0, onChanged: null)),
+                const SizedBox(width: 8),
+                Text(
+                  duration > Duration.zero
+                      ? formatVideoDuration(duration)
+                      : '--:--',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
           if (initialized && duration != Duration.zero) ...[
             const SizedBox(height: 4),
             ValueListenableBuilder<VideoPlayerValue>(
@@ -87,7 +121,11 @@ class VideoControlBar extends StatelessWidget {
                   children: [
                     Text(
                       formatVideoDuration(pos),
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -105,7 +143,11 @@ class VideoControlBar extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       formatVideoDuration(total),
-                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 );
@@ -123,7 +165,12 @@ class VideoControlButton extends StatelessWidget {
   final List<List<dynamic>> icon;
   final String? label;
   final VoidCallback onTap;
-  const VideoControlButton({required this.icon, this.label, required this.onTap, super.key});
+  const VideoControlButton({
+    required this.icon,
+    this.label,
+    required this.onTap,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +185,14 @@ class VideoControlButton extends StatelessWidget {
             HugeIcon(icon: icon, size: 22, color: Colors.white),
             if (label != null) ...[
               const SizedBox(width: 6),
-              Text(label!, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(
+                label!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ],
         ),

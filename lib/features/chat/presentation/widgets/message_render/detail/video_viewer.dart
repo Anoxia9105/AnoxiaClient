@@ -23,6 +23,7 @@ mixin VideoPlayerControllerMixin<T extends StatefulWidget> on State<T> {
   bool hasError = false;
   bool isPlaying = false;
   bool isMuted = true;
+  bool hasPlayed = false;
   bool _disposed = false;
 
   @protected
@@ -34,6 +35,16 @@ mixin VideoPlayerControllerMixin<T extends StatefulWidget> on State<T> {
   void _onVideoChanged() {
     if (!mounted || controller == null) return;
     final v = controller!.value;
+    if (v.hasError) {
+      if (!hasError) {
+        setState(() {
+          hasError = true;
+          isPlaying = false;
+        });
+      }
+      return;
+    }
+    if (!hasPlayed && v.isPlaying) setState(() => hasPlayed = true);
     final ended = v.duration != Duration.zero && v.position >= v.duration;
     if (ended) {
       if (isPlaying) setState(() => isPlaying = false);
@@ -44,7 +55,7 @@ mixin VideoPlayerControllerMixin<T extends StatefulWidget> on State<T> {
   }
 
   @protected
-  Future<void> initPlayer({required bool muted}) async {
+  Future<void> initPlayer({required bool muted, bool play = true}) async {
     if (initializing || initialized || _disposed) return;
     setState(() {
       initializing = true;
@@ -65,11 +76,17 @@ mixin VideoPlayerControllerMixin<T extends StatefulWidget> on State<T> {
       controller = c;
       initialized = true;
       isMuted = muted;
-      isPlaying = true;
+      isPlaying = false;
       c.addListener(_onVideoChanged);
-      await c.play();
+      if (play) await c.play();
       if (mounted) setState(() => initializing = false);
     } catch (_) {
+      c.removeListener(_onVideoChanged);
+      if (identical(controller, c)) {
+        controller = null;
+        initialized = false;
+        isPlaying = false;
+      }
       if (mounted) {
         await c.dispose();
         if (!_disposed) {
@@ -87,6 +104,13 @@ mixin VideoPlayerControllerMixin<T extends StatefulWidget> on State<T> {
   @protected
   Future<void> togglePlay() async {
     if (hasError) {
+      final failed = controller;
+      controller = null;
+      initialized = false;
+      hasPlayed = false;
+      failed?.removeListener(_onVideoChanged);
+      await failed?.dispose();
+      if (!mounted) return;
       setState(() => hasError = false);
       await initPlayer(muted: isMuted);
       return;
@@ -147,11 +171,8 @@ class VideoViewerDialog extends ConsumerStatefulWidget {
   ConsumerState<VideoViewerDialog> createState() => _VideoViewerDialogState();
 }
 
-class _VideoViewerDialogState
-    extends ConsumerState<VideoViewerDialog>
+class _VideoViewerDialogState extends ConsumerState<VideoViewerDialog>
     with VideoPlayerControllerMixin {
-  bool _autoPlayAttempted = false;
-
   @override
   String get videoUrl => widget.videoUrl;
 
@@ -166,10 +187,7 @@ class _VideoViewerDialogState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (autoPlayOnInit && !_autoPlayAttempted) {
-        _autoPlayAttempted = true;
-        initPlayer(muted: true);
-      }
+      initPlayer(muted: true, play: autoPlayOnInit);
     });
   }
 
@@ -216,7 +234,7 @@ class _VideoViewerDialogState
                       onTap: () {
                         if (initialized) togglePlay();
                       },
-                      child: initialized && controller != null
+                      child: initialized && controller != null && hasPlayed
                           ? FittedBox(
                               fit: BoxFit.contain,
                               child: SizedBox(
@@ -225,13 +243,15 @@ class _VideoViewerDialogState
                                 child: VideoPlayer(controller!),
                               ),
                             )
-                          : widget.coverUrl != null && widget.coverUrl!.isNotEmpty
+                          : widget.coverUrl != null &&
+                                widget.coverUrl!.isNotEmpty
                           ? CachedNetworkImageView(
                               imageUrl: widget.coverUrl!,
                               width: displaySize.width,
                               height: displaySize.height,
                               fit: BoxFit.cover,
-                              placeholder: (_, _) => Container(color: Colors.grey[900]),
+                              placeholder: (_, _) =>
+                                  Container(color: Colors.grey[900]),
                               errorWidget: (_, _, _) => _placeholder(),
                             )
                           : _placeholder(),
@@ -241,7 +261,10 @@ class _VideoViewerDialogState
                         child: SizedBox(
                           width: 30,
                           height: 30,
-                          child: CircularProgressIndicator(strokeWidth: 2.6, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.6,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     if (hasError)
@@ -252,13 +275,26 @@ class _VideoViewerDialogState
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, size: 30, color: Colors.white),
+                              const HugeIcon(
+                                icon: HugeIcons.strokeRoundedAlert02,
+                                size: 30,
+                                color: Colors.white,
+                              ),
                               const SizedBox(height: 8),
-                              Text('video_load_failed'.tr(), style: const TextStyle(color: Colors.white, fontSize: 13)),
+                              Text(
+                                'video_load_failed'.tr(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                              ),
                               const SizedBox(height: 8),
                               FilledButton.tonal(
                                 onPressed: togglePlay,
-                                child: Text('retry'.tr(), style: const TextStyle(fontSize: 12)),
+                                child: Text(
+                                  'retry'.tr(),
+                                  style: const TextStyle(fontSize: 12),
+                                ),
                               ),
                             ],
                           ),
@@ -280,7 +316,10 @@ class _VideoViewerDialogState
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.black.withValues(alpha: 0.65), Colors.transparent],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.65),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
                 child: Row(
@@ -290,12 +329,20 @@ class _VideoViewerDialogState
                         widget.fileName ?? 'video'.tr(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: Colors.white, size: 22),
+                      icon: const HugeIcon(
+                        icon: HugeIcons.strokeRoundedCancel01,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                   ],
                 ),
@@ -309,7 +356,11 @@ class _VideoViewerDialogState
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 12, left: 12, right: 12),
+                  padding: const EdgeInsets.only(
+                    bottom: 12,
+                    left: 12,
+                    right: 12,
+                  ),
                   child: VideoControlBar(
                     initialized: initialized,
                     isPlaying: isPlaying,
@@ -318,6 +369,10 @@ class _VideoViewerDialogState
                     onTogglePlay: togglePlay,
                     onToggleMute: toggleMute,
                     controller: controller,
+                    durationHint: Duration(
+                      milliseconds: widget.durationMs ?? 0,
+                    ),
+                    initializing: initializing,
                   ),
                 ),
               ),
@@ -331,7 +386,11 @@ class _VideoViewerDialogState
   Widget _placeholder() => Container(
     color: Colors.grey[900],
     alignment: Alignment.center,
-    child: const HugeIcon(icon: HugeIcons.strokeRoundedVideo01, size: 36, color: Colors.white54),
+    child: const HugeIcon(
+      icon: HugeIcons.strokeRoundedVideo01,
+      size: 36,
+      color: Colors.white54,
+    ),
   );
 }
 
@@ -362,8 +421,6 @@ class VideoViewerPage extends ConsumerStatefulWidget {
 
 class _VideoViewerPageState extends ConsumerState<VideoViewerPage>
     with VideoPlayerControllerMixin {
-  bool _autoPlayAttempted = false;
-
   @override
   String get videoUrl => widget.videoUrl;
 
@@ -378,10 +435,7 @@ class _VideoViewerPageState extends ConsumerState<VideoViewerPage>
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (autoPlayOnInit && !_autoPlayAttempted) {
-        _autoPlayAttempted = true;
-        initPlayer(muted: true);
-      }
+      initPlayer(muted: true, play: autoPlayOnInit);
     });
   }
 
@@ -392,22 +446,21 @@ class _VideoViewerPageState extends ConsumerState<VideoViewerPage>
     // 减少动效时关闭 Hero，路由本身已零时长即时呈现
     final reduceMotion =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    final mediaChild =
-        initialized && controller != null
-            ? AspectRatio(
-                aspectRatio: controller!.value.aspectRatio == 0
-                    ? 16 / 9
-                    : controller!.value.aspectRatio,
-                child: VideoPlayer(controller!),
-              )
-            : widget.coverUrl != null && widget.coverUrl!.isNotEmpty
-            ? CachedNetworkImageView(
-                imageUrl: widget.coverUrl!,
-                fit: BoxFit.contain,
-                placeholder: (_, _) => const SizedBox.expand(),
-                errorWidget: (_, _, _) => _placeholder(),
-              )
-            : _placeholder();
+    final mediaChild = initialized && controller != null && hasPlayed
+        ? AspectRatio(
+            aspectRatio: controller!.value.aspectRatio == 0
+                ? 16 / 9
+                : controller!.value.aspectRatio,
+            child: VideoPlayer(controller!),
+          )
+        : widget.coverUrl != null && widget.coverUrl!.isNotEmpty
+        ? CachedNetworkImageView(
+            imageUrl: widget.coverUrl!,
+            fit: BoxFit.contain,
+            placeholder: (_, _) => const SizedBox.expand(),
+            errorWidget: (_, _, _) => _placeholder(),
+          )
+        : _placeholder();
     return Scaffold(
       backgroundColor: bg,
       extendBodyBehindAppBar: true,
@@ -441,28 +494,42 @@ class _VideoViewerPageState extends ConsumerState<VideoViewerPage>
                       final w = dir == HeroFlightDirection.push
                           ? to.widget
                           : from.widget;
-                      return Material(
-                        color: Colors.transparent,
-                        child: w,
-                      );
+                      return Material(color: Colors.transparent, child: w);
                     },
                     child: mediaChild,
                   ),
           ),
           if (initializing)
             const Center(
-              child: SizedBox(width: 34, height: 34, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white)),
+              child: SizedBox(
+                width: 34,
+                height: 34,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: Colors.white,
+                ),
+              ),
             ),
           if (hasError)
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, size: 32, color: Colors.white),
+                  const HugeIcon(
+                    icon: HugeIcons.strokeRoundedAlert02,
+                    size: 32,
+                    color: Colors.white,
+                  ),
                   const SizedBox(height: 8),
-                  Text('video_load_failed'.tr(), style: const TextStyle(color: Colors.white, fontSize: 14)),
+                  Text(
+                    'video_load_failed'.tr(),
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  ),
                   const SizedBox(height: 10),
-                  FilledButton.tonal(onPressed: togglePlay, child: Text('retry'.tr())),
+                  FilledButton.tonal(
+                    onPressed: togglePlay,
+                    child: Text('retry'.tr()),
+                  ),
                 ],
               ),
             ),
@@ -479,6 +546,8 @@ class _VideoViewerPageState extends ConsumerState<VideoViewerPage>
               onTogglePlay: togglePlay,
               onToggleMute: toggleMute,
               controller: controller,
+              durationHint: Duration(milliseconds: widget.durationMs ?? 0),
+              initializing: initializing,
             ),
           ),
         ],
@@ -489,6 +558,10 @@ class _VideoViewerPageState extends ConsumerState<VideoViewerPage>
   Widget _placeholder() => Container(
     color: Colors.transparent,
     alignment: Alignment.center,
-    child: const HugeIcon(icon: HugeIcons.strokeRoundedVideo01, size: 48, color: Colors.white54),
+    child: const HugeIcon(
+      icon: HugeIcons.strokeRoundedVideo01,
+      size: 48,
+      color: Colors.white54,
+    ),
   );
 }

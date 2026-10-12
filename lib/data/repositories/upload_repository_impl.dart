@@ -89,6 +89,9 @@ class UploadRepositoryImpl implements UploadRepository {
             width: _readInt(data['width']),
             height: _readInt(data['height']),
             bitrate: _readInt(data['bitrate']),
+            sizeBytes: _readInt(data['sizeBytes']),
+            name: data['name']?.toString(),
+            mimeType: data['mimeType']?.toString(),
           );
         }
       }

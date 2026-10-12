@@ -10,6 +10,9 @@ class UploadFileResult {
     this.width,
     this.height,
     this.bitrate,
+    this.sizeBytes,
+    this.name,
+    this.mimeType,
     this.errorCode,
   });
 
@@ -22,5 +25,8 @@ class UploadFileResult {
   final int? width;
   final int? height;
   final int? bitrate;
+  final int? sizeBytes;
+  final String? name;
+  final String? mimeType;
   final String? errorCode;
 }
