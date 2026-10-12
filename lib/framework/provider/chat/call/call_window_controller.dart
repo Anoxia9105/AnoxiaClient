@@ -10,6 +10,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
 import 'package:anoxia_protocol/anoxia_protocol.dart' as v6;
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 
@@ -40,6 +41,17 @@ class CallWindowController extends _$CallWindowController {
   WindowController? build() {
     _channelReady = Future<void>(() async {
       await Channel.callChannel.setMethodCallHandler((call) async {
+        if (call.method == Channel.callWindowAuthMethod) {
+          final payload = Map<String, dynamic>.from(call.arguments as Map);
+          // 仅当前通话窗口能读取登录态，迟到的旧窗口或其他房间一律拒绝。
+          if (_activeRoomId == null ||
+              _windowSession == null ||
+              payload['roomId'] != _activeRoomId ||
+              payload['session'] != _windowSession) {
+            return null;
+          }
+          return ref.read(tokenCacheProvider);
+        }
         if (call.method == Channel.callWindowReadyMethod) {
           final payload = Map<String, dynamic>.from(call.arguments as Map);
           if (payload['roomId'] != _activeRoomId ||

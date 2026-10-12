@@ -7,6 +7,7 @@ import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
 import 'package:anoxia/features/chat/presentation/call/component/call_error_state.dart';
 import 'package:anoxia/features/chat/presentation/call/component/call_loading_state.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/provider/chat/call/channel.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
@@ -87,6 +88,24 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     _title = args['title'] ?? '';
     _roomId = args['roomId'] ?? '';
     _windowSession = args['session']?.toString() ?? '';
+    // 多引擎的 TokenManager/SharedPreferences 缓存不会随主窗口登录刷新。
+    // HTTP 始终从主窗口领取当前凭据；不写持久化，不放入窗口参数或日志。
+    DioClient().configureAuth(
+      tokenLoader: () async {
+        if (!mounted || _closing) throw StateError('通话窗口已关闭');
+        final token = await Channel.callChannel.invokeMethod(
+          Channel.callWindowAuthMethod,
+          {'roomId': _roomId, 'session': _windowSession},
+        );
+        if (!mounted || _closing) throw StateError('通话窗口已关闭');
+        if (token is! String || token.isEmpty) {
+          throw StateError('api_login_expired'.tr());
+        }
+        return token;
+      },
+      // 子窗口不独立登出或写回凭据；主窗口负责账号生命周期。
+      onUnauthorized: () async {},
+    );
     _avatarUrl = args['avatarUrl']?.toString() ?? '';
     _prefetchedToken = args['token']?.toString() ?? '';
     _initialMedia = CallInitialMedia.fromValue(args['initialMedia']);

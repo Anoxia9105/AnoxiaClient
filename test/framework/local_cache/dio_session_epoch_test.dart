@@ -7,6 +7,27 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('凭据同步异常会结束请求并返回错误，不让重试一直等待', () async {
+    final client = DioClient();
+    client.configureAuth(
+      tokenLoader: () async => throw StateError('窗口会话已失效'),
+      onUnauthorized: () async {},
+    );
+    addTearDown(
+      () => client.configureAuth(
+        tokenLoader: () async => null,
+        onUnauthorized: () async {},
+      ),
+    );
+    await expectLater(
+      client
+          .get('http://127.0.0.1:1/never-sent')
+          .timeout(const Duration(seconds: 2)),
+      throwsA(
+        isA<DioException>().having((e) => e.error, 'error', isA<StateError>()),
+      ),
+    );
+  });
   for (final status in [200, 401]) {
     test('账号切换后拒绝过期 HTTP $status 响应并避免登出新账号', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);

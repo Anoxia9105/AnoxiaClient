@@ -14,6 +14,9 @@ class Channel {
   static const String callWindowReadyMethod = 'on_call_window_ready';
   static const String callAcceptedMethod = 'on_call_accepted';
 
+  /// 子窗口每次 HTTP 请求领取主窗口当前登录态，不依赖引擎各自的存储缓存。
+  static const String callWindowAuthMethod = 'get_call_window_auth';
+
   /// 子窗口开始结束通话：主窗口应立即发送 CALL_END，但继续持有窗口状态。
   static const String callWindowEndingMethod = 'on_call_window_ending';
 

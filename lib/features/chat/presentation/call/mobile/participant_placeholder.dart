@@ -23,12 +23,7 @@ class ParticipantPlaceholder extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AvatarWidget(
-            url: avatar,
-            name: name,
-            size: compact ? 48 : 84,
-            borderRadius: compact ? 24 : 42,
-          ),
+          AvatarWidget(url: avatar, name: name, size: compact ? 48 : 84),
           if (!compact) ...[
             const SizedBox(height: 10),
             Text(

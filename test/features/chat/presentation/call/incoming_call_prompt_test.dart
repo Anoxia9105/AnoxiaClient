@@ -120,12 +120,6 @@ void main() {
     final rejectStyle = tester.widget<FilledButton>(reject).style!;
     expect(rejectStyle.backgroundColor!.resolve({}), const Color(0xFFD32F2F));
     expect(rejectStyle.foregroundColor!.resolve({}), Colors.white);
-    final acceptStyle = tester
-        .widget<FilledButton>(
-          find.byKey(const ValueKey('incoming-call-accept')),
-        )
-        .style!;
-    expect(acceptStyle.foregroundColor!.resolve({}), Colors.white);
     expect(tester.getSize(reject).height, lessThanOrEqualTo(48));
     expect(tester.getSize(reject).width, lessThanOrEqualTo(146));
     await tester.tap(find.text('window'));
@@ -162,7 +156,7 @@ void main() {
             accepted = media;
           },
         );
-        final voice = find.byKey(const ValueKey('incoming-call-voice'));
+        final voice = find.widgetWithIcon(TextButton, Icons.call_outlined);
         await tester.ensureVisible(voice);
         await tester.tap(voice);
         await tester.pumpAndSettle();

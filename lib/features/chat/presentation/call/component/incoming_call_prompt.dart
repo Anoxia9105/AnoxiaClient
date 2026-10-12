@@ -5,7 +5,6 @@ import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.d
 import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 来电卡片位于标题栏下方，私聊突出提醒，群聊保持非阻塞邀请。
@@ -130,70 +129,73 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      AvatarWidget(
-                                        size: 56,
-                                        url: invite.isGroup
-                                            ? invite.roomAvatar
-                                            : invite.callerAvatar,
-                                        name: name,
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'call_incoming'.tr(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelLarge
-                                                  ?.copyWith(
-                                                    color: colors.primary,
-                                                  ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              name,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleLarge
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Text(
-                                              invite.isGroup
-                                                  ? 'call_invitation_group_body'
-                                                        .tr(
-                                                          args: [
-                                                            invite.callerName,
-                                                            mediaLabel,
-                                                          ],
-                                                        )
-                                                  : (isVideo
-                                                            ? 'call_invite_video_title'
-                                                            : 'call_invite_audio_title')
-                                                        .tr(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium
-                                                  ?.copyWith(
-                                                    color:
-                                                        colors.onSurfaceVariant,
-                                                  ),
-                                            ),
-                                          ],
+                                  Semantics(
+                                    header: true,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          isVideo
+                                              ? Icons.videocam_rounded
+                                              : Icons.call_rounded,
+                                          color: colors.primary,
+                                          size: 20,
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            'call_incoming'.tr(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelLarge
+                                                ?.copyWith(
+                                                  color: colors.primary,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  AvatarWidget(
+                                    size: 56,
+                                    url: invite.isGroup
+                                        ? invite.roomAvatar
+                                        : invite.callerAvatar,
+                                    name: name,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    invite.isGroup
+                                        ? 'call_invitation_group_body'.tr(
+                                            args: [
+                                              invite.callerName,
+                                              mediaLabel,
+                                            ],
+                                          )
+                                        : (isVideo
+                                                  ? 'call_invite_video_title'
+                                                  : 'call_invite_audio_title')
+                                              .tr(),
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: colors.onSurfaceVariant,
+                                        ),
                                   ),
                                   const SizedBox(height: 20),
                                   ConstrainedBox(
@@ -221,13 +223,10 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                             onPressed: _busy
                                                 ? null
                                                 : () => _act(widget.onReject),
-                                            icon: HugeIcon(
-                                              icon: invite.isGroup
-                                                  ? HugeIcons
-                                                        .strokeRoundedCancel01
-                                                  : HugeIcons
-                                                        .strokeRoundedCallEnd01,
-                                              color: Colors.white,
+                                            icon: Icon(
+                                              invite.isGroup
+                                                  ? Icons.close_rounded
+                                                  : Icons.call_end_rounded,
                                               size: 20,
                                             ),
                                             label: Text(
@@ -235,9 +234,6 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                                       ? 'call_ignore'
                                                       : 'notification_call_reject')
                                                   .tr(),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                              ),
                                             ),
                                           ),
                                         ),
@@ -248,7 +244,6 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                               'incoming-call-accept',
                                             ),
                                             style: FilledButton.styleFrom(
-                                              foregroundColor: Colors.white,
                                               minimumSize: const Size(0, 44),
                                               padding:
                                                   const EdgeInsets.symmetric(
@@ -268,16 +263,12 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                                     child:
                                                         CircularProgressIndicator(
                                                           strokeWidth: 2,
-                                                          color: Colors.white,
                                                         ),
                                                   )
-                                                : HugeIcon(
-                                                    icon: isVideo
-                                                        ? HugeIcons
-                                                              .strokeRoundedVideo01
-                                                        : HugeIcons
-                                                              .strokeRoundedCall02,
-                                                    color: Colors.white,
+                                                : Icon(
+                                                    isVideo
+                                                        ? Icons.videocam_rounded
+                                                        : Icons.call_rounded,
                                                     size: 20,
                                                   ),
                                             label: Text(
@@ -285,9 +276,6 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                                       ? 'call_join_call'
                                                       : 'notification_call_accept')
                                                   .tr(),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                              ),
                                             ),
                                           ),
                                         ),
@@ -297,9 +285,6 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                   if (isVideo && !invite.isGroup) ...[
                                     const SizedBox(height: 12),
                                     TextButton.icon(
-                                      key: const ValueKey(
-                                        'incoming-call-voice',
-                                      ),
                                       onPressed: _busy
                                           ? null
                                           : () => _act(
@@ -307,9 +292,8 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                                 CallInitialMedia.audio,
                                               ),
                                             ),
-                                      icon: HugeIcon(
-                                        icon: HugeIcons.strokeRoundedCall02,
-                                        color: colors.primary,
+                                      icon: const Icon(
+                                        Icons.call_outlined,
                                         size: 18,
                                       ),
                                       label: Text('call_answer_as_voice'.tr()),

@@ -36,7 +36,20 @@ class DioClient {
             final epoch = SessionEpoch.instance.value;
             options.extra['sessionEpoch'] = epoch;
             // 优先从内存缓存获取 Token（减少频繁读取本地存储）
-            final token = await _tokenLoader();
+            String? token;
+            try {
+              token = await _tokenLoader();
+            } catch (error, stack) {
+              // 跨窗口凭据同步失败也必须完成 Dio 拦截链，不能让重试一直等待。
+              return handler.reject(
+                DioException(
+                  requestOptions: options,
+                  type: DioExceptionType.unknown,
+                  error: error,
+                  stackTrace: stack,
+                ),
+              );
+            }
             if (epoch != SessionEpoch.instance.value) {
               return handler.reject(
                 DioException(

@@ -69,9 +69,17 @@ class _MobileMentionSheetState extends State<MobileMentionSheet> {
                   onChanged: (value) => setState(() => _query = value),
                   decoration: InputDecoration(
                     hintText: 'appbar_search_hint'.tr(),
-                    prefixIcon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedSearch01,
-                      size: 20,
+                    prefixIcon: const SizedBox(
+                      width: 44,
+                      child: Center(
+                        child: SizedBox.square(
+                          dimension: 20,
+                          child: HugeIcon(
+                            icon: HugeIcons.strokeRoundedSearch01,
+                            size: 20,
+                          ),
+                        ),
+                      ),
                     ),
                     filled: true,
                   ),
