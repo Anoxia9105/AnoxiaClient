@@ -3,6 +3,7 @@
 // 提供图片、文件、@提及、语音通话和视频通话等快捷操作入口。
 import 'package:anoxia/common/utils/device_util.dart' show DeviceUtil;
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_bar_handlers.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
@@ -39,12 +40,14 @@ class ChatMorePanel extends ConsumerWidget {
 
   /// @提及点击回调。
   final VoidCallback onMentionTap;
+  final VoidCallback? onAiTap;
 
   const ChatMorePanel({
     super.key,
     required this.roomId,
     required this.onPickFile,
     required this.onMentionTap,
+    this.onAiTap,
   });
 
   Future<void> _capture(BuildContext context, WidgetRef ref) async {
@@ -203,6 +206,13 @@ class ChatMorePanel extends ConsumerWidget {
 
     return ChatActionPager(
       actions: [
+        if (onAiTap != null &&
+            (ref.watch(aiFeatureFlagsProvider).value?.noteAvailable ?? true))
+          ChatActionItem(
+            icon: HugeIcons.strokeRoundedSparkles,
+            label: 'chat_ai.assist_title'.tr(),
+            onTap: onAiTap!,
+          ),
         ChatActionItem(
           icon: HugeIcons.strokeRoundedCamera01,
           label: 'chat_capture'.tr(),

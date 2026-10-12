@@ -88,24 +88,17 @@ class CallRoomPage extends ConsumerWidget {
   /// 重试：重新向服务端拉取新 token 并重连，
   /// 避免复用已过期（超 24h）的 LiveKit token 导致 401
   Future<void> _retry(BuildContext context, WidgetRef ref) async {
+    final fresh = await ref.read(callRepositoryProvider).fetchCallToken(roomId);
+    if (!context.mounted) return;
+    await ref
+        .read(roomControllerProvider(token).notifier)
+        .prepareRetry(fresh, isActive: () => context.mounted);
+    if (!context.mounted) return;
+    // 服务端可能返回相同 JWT，显式清除对应错误缓存也必须生效。
+    ref.invalidate(roomControllerProvider(fresh));
     if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
-      // 移动/Web：直接向服务端拉取新 token（绕过 provider 缓存），
-      // 更新会话 token 后由 MobileCallPage 触发重建
-      final fresh = await ref
-          .read(callRepositoryProvider)
-          .fetchCallToken(roomId);
-      if (!context.mounted) return;
-      await ref.read(roomControllerProvider(token).notifier).leave();
-      if (!context.mounted) return;
       ref.read(mobileCallSessionControllerProvider.notifier).updateToken(fresh);
     } else {
-      // 桌面由当前窗口替换 token，预取 token 路径也能正确重试。
-      final fresh = await ref
-          .read(callRepositoryProvider)
-          .fetchCallToken(roomId);
-      if (!context.mounted) return;
-      await ref.read(roomControllerProvider(token).notifier).leave();
-      if (!context.mounted) return;
       CallRetryTokenNotification(fresh).dispatch(context);
     }
   }

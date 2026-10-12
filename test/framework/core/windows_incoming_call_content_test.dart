@@ -23,26 +23,18 @@ void main() {
     voiceAction: 'call_accept_voice',
   );
 
-  test('来电布局包含头像、居中文案和彩色图标按钮，拒绝排在接听前', () {
+  test('来电布局包含左侧头像、右侧文案和彩色图标按钮，拒绝排在接听前', () {
     final xml = build();
     expect(xml, contains('scenario="incomingCall"'));
     expect(xml, contains('useButtonStyle="true"'));
-    expect(
-      xml,
-      contains(
-        '<image src="${const HtmlEscape().convert("file:///C:/avatar.png")}"',
-      ),
-    );
-    expect(
-      RegExp('hint-callScenarioCenterAlign="true"').allMatches(xml).length,
-      2,
-    );
+    expect(xml, contains('placement="appLogoOverride"'));
+    expect(xml, isNot(contains('hint-callScenarioCenterAlign')));
+    expect(xml, contains('hint-maxLines="1"'));
     expect(xml, contains('hint-buttonStyle="Critical"'));
     expect(xml, contains('hint-buttonStyle="Success"'));
     expect(xml.indexOf('content="拒绝"'), lessThan(xml.indexOf('content="接听"')));
     expect(RegExp('<action ').allMatches(xml).length, 2);
-    expect(xml, isNot(contains('appLogoOverride')));
-    expect(xml, contains('<subgroup hint-weight="1"><image'));
+    expect(xml, isNot(contains('<group>')));
     expect(xml, contains('hint-crop="circle"'));
   });
 

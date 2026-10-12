@@ -516,9 +516,10 @@ class ChatAiAssistCustomInput extends StatelessWidget {
             ),
             child: Text(
               'note_ai.run'.tr(),
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                fontWeight: FontWeight.w600,
+                color: enabled ? Colors.white : null,
+              ),
             ),
           ),
         ),

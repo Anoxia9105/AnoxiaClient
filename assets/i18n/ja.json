@@ -844,6 +844,7 @@
   "settings_sticker_delete_sticker_desc": "このスタンプを削除しますか？",
   "settings_sticker_delete_success": "スタンプを削除しました",
   "settings_sticker_delete_failed": "削除に失敗しました。後でもう一度お試しください",
+  "mention_select_user": "メンションする人を選択",
   "mention_no_users": "メンションできるユーザーがいません",
   "mention_user_not_found": "\"{}\" に一致するユーザーが見つかりません",
   "mention_all": "全員",

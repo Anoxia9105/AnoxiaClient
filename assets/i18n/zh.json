@@ -844,6 +844,7 @@
   "settings_sticker_delete_sticker_desc": "确定删除这个表情吗？",
   "settings_sticker_delete_success": "表情已删除",
   "settings_sticker_delete_failed": "删除失败，请稍后重试",
+  "mention_select_user": "选择要提及的人",
   "mention_no_users": "暂无可@的用户",
   "mention_user_not_found": "没有找到匹配 \"{}\" 的用户",
   "mention_all": "所有人",

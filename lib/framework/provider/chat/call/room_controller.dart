@@ -1347,6 +1347,16 @@ class RoomController extends _$RoomController {
     return _leaveFuture = _leave();
   }
 
+  /// 仅用户主动重试时允许复用服务端返回的相同 JWT。
+  /// 必须先完整释放旧媒体；普通挂断仍永久阻止旧令牌自动重连。
+  Future<void> prepareRetry(
+    String retryToken, {
+    required bool Function() isActive,
+  }) async {
+    await leave();
+    if (isActive() && retryToken == token) _disposedTokens.remove(token);
+  }
+
   Future<void> _leave() async {
     // 无论是否成功连接过，都要先把 token 标记为已处理：
     // 连接失败（错误态）时 _currentState 为 null，若只标记成功路径，

@@ -844,6 +844,7 @@
   "settings_sticker_delete_sticker_desc": "Delete this sticker?",
   "settings_sticker_delete_success": "Sticker deleted",
   "settings_sticker_delete_failed": "Delete failed, please try again later",
+  "mention_select_user": "Mention someone",
   "mention_no_users": "No users to mention",
   "mention_user_not_found": "No users matching \"{}\"",
   "mention_all": "Everyone",

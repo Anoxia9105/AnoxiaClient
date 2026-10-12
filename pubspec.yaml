@@ -56,6 +56,7 @@ dependencies:
   cupertino_icons: ^1.0.8 # Flutter/依赖中的 Cupertino 图标字体
   flutter_screenutil: ^5.9.3 # 屏幕适配
   hugeicons: ^1.1.5 # 图标库
+  flutter_svg: ^2.0.9 # 将 HugeIcons 渲染为系统通知 PNG（原有间接依赖）
   bot_toast: ^4.1.3 # Toast/loading 提示
   flutter_list_view: ^1.1.29 # 高性能列表
   scrollable_positioned_list: ^0.3.8 # 可定位滚动列表（聊天记录跳转）

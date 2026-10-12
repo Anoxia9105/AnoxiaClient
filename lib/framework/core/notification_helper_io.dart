@@ -10,7 +10,7 @@ import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:cross_cache/cross_cache.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart' show Icons;
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
@@ -452,13 +452,21 @@ class NotificationHelper {
             avatarUrl,
           ).timeout(const Duration(milliseconds: 300), onTimeout: () => null);
           avatarUri ??= await assets.avatar(title);
-          rejectIcon = await assets.icon('reject', Icons.call_end_rounded);
+          rejectIcon = await assets.icon(
+            'reject',
+            HugeIcons.strokeRoundedCallEnd01,
+          );
           acceptIcon = await assets.icon(
             isVideo ? 'video' : 'accept',
-            isVideo ? Icons.videocam_rounded : Icons.call_rounded,
+            isVideo
+                ? HugeIcons.strokeRoundedVideo01
+                : HugeIcons.strokeRoundedCall02,
           );
           if (isVideo && payload['isGroup'] != true) {
-            voiceIcon = await assets.icon('accept', Icons.call_rounded);
+            voiceIcon = await assets.icon(
+              'accept',
+              HugeIcons.strokeRoundedCall02,
+            );
           }
         }
         return true;

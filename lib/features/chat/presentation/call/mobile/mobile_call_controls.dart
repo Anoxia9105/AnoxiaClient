@@ -15,7 +15,6 @@ import 'package:anoxia/platform/shims/pip_shim.dart';
 
 import 'mobile_call_timer.dart';
 import '../component/call_invite_members_button.dart';
-import '../component/call_media_menu.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
@@ -110,8 +109,6 @@ class MobileCallControls extends ConsumerWidget {
         const SizedBox(width: 7),
         CallInviteMembersButton(state: state),
       ],
-      const SizedBox(width: 7),
-      CallMediaMenu(state: state),
       const SizedBox(width: 20),
       _CallControlButton(
         tooltip: 'call_hangup_tooltip'.tr(),

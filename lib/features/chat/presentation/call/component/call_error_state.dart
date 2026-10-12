@@ -3,6 +3,7 @@ import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.d
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
+import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -63,7 +64,14 @@ class _CallErrorStateState extends ConsumerState<CallErrorState> {
         await _defaultRetry();
       }
     } catch (_) {
-      // 重试失败（网络 / 鉴权异常），保持当前错误态供用户再次操作
+      if (mounted) {
+        ref
+            .read(toastServiceProvider)
+            .showNotificationNow(
+              'api_request_failed'.tr(),
+              type: ToastType.error,
+            );
+      }
     } finally {
       if (mounted) setState(() => _retrying = false);
     }
@@ -161,22 +169,28 @@ class _CallErrorStateState extends ConsumerState<CallErrorState> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          foregroundColor: Colors.white,
+                        ),
                         onPressed: _retrying || widget.recovering
                             ? null
                             : _retry,
                         child: _retrying || widget.recovering
-                            ? SizedBox(
+                            ? const SizedBox(
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  color: theme.colorScheme.onPrimary,
+                                  color: Colors.white,
                                 ),
                               )
                             : Text(
                                 'call_retry'.tr(),
                                 style: Theme.of(context).textTheme.titleMedium!
-                                    .copyWith(fontWeight: FontWeight.w500),
+                                    .copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
                               ),
                       ),
                     ),

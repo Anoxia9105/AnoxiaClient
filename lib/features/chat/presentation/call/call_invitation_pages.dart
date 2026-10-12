@@ -101,9 +101,9 @@ class IncomingCallPage extends ConsumerWidget {
                         ),
                       ),
                       const Spacer(flex: 4),
-                      // 接听 / 拒绝 按钮组（整体靠右，与桌面端通知按钮成组在右侧的布局对齐）
+                      // 手机全屏来电页底部居中显示接听 / 拒绝按钮组。
                       Align(
-                        alignment: Alignment.centerRight,
+                        alignment: Alignment.center,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -124,11 +124,11 @@ class IncomingCallPage extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      // 视频来电：以语音方式接听（与按钮组同侧靠右）
+                      // 视频来电：以语音方式接听，与按钮组居中对齐。
                       if (isVideo) ...[
                         const SizedBox(height: 20),
                         Align(
-                          alignment: Alignment.centerRight,
+                          alignment: Alignment.center,
                           child: TextButton(
                             onPressed: () => controller.acceptAndOpen(
                               invitation,

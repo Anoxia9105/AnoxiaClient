@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart' as svg;
 
 /// 为系统通知生成本地 PNG：按钮图标使用白色透明底，头像缺失时使用姓名首字。
 class NotificationCallAssets {
@@ -48,25 +49,48 @@ class NotificationCallAssets {
     return Uri.file(file.path, windows: true);
   }
 
-  Future<Uri> icon(String name, IconData icon) async {
-    final file = File('${directory.path}/notification_call_${name}_v1.png');
+  Future<Uri> icon(String name, List<List<dynamic>> icon) async {
+    // 升级缓存名，避免沿用旧 Material 字体图标。
+    final file = File(
+      '${directory.path}/notification_call_${name}_huge_v2.png',
+    );
     if (!await file.exists()) {
+      final source = StringBuffer(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">',
+      );
+      const attributes = {
+        'strokeWidth': 'stroke-width',
+        'strokeLinecap': 'stroke-linecap',
+        'strokeLinejoin': 'stroke-linejoin',
+        'fillRule': 'fill-rule',
+        'clipRule': 'clip-rule',
+      };
+      for (final element in icon) {
+        source.write('<${element[0]}');
+        for (final entry in (element[1] as Map<String, dynamic>).entries) {
+          if (entry.key == 'key') continue;
+          final value = entry.value == 'currentColor'
+              ? '#ffffff'
+              : entry.value.toString();
+          source.write(
+            ' ${attributes[entry.key] ?? entry.key}="${const HtmlEscape().convert(value)}"',
+          );
+        }
+        source.write('/>');
+      }
+      source.write('</svg>');
+      final picture = await svg.vg.loadPicture(
+        svg.SvgStringLoader(source.toString()),
+        null,
+      );
       final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder);
-      final text = TextPainter(
-        text: TextSpan(
-          text: String.fromCharCode(icon.codePoint),
-          style: TextStyle(
-            fontFamily: icon.fontFamily,
-            color: Colors.white,
-            fontSize: 16,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout(maxWidth: 16);
-      text.paint(canvas, Offset((16 - text.width) / 2, (16 - text.height) / 2));
-      text.dispose();
-      await _write(recorder, file, 16);
+      final canvas = Canvas(recorder)..scale(32 / 24);
+      canvas.drawPicture(picture.picture);
+      try {
+        await _write(recorder, file, 32);
+      } finally {
+        picture.picture.dispose();
+      }
     }
     return Uri.file(file.path, windows: true);
   }

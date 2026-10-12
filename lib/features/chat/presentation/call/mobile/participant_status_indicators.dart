@@ -114,13 +114,14 @@ class ConnectionQualityIcon extends StatelessWidget {
           border: Border.all(color: Colors.white24),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: List.generate(3, (index) {
             final level = index + 1;
             return Container(
               width: compact ? 2 : 2.5,
               height: (compact ? 4 : 5) + level * (compact ? 2 : 2.5),
-              margin: const EdgeInsets.symmetric(horizontal: 1),
+              margin: EdgeInsets.fromLTRB(1, 0, 1, compact ? 4 : 5),
               decoration: BoxDecoration(
                 color: level <= bars ? color : Colors.white24,
                 borderRadius: BorderRadius.circular(RadiusToken.sm),

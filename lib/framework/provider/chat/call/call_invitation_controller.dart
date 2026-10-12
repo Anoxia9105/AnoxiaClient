@@ -557,7 +557,8 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
           roomId: invite.roomId,
           initialMedia: invite.initialMedia,
           isGroup: invite.isGroup,
-          token: await ref.read(roomTokenProvider(invite.roomId).future),
+          // 子窗口自行获取令牌，避免主窗口缓存旧令牌或失败时无法重试。
+          join: true,
         );
   }
 
@@ -653,8 +654,8 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     required CallInvitationPhase remotePhase,
   }) {
     if (!_isSameInvite(state, invite)) return;
-    if (state?.minimized == true) {
-      // 悬浮窗态收到终端信号：Toast 提示后直接清除，避免弹回全屏通知卡。
+    if (state?.minimized == true || DeviceUtil.isRealMobile()) {
+      // 手机全屏页与最小化邀请共用项目 Toast，清除邀请后提示不会被浮层遮住。
       final effective = fromSelf ? selfPhase : remotePhase;
       final text = switch (effective) {
         CallInvitationPhase.rejected => 'call_rejected_by_peer',

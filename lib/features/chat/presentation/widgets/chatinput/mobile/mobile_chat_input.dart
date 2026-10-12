@@ -16,7 +16,6 @@ import 'package:anoxia/platform/shims/image_cropper_shim.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 
-import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
@@ -29,6 +28,7 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_previe
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
 import 'chat_more_panel.dart';
+import 'mobile_mention_sheet.dart';
 import 'mobile_chat_input_widgets.dart';
 
 /// 移动端聊天输入组件
@@ -144,25 +144,25 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(RadiusToken.xl)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.45,
-          width: double.infinity,
-          child: MentionListWidget(
-            users: users,
-            onUserSelected: (user) {
-              Navigator.of(ctx).pop();
-              if (user.isAll) {
-                _inputController.insertMentionAll();
-              } else {
-                _inputController.insertMention(user.id, user.name);
-              }
-            },
-          ),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(RadiusToken.xl),
         ),
+      ),
+      builder: (ctx) => MobileMentionSheet(
+        users: users,
+        onSelected: (user) {
+          Navigator.of(ctx).pop();
+          if (!mounted) return;
+          if (user.isAll) {
+            _inputController.insertMentionAll();
+          } else {
+            _inputController.insertMention(user.id, user.name);
+          }
+          _focusNode.requestFocus();
+        },
       ),
     );
   }
@@ -315,7 +315,9 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     final result = await showModalBottomSheet<CropAspectRatio?>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(RadiusToken.xl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(RadiusToken.xl),
+        ),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -587,25 +589,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                       : _buildTextCapsule(),
                 ),
               ),
-              // AI 助手按钮：人工开关与上游探测同时满足才展示，任一不满足即隐藏
-              Builder(
-                builder: (_) {
-                  final noteEnabled =
-                      ref.watch(aiFeatureFlagsProvider).value?.noteAvailable ??
-                      true;
-                  if (!noteEnabled) return const SizedBox.shrink();
-                  return _buildCompactButton(
-                    tooltipMessage: 'chat_ai.assist_title'.tr(),
-                    onTap: () => _toggleOtherPanel(MobileBottomPanelType.ai),
-                    icon:
-                        _currentPanelType == ChatBottomPanelType.other &&
-                            _currentOtherPanelType == MobileBottomPanelType.ai
-                        ? HugeIcons.strokeRoundedCancel01
-                        : HugeIcons.strokeRoundedSparkles,
-                    color: Theme.of(context).colorScheme.primary,
-                  );
-                },
-              ),
               // 表情按钮
               _buildCompactButton(
                 tooltipMessage: 'toolbar_emoji'.tr(),
@@ -705,6 +688,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                   MobileBottomPanelType.more => ChatMorePanel(
                     roomId: widget.roomId,
                     onPickFile: _pickAndSend,
+                    onAiTap: () => _toggleOtherPanel(MobileBottomPanelType.ai),
                     onMentionTap: () {
                       _hidePanel();
                       _showMentionSheet();

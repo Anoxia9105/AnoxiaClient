@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-/// 来电模式需要居中文字和内联头像，普通 appLogoOverride 在此模式下不可靠。
+/// 使用左侧圆形头像、右侧两行标题，下方由系统横向排列操作按钮。
 /// 显式启用按钮样式，避免插件在设置 scenario 时省略 useButtonStyle。
 String buildWindowsIncomingCallContent({
   required Map<String, dynamic> payload,
@@ -28,12 +28,9 @@ String buildWindowsIncomingCallContent({
 
   return '<toast scenario="incomingCall" duration="long" useButtonStyle="true" launch="${arguments()}">'
       '<visual><binding template="ToastGeneric">'
-      '<text hint-callScenarioCenterAlign="true">${escape(title)}</text>'
-      '<text hint-callScenarioCenterAlign="true">${escape(body)}</text>'
-      '<group><subgroup hint-weight="1"/>'
-      '<subgroup hint-weight="1">'
-      '<image src="${escape(avatar.toString())}" hint-crop="circle" alt="${escape(title)}"/>'
-      '</subgroup><subgroup hint-weight="1"/></group>'
+      '<image placement="appLogoOverride" src="${escape(avatar.toString())}" hint-crop="circle" alt="${escape(title)}"/>'
+      '<text hint-maxLines="1">${escape(title)}</text>'
+      '<text hint-maxLines="2">${escape(body)}</text>'
       '</binding></visual><actions>'
       '${button(rejectLabel, rejectAction, rejectIcon, 'Critical')}'
       '${button(acceptLabel, acceptAction, acceptIcon, 'Success')}'
