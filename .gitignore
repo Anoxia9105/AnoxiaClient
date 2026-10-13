@@ -56,3 +56,6 @@ android/key.properties
 
 # FVM Version Cache
 .fvm/
+# Local task records and design drafts
+/tasks/
+/design/

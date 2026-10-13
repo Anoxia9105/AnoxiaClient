@@ -1168,8 +1168,8 @@ QrImageView 渲染二维码（https://<host>/qrlogin?ticket=xxx）
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-account/Anoxia-IM.git
-cd Anoxia-IM/AnoxiaClient
+git clone https://github.com/Anoxia9105/AnoxiaClient.git
+cd AnoxiaClient
 
 # 安装依赖
 flutter pub get

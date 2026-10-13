@@ -107,3 +107,19 @@
 - 提醒由页面在加载、创建、编辑和删除后重新计算；通知权限只能由工具栏按钮主动申请。
 - 自动化验证覆盖 768/1024/1440 宽度、zh/en/ja 日期格式、重复边界、提醒时间、重叠布局和乐观回滚。
 - `flutter build web --release`（含 Wasm dry-run）通过；浏览器 release 启动与控制台检查通过。受登录保护且无测试账号，浏览器内未执行鉴权后的数据写入。
+
+## 基础接口与部署
+
+所有接口要求登录，资源归属由服务端认证上下文确定：
+
+```text
+GET    /schedule/events?from=<RFC3339>&to=<RFC3339>
+GET    /schedule/events/{id}
+POST   /schedule/events
+PUT    /schedule/events/{id}
+DELETE /schedule/events/{id}
+```
+
+更新携带最近读取到的 `revision`；版本冲突时刷新后重试。普通日程使用 UTC 瞬时值，全天日程使用 UTC 零点承载日期边界。重复系列由客户端按查询窗口展开。
+
+新环境使用服务端 `anoxia.sql`。已有环境核对 `2026-09-22-schedule-event.sql` 与 `2026-09-22-schedule-event-v2.sql`，按数据库现状执行所需迁移。

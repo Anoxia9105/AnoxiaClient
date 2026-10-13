@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/group_avatar_picker.dart';
@@ -154,7 +153,7 @@ void main() {
           await expectLater(
             find.byType(MaterialApp),
             matchesGoldenFile(
-              '../../../tasks/create_group_${scenario.size.width.toInt()}x${scenario.size.height.toInt()}_${scenario.asPage ? 'page' : 'dialog'}.png',
+              '../../goldens/create_group/create_group_${scenario.size.width.toInt()}x${scenario.size.height.toInt()}_${scenario.asPage ? 'page' : 'dialog'}.png',
             ),
           );
         }

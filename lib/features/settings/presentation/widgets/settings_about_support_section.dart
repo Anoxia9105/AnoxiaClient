@@ -16,7 +16,7 @@ import 'settings_about_widgets.dart';
 
 /// 作者联系方式与对外链接。
 const String _authorEmail = 'zhangj9105@gmail.com';
-const String _authorGithubUrl = 'https://github.com/crazydavet';
+const String _officialRepositoryUrl = 'https://github.com/Anoxia9105/AnoxiaClient';
 const String _sponsorUrl = 'https://www.anoxia.cn/sponsor.html';
 const String _privacyPolicyUrl = 'https://www.anoxia.cn/privacy.html';
 const String _termsUrl = 'https://www.anoxia.cn/terms.html';
@@ -145,8 +145,8 @@ class _SettingsAboutSupportSectionState
             ActionRow(
               icon: HugeIcons.strokeRoundedGithub,
               title: 'settings_about_github'.tr(),
-              subtitle: _authorGithubUrl,
-              onTap: () => _launchUrl(context, _authorGithubUrl),
+              subtitle: _officialRepositoryUrl,
+              onTap: () => _launchUrl(context, _officialRepositoryUrl),
             ),
           ],
         ),

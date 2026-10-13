@@ -1,5 +1,7 @@
 # AGENTS.md
 
+官方仓库：https://github.com/Anoxia9105/AnoxiaClient 。文档、应用内 GitHub 入口和官网对外仓库链接统一使用此地址。
+
 Flutter IM client (package `anoxia`), cross-platform: Android / iOS / Windows / macOS / Linux / Web (JS + Wasm). 分支策略：本地与远程只保留 `master`，Web/桌面/移动端全部在 master 上开发。Repo docs and code comments are in Chinese; match that style.
 
 ## Commands
