@@ -13,6 +13,8 @@ dependencies:
   # —— Flutter SDK（必选）——
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # —— 状态管理 + 路由 ——
   flutter_riverpod: ^3.0.3 # 全局状态管理

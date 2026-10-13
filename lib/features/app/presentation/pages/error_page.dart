@@ -1,166 +1,215 @@
-import 'package:anoxia/common/widgets/toast.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/app_colors.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:hugeicons/hugeicons.dart';
 
-/// 全局错误页面
-///
-/// 用于展示应用运行时发生的错误（含 [ErrorWidget.builder] 渲染失败场景），
-/// 支持自定义错误消息与错误详情。
-///
-/// 国际化：文案默认走 easy_localization（en/zh/ja）；当错误发生在
-/// EasyLocalization 尚未初始化（如启动失败兜底页）或上下文异常时，
-/// 自动回退到内置默认文案，避免二次渲染错误。
+import 'error_page_strings.dart';
+
+/// 通用错误页：继承当前主题；启动期由 StartupErrorApp 提供独立主题和语言。
 class ErrorPage extends StatelessWidget {
-  /// 自定义错误消息；为 null 时显示通用错误文案
-  final String? message;
-
-  /// 错误详情（原始异常文本），非空时展示可复制的详情卡片
-  final String? details;
-
-  /// 重试回调；为 null 时隐藏重试按钮
-  final VoidCallback? onRetry;
-
-  /// 关闭回调（如桌面端关闭窗口）；为 null 时隐藏关闭按钮
-  final VoidCallback? onClose;
-
   const ErrorPage({
     super.key,
     this.message,
     this.details,
     this.onRetry,
     this.onClose,
+    this.startup = false,
   });
 
-  /// 安全的国际化取值：国际化未就绪或取不到值时回退默认文案，
-  /// 保证错误页本身永不因缺失 localization 而二次报错。
-  String _t(BuildContext context, String key, String fallback) {
-    try {
-      final value = context.tr(key);
-      if (value.isNotEmpty && value != key) return value;
-    } catch (_) {}
-    return fallback;
-  }
+  final String? message;
+  final String? details;
+  final VoidCallback? onRetry;
+  final VoidCallback? onClose;
+  final bool startup;
 
-  void _copy(BuildContext context) {
+  Future<void> _copy(BuildContext context) async {
     final text = details?.isNotEmpty == true
         ? details!
-        : message ?? _t(context, 'error_page_generic', '页面遇到了一些问题');
+        : message ?? ErrorPageStrings.text(context, 'error_page_generic');
+    var resultKey = 'error_page_copied';
     try {
-      Clipboard.setData(ClipboardData(text: text));
-      Toast.showToast(
-        _t(context, 'error_page_copied', '错误信息已复制'),
-        type: ToastType.success,
+      await Clipboard.setData(ClipboardData(text: text));
+    } catch (_) {
+      resultKey = 'error_page_copy_failed';
+    }
+    if (!context.mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(
+      SnackBar(
+        content: Text(ErrorPageStrings.text(context, resultKey)),
         duration: const Duration(seconds: 2),
-      );
-    } catch (_) {}
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // 错误场景下 Theme 可能不可用，兜底使用亮色默认配色，避免二次异常
-    ColorScheme scheme;
-    try {
-      scheme = Theme.of(context).colorScheme;
-    } catch (_) {
-      scheme = const ColorScheme.light();
-    }
-
-    final messageText =
-        message ?? _t(context, 'error_page_generic', '页面遇到了一些问题，请重试');
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    String label(String key) => ErrorPageStrings.text(context, key);
+    final copyLabel = label('error_page_copy');
     final detailsText = details?.isNotEmpty == true ? details : null;
+    Widget copyIcon(Color color) =>
+        HugeIcon(icon: HugeIcons.strokeRoundedCopy01, size: 18, color: color);
 
     return Scaffold(
       backgroundColor: scheme.surface,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 96,
-                  height: 96,
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: theme.extension<AppColors>()?.scaffoldGradient,
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: scheme.errorContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: HugeIcon(
-                    icon: HugeIcons.strokeRoundedAlertCircle,
-                    size: 48,
-                    color: scheme.onErrorContainer,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  _t(context, 'error_page_title', '页面渲染出错'),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  messageText,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    height: 1.5,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-                if (detailsText != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(RadiusToken.md),
-                      border: Border.all(color: scheme.outlineVariant),
-                    ),
-                    child: SelectableText(
-                      detailsText,
-                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
-                        fontFamily: 'monospace',
-                        color: scheme.onSurfaceVariant,
-                      ),
-                      maxLines: 8,
+                    color: scheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(RadiusToken.xl),
+                    border: Border.all(
+                      color: scheme.outlineVariant.withValues(alpha: .6),
                     ),
                   ),
-                ],
-                const SizedBox(height: 28),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    if (onRetry != null)
-                      FilledButton.icon(
-                        onPressed: onRetry,
-                        icon: const HugeIcon(
-                          icon: HugeIcons.strokeRoundedRefresh,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: scheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
                         ),
-                        label: Text(_t(context, 'error_page_retry', '重试')),
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedAlertCircle,
+                          size: 26,
+                          color: scheme.onPrimaryContainer,
+                        ),
                       ),
-                    OutlinedButton.icon(
-                      onPressed: () => _copy(context),
-                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedCopy01),
-                      label: Text(_t(context, 'error_page_copy', '复制错误信息')),
-                    ),
-                    if (onClose != null)
-                      TextButton(
-                        onPressed: onClose,
-                        child: Text(_t(context, 'error_page_close', '关闭窗口')),
+                      const SizedBox(height: 20),
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          label(
+                            startup
+                                ? 'error_page_startup_title'
+                                : 'error_page_title',
+                          ),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                  ],
+                      const SizedBox(height: 10),
+                      Text(
+                        message ??
+                            label(
+                              startup
+                                  ? 'error_page_startup_message'
+                                  : 'error_page_generic',
+                            ),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          height: 1.6,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          if (onRetry != null)
+                            FilledButton.icon(
+                              onPressed: onRetry,
+                              icon: HugeIcon(
+                                icon: HugeIcons.strokeRoundedRefresh,
+                                size: 18,
+                                color: scheme.onPrimary,
+                              ),
+                              label: Text(label('error_page_retry')),
+                            ),
+                          if (onRetry == null)
+                            FilledButton.icon(
+                              onPressed: () => _copy(context),
+                              icon: copyIcon(scheme.onPrimary),
+                              label: Text(copyLabel),
+                            )
+                          else
+                            OutlinedButton.icon(
+                              onPressed: () => _copy(context),
+                              icon: copyIcon(scheme.primary),
+                              label: Text(copyLabel),
+                            ),
+                          if (onClose != null)
+                            OutlinedButton(
+                              onPressed: onClose,
+                              child: Text(label('error_page_close')),
+                            ),
+                        ],
+                      ),
+                      if (detailsText != null) ...[
+                        const SizedBox(height: 20),
+                        Divider(
+                          height: 1,
+                          color: scheme.outlineVariant.withValues(alpha: .6),
+                        ),
+                        Theme(
+                          data: theme.copyWith(
+                            dividerColor: Colors.transparent,
+                          ),
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: ExpansionTile(
+                              tilePadding: EdgeInsets.zero,
+                              childrenPadding: EdgeInsets.zero,
+                              title: Text(
+                                label('error_page_details'),
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: scheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(
+                                      RadiusToken.md,
+                                    ),
+                                  ),
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxHeight: 180,
+                                    ),
+                                    child: SingleChildScrollView(
+                                      child: SelectableText(
+                                        detailsText,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              height: 1.5,
+                                              color: scheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
         ),

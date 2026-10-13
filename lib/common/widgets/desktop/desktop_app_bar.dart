@@ -1,4 +1,6 @@
 import 'package:anoxia/common/widgets/desktop/connection_status_tag.dart';
+import 'package:anoxia/common/constants/desktop_window_chrome.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
 import 'package:anoxia/common/widgets/desktop/header_search_entry.dart';
@@ -37,30 +39,42 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 最大化/还原图标以窗口真实状态为准（幂等同步），与侧边栏等 UI 状态解耦
-    final maximized = ref.watch(windowMaximizedProvider);
+    final isMacOS = DeviceUtil.isMacOS();
+    final maximized = !isMacOS && ref.watch(windowMaximizedProvider);
 
     // 用 Navigator 而非 GoRouter 扩展判断：桌面端子窗口（如强制更新窗口）
     // 的树里没有 GoRouter，context.canPop() 会抛 "No GoRouter found in context"。
     // GoRouter 的 Navigator 同样会通过 onPopPage 回调把 URL 状态同步回去。
     final canGoBack = Navigator.of(context).canPop();
+    final showBack = hideAppBarLogo && canGoBack;
+    final logo = Center(
+      child: Assets.images.appLogo.image(
+        width: 24,
+        height: 24,
+        fit: BoxFit.contain,
+        isAntiAlias: true,
+        filterQuality: FilterQuality.high,
+      ),
+    );
     return AppBar(
       elevation: 0,
       titleSpacing: 4,
-      leading: hideAppBarLogo && canGoBack
-          ? IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
-            )
-          : Center(
-              child: Assets.images.appLogo.image(
-                width: 24,
-                height: 24,
-                fit: BoxFit.contain,
-                isAntiAlias: true,
-                filterQuality: FilterQuality.high,
-                // fit: BoxFit.cover
-              ),
-            ),
+      leadingWidth: isMacOS
+          ? macosWindowControlsInset + (showBack ? kToolbarHeight : 0)
+          : null,
+      leading: Padding(
+        padding: EdgeInsets.only(
+          left: isMacOS && showBack ? macosWindowControlsInset : 0,
+        ),
+        child: showBack
+            ? IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
+              )
+            : isMacOS
+            ? const SizedBox.shrink()
+            : logo,
+      ),
       title: () {
         if (showHeaderEnhancements) {
           return const Row(
@@ -77,50 +91,57 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
           const SizedBox(width: 6),
         ],
-        //最小化
-        IconButton(
-          tooltip: 'header_minimize'.tr(),
-          padding: EdgeInsets.zero,
-          onPressed: () {
-            windowManager.minimize();
-          },
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedSolidLine01,
-            // color: widget.iconColor,
-            size: 18,
-          ),
-          style: ButtonStyle(
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
+        if (isMacOS) SizedBox(width: 48, child: logo),
+        if (!isMacOS) ...[
+          //最小化
+          IconButton(
+            tooltip: 'header_minimize'.tr(),
+            padding: EdgeInsets.zero,
+            onPressed: () {
+              windowManager.minimize();
+            },
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedSolidLine01,
+              // color: widget.iconColor,
+              size: 18,
+            ),
+            style: ButtonStyle(
+              shape: WidgetStateProperty.all(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(RadiusToken.sm),
+                ),
+              ),
             ),
           ),
-        ),
-        //正常/最大化
-        changeScreenMode(ref, maximized),
-        IconButton(
-          tooltip: 'header_closure'.tr(),
-          padding: EdgeInsets.zero,
-          hoverColor: Colors.red,
-          onPressed: () {
-            windowManager.close();
-          },
-          style: ButtonStyle(
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
+          //正常/最大化
+          changeScreenMode(ref, maximized),
+          IconButton(
+            tooltip: 'header_closure'.tr(),
+            padding: EdgeInsets.zero,
+            hoverColor: Colors.red,
+            onPressed: () {
+              windowManager.close();
+            },
+            style: ButtonStyle(
+              shape: WidgetStateProperty.all(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(RadiusToken.sm),
+                ),
+              ),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.hovered)) {
+                  return Colors.white;
+                }
+                return null;
+              }),
             ),
-            foregroundColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.hovered)) {
-                return Colors.white;
-              }
-              return null;
-            }),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedCancel01,
+              size: 20,
+              // color: widget.iconColor,
+            ),
           ),
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedCancel01,
-            size: 20,
-            // color: widget.iconColor,
-          ),
-        ),
+        ],
         const SizedBox(width: 8),
       ],
       flexibleSpace: const DragToMoveArea(child: SizedBox.expand()),
@@ -144,7 +165,9 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ),
         style: ButtonStyle(
           shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(RadiusToken.sm),
+            ),
           ),
         ),
       );
@@ -156,7 +179,9 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
       icon: const HugeIcon(icon: HugeIcons.strokeRoundedSquare, size: 16),
       style: ButtonStyle(
         shape: WidgetStateProperty.all(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(RadiusToken.sm),
+          ),
         ),
       ),
     );

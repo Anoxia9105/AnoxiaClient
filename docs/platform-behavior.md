@@ -20,6 +20,16 @@ Manifest 开启 `enableOnBackInvokedCallback`；`setFrameworkHandlesBack()` 保�
 
 相关回归：`desktop_drop_files_test.dart`、`desktop_chat_drop_target_test.dart`、`desktop_drop_upload_test.dart`、`desktop_upload_multipart_test.dart`、`file_embed_retry_test.dart`，均位于 `test/features/chat/`。新增原生插件后需完整重启应用。
 
+## macOS 窗口与通话启动
+
+macOS 主窗口与通话窗口保留左上角原生红黄绿按钮，Logo 移至标题栏最右侧。左侧为原生按钮预留 80 个逻辑像素，返回按钮和连接状态从留白之后显示；不再显示右侧重复的最小化、最大化和关闭控件。Windows 保留左侧 Logo 和右侧自绘窗口控件。标题栏拖动继续由 `DragToMoveArea` 处理；原生关闭按钮沿用主窗口退出/驻留托盘和通话窗口先释放媒体再关闭的既有流程。
+
+通话子窗口拥有独立 Flutter 引擎。`MainFlutterWindow.swift` 必须通过 `FlutterMultiWindowPlugin.setOnWindowCreatedCallback` 给每个新引擎执行 `RegisterGeneratedPlugins`，否则热键、窗口管理、存储和媒体等插件可能抛出 `MissingPluginException`。全局热键清理、自启设置和后台更新检查仅在主窗口初始化，子窗口不能清除主窗口快捷键或重复运行应用级任务。
+
+运行时 `.ico` 窗口图标仅在 Windows 设置；macOS 使用应用包图标，不调用没有原生实现的 `setIcon`。
+
+相关回归：`macos_title_bar_test.dart`、`desktop_window_setup_test.dart`、`desktop_window_close_test.dart`（`test/common/widgets/desktop/`），以及 `window_call_teardown_test.dart`（`test/features/chat/presentation/call/`）。Windows 上可以覆盖 Dart 平台分支和窗口方法调用，不能代替 macOS 原生编译及真实通话验收。Swift 注册回调改动需在 Mac 上重新构建安装，热重载不能使其生效。
+
 ## 移动端聊天面板与拍摄
 
 更多面板每页四列两排，提供拍摄、图片、文件、@、收藏、个人名片、语音和视频通话；超过八项时分页。
@@ -33,3 +43,11 @@ Manifest 开启 `enableOnBackInvokedCallback`；`setFrameworkHandlesBack()` 保�
 手机与窄屏 Web 支持下拉刷新，桌面与宽屏 Web 提供标题栏刷新按钮。空态、少量联系人和错误态也应可刷新；多个刷新入口等待同一个进行中的 Future，避免重复请求。
 
 刷新保留既有数据，失败时保留重试入口。首次加载、缓存与错误状态约定见 [聊天与联系人加载状态](./chat_loading_states.md)。
+
+## 错误页面
+
+运行时错误页继承当前应用主题和语言，使用主题卡片、标准圆角按钮与强调色；有重试回调时突出重试，否则突出复制错误信息。技术详情默认折叠，可展开滚动和选择，复制保留完整原始异常；剪贴板返回成功后才提示复制成功，失败反馈同样国际化。
+
+启动失败使用独立 `StartupErrorApp`，不依赖业务 Provider 或 EasyLocalization 初始化成功，读取已保存的语言、亮暗模式、预设/自定义强调色，并使用相同的 `AppTheme`。系统模式继续跟随系统亮暗切换。语言包尚未可用时，`ErrorPageStrings` 提供中英日最小兜底；测试对照正式 JSON，避免文案漂移。启动错误不拼接中文异常前缀，用户提示与原始异常分开显示。
+
+相关回归：`test/features/app/error_page_test.dart`，覆盖无 EasyLocalization 的三语、保存主题、系统模式、小窗口和剪贴板异步成功/失败。

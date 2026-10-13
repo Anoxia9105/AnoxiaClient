@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/constants/desktop_window_chrome.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
   @override
   void initState() {
     super.initState();
+    if (DeviceUtil.isMacOS()) return;
     windowManager.addListener(this);
     // 异步同步一次真实状态：监听注册前窗口可能已经处于最大化
     Future<void>.microtask(() async {
@@ -60,6 +62,16 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
 
   @override
   Widget build(BuildContext context) {
+    final isMacOS = DeviceUtil.isMacOS();
+    final logo = Center(
+      child: Assets.images.appLogo.image(
+        width: 24,
+        height: 24,
+        fit: BoxFit.contain,
+        isAntiAlias: true,
+        filterQuality: FilterQuality.high,
+      ),
+    );
     return AppBar(
       centerTitle: DeviceUtil.isRealMobile(),
       title: Text(
@@ -68,54 +80,52 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
           context,
         ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
       ),
-      leading: Center(
-        child: Assets.images.appLogo.image(
-          width: 24,
-          height: 24,
-          fit: BoxFit.contain,
-          isAntiAlias: true,
-          filterQuality: FilterQuality.high,
-        ),
-      ),
+      leadingWidth: isMacOS ? macosWindowControlsInset : null,
+      leading: isMacOS ? const SizedBox.shrink() : logo,
       elevation: 0,
-      actions: [
-        const SizedBox(width: 10),
-        IconButton(
-          tooltip: 'header_minimize'.tr(),
-          padding: EdgeInsets.zero,
-          onPressed: () {
-            windowManager.minimize();
-          },
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedSolidLine01,
-            size: 18,
-          ),
-        ),
-        changeScreenMode(_maximized),
-        IconButton(
-          tooltip: 'header_closure'.tr(),
-          padding: EdgeInsets.zero,
-          hoverColor: Colors.red,
-          onPressed: () {
-            windowManager.close();
-          },
-          style: ButtonStyle(
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(RadiusToken.sm),
+      actions: isMacOS
+          ? [SizedBox(width: 48, child: logo), const SizedBox(width: 8)]
+          : [
+              const SizedBox(width: 10),
+              IconButton(
+                tooltip: 'header_minimize'.tr(),
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  windowManager.minimize();
+                },
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedSolidLine01,
+                  size: 18,
+                ),
               ),
-            ),
-            foregroundColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.hovered)) {
-                return Colors.white;
-              }
-              return null;
-            }),
-          ),
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 18),
-        ),
-        const SizedBox(width: 8),
-      ],
+              changeScreenMode(_maximized),
+              IconButton(
+                tooltip: 'header_closure'.tr(),
+                padding: EdgeInsets.zero,
+                hoverColor: Colors.red,
+                onPressed: () {
+                  windowManager.close();
+                },
+                style: ButtonStyle(
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(RadiusToken.sm),
+                    ),
+                  ),
+                  foregroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.hovered)) {
+                      return Colors.white;
+                    }
+                    return null;
+                  }),
+                ),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedCancel01,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
       flexibleSpace: const DragToMoveArea(child: SizedBox.expand()),
     );
   }

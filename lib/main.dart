@@ -33,8 +33,8 @@ import 'app.dart';
 import 'common/constants/storage_keys.dart';
 import 'common/utils/device_util.dart';
 import 'common/utils/sp_util.dart';
-import 'common/widgets/toast.dart';
 import 'features/app/presentation/pages/error_page.dart';
+import 'features/app/presentation/pages/startup_error_app.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'framework/network/dio_client.dart';
 import 'framework/network/token_manager.dart';
@@ -104,11 +104,9 @@ Future<void> main(List<String> args) async {
       return ErrorPage(
         details: details.exceptionAsString(),
         onClose: DeviceUtil.isRealDesktop()
-            ? () {
-                try {
-                  desktop.windowManager.close();
-                } catch (_) {}
-              }
+            ? () => unawaited(
+                desktop.windowManager.close().catchError((Object _) {}),
+              )
             : null,
       );
     };
@@ -123,25 +121,16 @@ Future<void> main(List<String> args) async {
       return true;
     };
 
-    if (DeviceUtil.isRealDesktop()) {
-      // 热键管理器初始化（桌面端全局快捷键注册）
-      await hotKeyManager.unregisterAll();
-    }
-
     // 核心资源初始化（所有窗口共用，必须在窗口启动前完成）
     await Future.wait([
       EasyLocalization.ensureInitialized(), // 多语言初始化
       SPUtil.instance.init(), // 本地存储初始化
     ]);
 
-    _backgroundAsyncInit();
-
     // 桌面端窗口初始化（区分主/子窗口）
     if (DeviceUtil.isRealDesktop()) {
       // 自启标记要在窗口创建之前读取：决定本次是否静默驻留托盘。
       _isAutoStartLaunch = args.contains(kAutoStartArg);
-      // 初始化开机自启配置（内部按平台/构建类型判定，非 Windows 正式包为空操作）
-      await autoStartSetup();
       await _handleDesktopWindows(args);
     } else {
       // 非桌面端直接启动主窗口
@@ -150,7 +139,7 @@ Future<void> main(List<String> args) async {
   } catch (e, stack) {
     debugLog('应用启动失败', e, stack);
     // 启动失败兜底（显示错误页面）
-    runApp(_buildErrorPage('应用启动失败：$e'));
+    runApp(_buildErrorPage(e.toString()));
   }
 }
 
@@ -165,8 +154,9 @@ void _backgroundAsyncInit() {
         // provider 内部的「30 分钟轮询 + 网络恢复重试」都已保底启动。
         // （旧实现只在首查成功后才 read provider，一旦启动期超时/异常，
         //  轮询永远不会启动，导致发版后长时间检测不到新版本。）
-        final updateChecker =
-            globalContainer.read(appUpdateCheckerProvider.notifier);
+        final updateChecker = globalContainer.read(
+          appUpdateCheckerProvider.notifier,
+        );
 
         if (!DeviceUtil.isWeb) {
           // 启动期立即检查一次（带超时保护）：
@@ -174,9 +164,9 @@ void _backgroundAsyncInit() {
           // - 超时/失败：不影响已启动的轮询与网络恢复重试。
           AppUpdateInfo? updateInfo;
           try {
-            updateInfo = await updateChecker
-                .checkNow()
-                .timeout(const Duration(seconds: 10));
+            updateInfo = await updateChecker.checkNow().timeout(
+              const Duration(seconds: 10),
+            );
           } on TimeoutException {
             debugLog('启动更新检查超时，交给定时轮询兜底');
           }
@@ -202,7 +192,7 @@ Future<void> _handleDesktopWindows(List<String> args) async {
     final bool isSubWindow = _isSubWindow(windowController.arguments);
 
     if (isSubWindow) {
-      // 子窗口：继承全局容器，共享状态
+      // 子窗口：独立容器，仅同步认证 token。
       await runSubApp(windowController);
     } else {
       // 主窗口：初始化全局状态（如 Token）并启动
@@ -210,7 +200,7 @@ Future<void> _handleDesktopWindows(List<String> args) async {
     }
   } catch (e, stack) {
     debugLog('桌面窗口初始化失败', e, stack);
-    runApp(_buildErrorPage('窗口初始化失败：$e'));
+    runApp(_buildErrorPage(e.toString()));
   }
 }
 
@@ -270,6 +260,13 @@ void _installCrossTabSessionSync() {
 /// 启动主窗口（修正异步逻辑 + 窗口配置）
 Future<void> runMainApp() async {
   try {
+    if (DeviceUtil.isRealDesktop()) {
+      // 全局热键和自启仅由主窗口初始化，子窗口不能清除主窗口热键。
+      await hotKeyManager.unregisterAll();
+      await autoStartSetup();
+    }
+    // 更新检查等应用级任务只在主窗口运行。
+    _backgroundAsyncInit();
     // 预加载全局 Token（主窗口核心逻辑）
     await TokenManager.instance.getToken();
     NotificationHelper().configure(
@@ -352,7 +349,8 @@ Future<void> runMainApp() async {
     // 桌面端主窗口配置（标题栏隐藏 + 更大尺寸）
     if (DeviceUtil.isRealDesktop()) {
       // 开机自启 + 用户开启了静默启动 → 只驻留托盘，不弹主窗口
-      final silentStart = _isAutoStartLaunch &&
+      final silentStart =
+          _isAutoStartLaunch &&
           (SPUtil.instance.getBool(
                 StorageKeys.launchAtStartupSilent,
                 defValue: true,
@@ -376,14 +374,14 @@ Future<void> runMainApp() async {
     );
   } catch (e, stack) {
     debugLog('主窗口启动失败', e, stack);
-    runApp(_buildErrorPage('主窗口启动失败：$e'));
+    runApp(_buildErrorPage(e.toString()));
   }
 }
 
-/// 启动子窗口（继承全局容器 + 适配子窗口配置）
+/// 启动子窗口（独立容器 + 适配子窗口配置）
 Future<void> runSubApp(WindowController controller) async {
   try {
-    // 子窗口配置（保留标题栏 + 较小尺寸）
+    // 子窗口沿用自定义标题栏；macOS 保留原生红黄绿按钮。
     if (DeviceUtil.isRealDesktop()) {
       await setupDesktopWindow(
         size: const Size(800, 600),
@@ -404,7 +402,7 @@ Future<void> runSubApp(WindowController controller) async {
     );
   } catch (e, stack) {
     debugLog('子窗口启动失败', e, stack);
-    runApp(_buildErrorPage('子窗口启动失败：$e'));
+    runApp(_buildErrorPage(e.toString()));
   }
 }
 
@@ -441,7 +439,7 @@ Future<void> runUpdateApp(AppUpdateInfo updateInfo) async {
     );
   } catch (e, stack) {
     debugLog('更新窗口启动失败', e, stack);
-    runApp(_buildErrorPage('更新窗口启动失败：$e'));
+    runApp(_buildErrorPage(e.toString()));
   }
 }
 
@@ -455,7 +453,10 @@ Future<void> setupDesktopWindow({
   bool showWindow = true,
 }) async {
   await desktop.windowManager.ensureInitialized();
-  desktop.windowManager.setIcon(Assets.images.appIconIco);
+  // macOS 使用应用包内图标，不提供 setIcon 原生接口。
+  if (DeviceUtil.isWindows()) {
+    await desktop.windowManager.setIcon(Assets.images.appIconIco);
+  }
   final desktop.WindowOptions windowOptions = desktop.WindowOptions(
     size: size,
     minimumSize: minimumSize,
@@ -538,18 +539,13 @@ Widget _buildAppWrapper(Widget home, {String? startLocale}) {
   );
 }
 
-/// 启动失败兜底页面（复用全局错误页，国际化未就绪时自动回退默认文案）
-Widget _buildErrorPage(String message) {
-  return MaterialApp(
-    debugShowCheckedModeBanner: false,
-    scaffoldMessengerKey: Toast.messengerKey,
-    home: ErrorPage(
-      message: message,
-      onClose: () {
-        try {
-          desktop.windowManager.close();
-        } catch (_) {}
-      },
-    ),
+/// 启动失败时仍按用户语言、主题显示错误，不依赖业务初始化成功。
+Widget _buildErrorPage(String details) {
+  return StartupErrorApp(
+    details: details,
+    onClose: DeviceUtil.isRealDesktop()
+        ? () =>
+              unawaited(desktop.windowManager.close().catchError((Object _) {}))
+        : null,
   );
 }
