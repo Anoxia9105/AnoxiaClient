@@ -7,6 +7,7 @@ import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/group_room_list_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/new_friends_page.dart';
+import 'package:anoxia/features/contact/presentation/widgets/sorted_contacts/contact_groups_skeleton.dart';
 import 'package:anoxia/features/contact/presentation/widgets/sorted_contacts/sorted_contact_groups_widget.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
@@ -29,14 +30,23 @@ class ContactList extends ConsumerStatefulWidget {
 class _ContactListState extends ConsumerState<ContactList> {
   Future<void>? _refreshFuture;
 
-  Future<void> _refresh() {
+  /// 本次刷新是否由「刷新按钮」触发（下拉刷新自带指示器，不切骨架屏）。
+  bool _showRefreshSkeleton = false;
+
+  Future<void> _refresh({bool showSkeleton = false}) {
     if (_refreshFuture case final pending?) return pending;
     final future = ref.read(contactListServiceProvider.notifier).refresh();
     setState(() {
       _refreshFuture = future;
+      _showRefreshSkeleton = showSkeleton;
     });
     return future.whenComplete(() {
-      if (mounted) setState(() => _refreshFuture = null);
+      if (mounted) {
+        setState(() {
+          _refreshFuture = null;
+          _showRefreshSkeleton = false;
+        });
+      }
     });
   }
 
@@ -61,6 +71,12 @@ class _ContactListState extends ConsumerState<ContactList> {
         return (online, total); // 返回一个解构元组
       }),
     );
+    // 手动刷新期间展示骨架屏，给出明确的「刷新中」反馈；
+    // 空列表/错误态保留原界面。
+    final showSkeleton =
+        _showRefreshSkeleton &&
+        _refreshFuture != null &&
+        ref.watch(sortedContactGroupsProvider).value?.isNotEmpty == true;
     return Scaffold(
       appBar: AppBar(
         centerTitle: DeviceUtil.isMobile(context),
@@ -75,7 +91,7 @@ class _ContactListState extends ConsumerState<ContactList> {
           if (DeviceUtil.isRealDesktop() ||
               (DeviceUtil.isRealWeb() && DeviceUtil.isDesktop(context)))
             ListRefreshButton(
-              onRefresh: _refresh,
+              onRefresh: () => _refresh(showSkeleton: true),
               isRefreshing: _refreshFuture != null,
             ),
         ],
@@ -142,14 +158,19 @@ class _ContactListState extends ConsumerState<ContactList> {
                         ref.watch(contactListServiceProvider).hasValue)
                       ListRetryBanner(onRetry: _refresh),
                     Expanded(
-                      child: SortedContactGroupsWidget(
-                        onRetry: _refresh,
-                        onContactTap: () {
-                          if (DeviceUtil.useSingleColumnPush(context)) {
-                            _openMobileDetail(context, const ContactDetail());
-                          }
-                        },
-                      ),
+                      child: showSkeleton
+                          ? const ContactGroupsSkeleton()
+                          : SortedContactGroupsWidget(
+                              onRetry: _refresh,
+                              onContactTap: () {
+                                if (DeviceUtil.useSingleColumnPush(context)) {
+                                  _openMobileDetail(
+                                    context,
+                                    const ContactDetail(),
+                                  );
+                                }
+                              },
+                            ),
                     ),
                   ],
                 ),

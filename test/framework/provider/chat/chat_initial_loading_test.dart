@@ -12,6 +12,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  // roomEntryTask 会读取 appForegroundProvider（内部依赖 WidgetsBinding），
+  // 纯 ProviderContainer 测试需要先初始化测试 Binding。
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('首次进入：本地先返回空列表，远端同步结束前仍显示骨架屏', () async {
     final sync = Completer<void>();
     final container = ProviderContainer(

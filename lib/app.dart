@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:anoxia/framework/provider/core/app_foreground_provider.dart';
 
 import 'package:anoxia/features/chat/presentation/call/call_invitation_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/global_call_overlay.dart';
@@ -59,6 +60,7 @@ class _AppState extends ConsumerState<App>
   @override
   void initState() {
     super.initState();
+    ref.read(appForegroundProvider);
     // 启动系统事件监听服务（禁言/封禁/解散等事件分发入口）
     ref.read(systemEventServiceProvider);
 

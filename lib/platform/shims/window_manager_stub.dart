@@ -35,6 +35,7 @@ class WindowOptions {
 
 /// 与真实包同名的监听器混入，供 `with WindowListener` 调用点使用。
 mixin WindowListener {
+  void onWindowEvent(String eventName) {}
   void onWindowCloseRequested() {}
   Future<void> onWindowClose() async {}
   void onWindowFocus() {}

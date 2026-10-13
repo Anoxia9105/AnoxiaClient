@@ -99,7 +99,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'd39a84875725b7374466477c2b7877f803eb9e63';
+String _$roomListServiceHash() => r'9bd7ca81ec98b23126afa5b0ca4da4e189171c41';
 
 /// 聊天室列表服务
 ///
@@ -161,7 +161,7 @@ final class ActiveRoomIdProvider
   }
 }
 
-String _$activeRoomIdHash() => r'0bb4575941f63dd6c4df4100de8269deda49db94';
+String _$activeRoomIdHash() => r'415f2b8b3d222f0c8bc78a9612e586e5887955a6';
 
 /// 当前选中的聊天室 ID 全局指针
 
@@ -301,7 +301,7 @@ final class RoomEntryTaskProvider
   }
 }
 
-String _$roomEntryTaskHash() => r'16ddb38e84ba7b3fcadc0f06047e25ba7bc1a6e4';
+String _$roomEntryTaskHash() => r'8c0f3e10a365ed23b2e300f5eb307c2d7cc456de';
 
 /// 进入房间时的初始化任务
 ///
@@ -328,6 +328,53 @@ final class RoomEntryTaskFamily extends $Family
   @override
   String toString() => r'roomEntryTaskProvider';
 }
+
+/// 保留选中的房间，但后台不视为正在阅读。
+
+@ProviderFor(activelyViewedRoomId)
+final activelyViewedRoomIdProvider = ActivelyViewedRoomIdProvider._();
+
+/// 保留选中的房间，但后台不视为正在阅读。
+
+final class ActivelyViewedRoomIdProvider
+    extends $FunctionalProvider<String?, String?, String?>
+    with $Provider<String?> {
+  /// 保留选中的房间，但后台不视为正在阅读。
+  ActivelyViewedRoomIdProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'activelyViewedRoomIdProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$activelyViewedRoomIdHash();
+
+  @$internal
+  @override
+  $ProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String? create(Ref ref) {
+    return activelyViewedRoomId(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String?>(value),
+    );
+  }
+}
+
+String _$activelyViewedRoomIdHash() =>
+    r'c8e4c8d5ec0a3ac542d6423ec126a13c4cfd0c60';
 
 /// 群聊房间列表（房间类型为 GROUP）
 

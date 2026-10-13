@@ -29,14 +29,23 @@ class ChatRoomList extends ConsumerStatefulWidget {
 class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   Future<void>? _refreshFuture;
 
-  Future<void> _refresh() {
+  /// 本次刷新是否由「刷新按钮」触发（下拉刷新自带指示器，不切骨架屏）。
+  bool _showRefreshSkeleton = false;
+
+  Future<void> _refresh({bool showSkeleton = false}) {
     if (_refreshFuture case final pending?) return pending;
     final future = ref.read(roomListServiceProvider.notifier).refresh();
     setState(() {
       _refreshFuture = future;
+      _showRefreshSkeleton = showSkeleton;
     });
     return future.whenComplete(() {
-      if (mounted) setState(() => _refreshFuture = null);
+      if (mounted) {
+        setState(() {
+          _refreshFuture = null;
+          _showRefreshSkeleton = false;
+        });
+      }
     });
   }
 
@@ -133,7 +142,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
           if (DeviceUtil.isRealDesktop() ||
               (DeviceUtil.isRealWeb() && DeviceUtil.isDesktop(context)))
             ListRefreshButton(
-              onRefresh: _refresh,
+              onRefresh: () => _refresh(showSkeleton: true),
               isRefreshing: _refreshFuture != null,
             ),
           // 添加房间/好友按钮
@@ -241,6 +250,14 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   Widget _buildRoomList(BuildContext context, WidgetRef ref) {
     final filteredRooms = ref.watch(filteredSortedRoomListAsyncProvider);
     final query = ref.watch(roomSearchQueryProvider);
+
+    // 手动刷新期间展示骨架屏，给出明确的「刷新中」反馈；
+    // 空态/错误态保留原界面（其自有刷新/重试入口）。
+    final showSkeleton =
+        _showRefreshSkeleton &&
+        _refreshFuture != null &&
+        (filteredRooms.value?.isNotEmpty ?? false);
+    if (showSkeleton) return const ChatRoomListSkeleton();
 
     return filteredRooms.when(
       skipLoadingOnReload: true,

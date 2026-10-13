@@ -320,15 +320,14 @@ class ChatMessages extends _$ChatMessages {
     DateTime observedAt,
   ) async {
     final epoch = SessionEpoch.instance.value;
-    final activeRoomId = ref.read(activeRoomIdProvider);
     final currentUser = ref.read(authControllerProvider).value;
-    final incrementUnread =
-        activeRoomId != chatMessage.roomId &&
-        currentUser?.userId != chatMessage.senderId;
     var effectMessage = chatMessage;
     try {
       final inserted = await _enqueueMessageWrite(() async {
         final local = ref.read(localDataSourceProvider);
+        // 排队期间窗口可能已经最小化，落库前重新判断真正的阅读状态。
+        final isReading =
+            ref.read(activelyViewedRoomIdProvider) == chatMessage.roomId;
         if (currentUser != null &&
             chatMessage.senderId == currentUser.userId &&
             chatMessage.clientMsgId?.isNotEmpty == true) {
@@ -342,8 +341,9 @@ class ChatMessages extends _$ChatMessages {
         }
         return local.applyIncomingMessage(
           chatMessage,
-          incrementUnread: incrementUnread,
-          clearUnread: activeRoomId == chatMessage.roomId,
+          incrementUnread:
+              !isReading && currentUser?.userId != chatMessage.senderId,
+          clearUnread: isReading,
         );
       });
       if (!ref.mounted || epoch != SessionEpoch.instance.value) return;
@@ -363,7 +363,7 @@ class ChatMessages extends _$ChatMessages {
 
     ref
         .read(roomListServiceProvider.notifier)
-        .updateRoomPosition(chatMessage, activeRoomId);
+        .updateRoomPosition(chatMessage, ref.read(activeRoomIdProvider));
   }
 
   void _handleSystemMessageSideEffects(ChatMessage msg) {

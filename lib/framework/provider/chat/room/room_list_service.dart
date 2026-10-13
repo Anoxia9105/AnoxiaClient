@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:anoxia/framework/core/notification_helper.dart';
+import 'package:anoxia/framework/provider/core/app_foreground_provider.dart';
+import 'package:anoxia/framework/provider/core/message_notification_sender_provider.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/provider/core/chat_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/sync_conversations_usecase_provider.dart';
@@ -20,7 +21,6 @@ import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -94,6 +94,16 @@ class RoomListService extends _$RoomListService {
 
   @override
   FutureOr<List<ChatRoomVO>> build() async {
+    ref.listen(activelyViewedRoomIdProvider, (previous, next) {
+      // listener 回调处于 Riverpod 生命周期栈内，栈内 ref.read / 修改 state
+      // 会被断言拦截（已读上报会静默失败），因此推迟到微任务执行。
+      scheduleMicrotask(() {
+        if (!ref.mounted) return;
+        // 失焦/最小化时先提交已经看到的游标，避免两秒后清掉后台新消息的未读。
+        if (previous != null && previous != next) _flushPendingRead(previous);
+        if (next != null) markAsRead(next);
+      });
+    });
     ref.onDispose(() {
       // 销毁时：将所有待上报的 seq 立即上报，然后取消定时器
       for (final entry in _pendingReadSeqs.entries) {
@@ -178,19 +188,9 @@ class RoomListService extends _$RoomListService {
         .read(roomListRefreshFailedProvider.notifier)
         .setFailed(newState.hasError);
 
-    final activeId = ref.read(activeRoomIdProvider);
-    if (activeId != null && newState is AsyncData<List<ChatRoomVO>>) {
-      final rooms = newState.value;
-      final index = rooms.indexWhere((r) => r.roomId == activeId);
-      if (index != -1 && (rooms[index].unreadCount ?? 0) > 0) {
-        final updatedList = List<ChatRoomVO>.from(rooms);
-        updatedList[index] = updatedList[index].copyWith(unreadCount: 0);
-        state = AsyncValue.data(updatedList);
-        return;
-      }
-    }
-
     state = newState.hasError && previous.hasValue ? previous : newState;
+    final viewedId = ref.read(activelyViewedRoomIdProvider);
+    if (viewedId != null) markAsRead(viewedId);
   }
 
   Future<List<ChatRoomVO>> _fetchRoomListForStartup() async {
@@ -235,13 +235,7 @@ class RoomListService extends _$RoomListService {
     state.whenData((rooms) {
       final oldRoom = RoomLookupHelper.findByRoomId(rooms, newMessage.roomId);
       if (oldRoom != null) {
-        final lifecycle = WidgetsBinding.instance.lifecycleState;
-        // Flutter maps a hidden Web window/tab to AppLifecycleState.hidden.
-        // Source: https://api.flutter.dev/flutter/dart-ui/AppLifecycleState.html
-        final isAppForeground =
-            lifecycle == null ||
-            lifecycle == AppLifecycleState.resumed ||
-            lifecycle == AppLifecycleState.inactive;
+        final isAppForeground = ref.read(appForegroundProvider);
         final isMobile =
             defaultTargetPlatform == TargetPlatform.android ||
             defaultTargetPlatform == TargetPlatform.iOS;
@@ -268,17 +262,21 @@ class RoomListService extends _$RoomListService {
                   isGroup: oldRoom.roomType == RoomType.groupChat.index,
                 ).text
               : MessagePreviewFormatter.format(newMessage);
-          NotificationHelper().show(
-            id: newMessage.roomId.hashCode,
-            title: oldRoom.roomName ?? tr('chat_new_message'),
-            body: notificationBody,
-            payload: newMessage.roomId,
-            avatarUrl: oldRoom.roomAvatar,
+          unawaited(
+            ref
+                .read(messageNotificationSenderProvider)(
+                  id: newMessage.roomId.hashCode,
+                  title: oldRoom.roomName ?? tr('chat_new_message'),
+                  body: notificationBody,
+                  payload: newMessage.roomId,
+                  avatarUrl: oldRoom.roomAvatar,
+                )
+                .catchError((Object error) => debugLog('消息通知失败: $error')),
           );
         }
 
         // 当前房间收到新消息时，防抖上报已读 seq
-        if (isCurrentRoom &&
+        if (ref.read(activelyViewedRoomIdProvider) == newMessage.roomId &&
             !isSelfMessage &&
             newMessage.seq != null &&
             newMessage.seq! > 0) {
@@ -355,6 +353,12 @@ class RoomListService extends _$RoomListService {
   /// 防抖上报已读 seq
   ///
   /// 2 秒内连续收到消息只上报最后一次（取最大值）
+  void _flushPendingRead(String roomId) {
+    _readDebounceTimers.remove(roomId)?.cancel();
+    final seq = _pendingReadSeqs.remove(roomId);
+    if (seq != null && seq > 0) unawaited(_sendReadCursor(roomId, seq));
+  }
+
   void _debouncedReportReadSeq(String roomId, int seq) {
     final currentPending = _pendingReadSeqs[roomId] ?? 0;
     if (seq > currentPending) {
@@ -365,6 +369,10 @@ class RoomListService extends _$RoomListService {
     _readDebounceTimers[roomId] = Timer(const Duration(seconds: 2), () {
       final pendingSeq = _pendingReadSeqs.remove(roomId);
       _readDebounceTimers.remove(roomId);
+      // 防抖期间用户可能已切走 / 最小化。此时不能上报：上报会写入已读游标
+      // 并清空未读数，把随后到达的后台新消息一并标成已读。
+      // 恢复阅读状态时会由 markAsRead 用最新 seq 统一上报。
+      if (ref.read(activelyViewedRoomIdProvider) != roomId) return;
       if (pendingSeq != null && pendingSeq > 0) {
         _sendReadCursor(roomId, pendingSeq);
       }
@@ -520,23 +528,14 @@ class ActiveRoomId extends _$ActiveRoomId {
 
   /// 设置当前活跃的房间
   ///
-  /// 离开旧房间与进入新房间时都会调用 [RoomListService.markAsRead]，
-  /// 确保未读角标可以在进入会话后立即清零。
+  /// 只负责更新指针。已读/Focus 切换的副作用由 [RoomListService] 监听
+  /// [activelyViewedRoomIdProvider] 处理（进入房间先由 [roomEntryTask] 兜底），
+  /// 此处不能再 read [roomListServiceProvider]，否则与其对新指针的监听互相
+  /// 依赖，Riverpod 会判定为循环依赖。
   void setActive(String? roomId) {
     if (state == roomId) return;
 
-    final oldRoomId = state;
-    final roomList = ref.read(roomListServiceProvider.notifier);
-
-    if (oldRoomId != null) {
-      roomList.markAsRead(oldRoomId);
-    }
-
     state = roomId;
-
-    if (roomId != null) {
-      roomList.markAsRead(roomId);
-    }
   }
 }
 
@@ -575,7 +574,16 @@ Future<void> roomEntryTask(Ref ref, String roomId) async {
 
   if (!ref.mounted) return;
   ref.read(roomInitialLoadsProvider.notifier).markLoaded(roomId);
-  ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
+  if (ref.read(activelyViewedRoomIdProvider) == roomId) {
+    ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
+  }
+}
+
+/// 保留选中的房间，但后台不视为正在阅读。
+@riverpod
+String? activelyViewedRoomId(Ref ref) {
+  if (!ref.watch(appForegroundProvider)) return null;
+  return ref.watch(activeRoomIdProvider);
 }
 
 /// 群聊房间列表（房间类型为 GROUP）
