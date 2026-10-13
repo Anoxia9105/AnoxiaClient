@@ -28,7 +28,8 @@ void main() {
         );
         final image = (await codec.getNextFrame()).image;
         final rgba = (await image.toByteData(
-          format: ui.ImageByteFormat.rawRgba,
+          // 白色描边的抗锯齿边缘有透明度，必须读取非预乘 RGB。
+          format: ui.ImageByteFormat.rawStraightRgba,
         ))!;
         var visiblePixels = 0;
         for (var offset = 0; offset < rgba.lengthInBytes; offset += 4) {

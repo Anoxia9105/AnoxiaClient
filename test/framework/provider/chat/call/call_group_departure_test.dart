@@ -18,6 +18,7 @@ import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_state.dart';
 import 'package:anoxia_protocol/anoxia_protocol.dart' as v6;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -130,6 +131,8 @@ void main() {
   });
 
   test('桌面窗口传来 LiveKit 房间 ID 时，主窗口仍用会话名称发邀请', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
     const channels = MethodChannel('mixin.one/desktop_multi_window/channels');
     const windows = MethodChannel('mixin.one/desktop_multi_window');
     final messenger =
