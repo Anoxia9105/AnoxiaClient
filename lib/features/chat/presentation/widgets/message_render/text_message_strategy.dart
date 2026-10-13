@@ -32,7 +32,13 @@ class TextMessageStrategy extends MessageRenderStrategy {
       children: [
         Text(
           content,
-          style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
+          style: TextStyle(
+            color: textColor,
+            fontSize: 15,
+            height: 1.4,
+            fontWeight: FontWeight.w500,
+            fontVariations: const [FontVariation('wght', 500)],
+          ),
         ),
         MessageLinkPreview(text: content),
       ],

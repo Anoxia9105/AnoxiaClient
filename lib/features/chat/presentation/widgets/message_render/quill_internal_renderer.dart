@@ -555,6 +555,8 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
       color: widget.textColor,
       fontSize: 14,
       height: 1.4,
+      fontWeight: FontWeight.w500,
+      fontVariations: const [ui.FontVariation('wght', 500)],
     );
   }
 
@@ -684,6 +686,9 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
               ? Theme.of(context).colorScheme.surfaceContainerHighest
               : null),
       fontWeight: attributes['bold'] == true ? FontWeight.bold : null,
+      fontVariations: attributes['bold'] == true
+          ? const [ui.FontVariation('wght', 700)]
+          : null,
       fontStyle: attributes['italic'] == true ? FontStyle.italic : null,
       fontSize: explicitSize,
       fontFamily: explicitFont,

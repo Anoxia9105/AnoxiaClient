@@ -71,13 +71,16 @@ class QuillStyleConfig {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    // 紧凑消息正文与输入框统一用中等字重，笔记等非紧凑视图沿用原样式。
+    final useMediumWeight = forEditing || compact;
+
     //  基础文本样式
     final baseTextStyle = TextStyle(
       fontFamily: theme.textTheme.bodyLarge?.fontFamily,
       fontFamilyFallback: theme.textTheme.bodyLarge?.fontFamilyFallback,
       // 可变字体显式设置字重轴，让中文输入笔画更清晰，避免只合成加粗。
-      fontWeight: forEditing ? FontWeight.w500 : null,
-      fontVariations: forEditing ? const [FontVariation('wght', 500)] : null,
+      fontWeight: useMediumWeight ? FontWeight.w500 : null,
+      fontVariations: useMediumWeight ? const [FontVariation('wght', 500)] : null,
       fontSize: 14,
       color: color ?? colorScheme.onSurface,
     );
@@ -92,7 +95,7 @@ class QuillStyleConfig {
     final codeTextStyle = QuillStyleConfig.codeTextStyle(context);
 
     return DefaultStyles(
-      bold: forEditing
+      bold: useMediumWeight
           ? const TextStyle(
               fontWeight: FontWeight.w700,
               fontVariations: [FontVariation('wght', 700)],
