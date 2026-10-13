@@ -42,7 +42,7 @@ final class RoomListRefreshFailedProvider
 }
 
 String _$roomListRefreshFailedHash() =>
-    r'85585aa8bc03bc8b85b9dbfc19519df8fca14d72';
+    r'7cc821e29f3171ca61a4fcc47664648e8fe37afc';
 
 abstract class _$RoomListRefreshFailed extends $Notifier<bool> {
   bool build();
@@ -99,7 +99,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'4501872cbd4fdec4f1606207cee733b13eb8318c';
+String _$roomListServiceHash() => r'd39a84875725b7374466477c2b7877f803eb9e63';
 
 /// 聊天室列表服务
 ///
@@ -183,6 +183,64 @@ abstract class _$ActiveRoomId extends $Notifier<String?> {
   }
 }
 
+/// 当前登录会话内完成过首次同步的房间，包含确实没有消息的房间。
+
+@ProviderFor(RoomInitialLoads)
+final roomInitialLoadsProvider = RoomInitialLoadsProvider._();
+
+/// 当前登录会话内完成过首次同步的房间，包含确实没有消息的房间。
+final class RoomInitialLoadsProvider
+    extends $NotifierProvider<RoomInitialLoads, Set<String>> {
+  /// 当前登录会话内完成过首次同步的房间，包含确实没有消息的房间。
+  RoomInitialLoadsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'roomInitialLoadsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$roomInitialLoadsHash();
+
+  @$internal
+  @override
+  RoomInitialLoads create() => RoomInitialLoads();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Set<String> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Set<String>>(value),
+    );
+  }
+}
+
+String _$roomInitialLoadsHash() => r'02ae031615424edf2eea6cb29be40b9621389cb6';
+
+/// 当前登录会话内完成过首次同步的房间，包含确实没有消息的房间。
+
+abstract class _$RoomInitialLoads extends $Notifier<Set<String>> {
+  Set<String> build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<Set<String>, Set<String>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<Set<String>, Set<String>>,
+              Set<String>,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 /// 进入房间时的初始化任务
 ///
 /// 确保消息和成员数据已同步到本地
@@ -243,7 +301,7 @@ final class RoomEntryTaskProvider
   }
 }
 
-String _$roomEntryTaskHash() => r'08384663bb5a80a64775a420540e5d0542004b2d';
+String _$roomEntryTaskHash() => r'16ddb38e84ba7b3fcadc0f06047e25ba7bc1a6e4';
 
 /// 进入房间时的初始化任务
 ///

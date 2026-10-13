@@ -42,7 +42,7 @@ final class ContactRefreshFailedProvider
 }
 
 String _$contactRefreshFailedHash() =>
-    r'4bdb37a904c3ea6f8ccc8f339b553339599b2a67';
+    r'57bacab42bb87f39c0b237b446f6ebc342c342fd';
 
 abstract class _$ContactRefreshFailed extends $Notifier<bool> {
   bool build();

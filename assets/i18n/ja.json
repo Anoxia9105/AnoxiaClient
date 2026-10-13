@@ -1378,6 +1378,8 @@
   "settings_window_minimize_to_tray": "閉じるときトレイに最小化",
   "settings_window_minimize_to_tray_desc": "終了せずシステムトレイに残します",
   "settings_reduce_motion": "アニメーションを減らす",
+  "settings_chat_effects": "チャットのキーワードエフェクト",
+  "settings_chat_effects_desc": "「誕生日おめでとう」「会いたい」などのメッセージを送受信すると絵文字が降ります。日本語・中国語・英語に対応。この端末のみに適用され、動きを減らす設定中は停止します。",
   "settings_reduce_motion_desc": "画面の動きを抑えて快適に",
   "settings_text_scale": "文字サイズ",
   "settings_text_scale_desc": "全体の文字とコントロールの倍率",

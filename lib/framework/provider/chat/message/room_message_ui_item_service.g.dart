@@ -8,6 +8,93 @@ part of 'room_message_ui_item_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 消息区与输入区共用的首次加载状态。
+
+@ProviderFor(chatInitialLoading)
+final chatInitialLoadingProvider = ChatInitialLoadingFamily._();
+
+/// 消息区与输入区共用的首次加载状态。
+
+final class ChatInitialLoadingProvider
+    extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  /// 消息区与输入区共用的首次加载状态。
+  ChatInitialLoadingProvider._({
+    required ChatInitialLoadingFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'chatInitialLoadingProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$chatInitialLoadingHash();
+
+  @override
+  String toString() {
+    return r'chatInitialLoadingProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    final argument = this.argument as String;
+    return chatInitialLoading(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ChatInitialLoadingProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$chatInitialLoadingHash() =>
+    r'e99f15941af7a1d8078d2318c6636993ee35a819';
+
+/// 消息区与输入区共用的首次加载状态。
+
+final class ChatInitialLoadingFamily extends $Family
+    with $FunctionalFamilyOverride<bool, String> {
+  ChatInitialLoadingFamily._()
+    : super(
+        retry: null,
+        name: r'chatInitialLoadingProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// 消息区与输入区共用的首次加载状态。
+
+  ChatInitialLoadingProvider call(String roomId) =>
+      ChatInitialLoadingProvider._(argument: roomId, from: this);
+
+  @override
+  String toString() => r'chatInitialLoadingProvider';
+}
+
 /// 聊天 UI 列表计算服务
 ///
 /// 专门为某个房间计算「时间条 + 消息」混合平铺列表的 ViewProvider。

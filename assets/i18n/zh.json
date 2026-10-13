@@ -1378,6 +1378,8 @@
   "settings_window_minimize_to_tray": "关闭时最小化到托盘",
   "settings_window_minimize_to_tray_desc": "关闭窗口时不退出应用，保留在系统托盘",
   "settings_reduce_motion": "减少动效",
+  "settings_chat_effects": "聊天关键词特效",
+  "settings_chat_effects_desc": "发送或收到「生日快乐」「想你了」等消息时播放下落特效，支持中英日三语。仅控制本设备；开启减少动效时暂停。",
   "settings_reduce_motion_desc": "降低界面动画与过渡效果，适合更省电或更简洁的体验",
   "settings_text_scale": "界面字号",
   "settings_text_scale_desc": "调整全局文字与控件的缩放比例",

@@ -15,6 +15,7 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/chat/effect/chat_effect_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -311,25 +312,48 @@ class ChatMessages extends _$ChatMessages {
 
   void _handleIncomingMessage(RoomMessage msg) {
     final chatMessage = ChatMessage.fromRoomMessage(msg);
-    unawaited(_processIncomingMessage(chatMessage));
+    unawaited(_processIncomingMessage(chatMessage, DateTime.now()));
   }
 
-  Future<void> _processIncomingMessage(ChatMessage chatMessage) async {
+  Future<void> _processIncomingMessage(
+    ChatMessage chatMessage,
+    DateTime observedAt,
+  ) async {
+    final epoch = SessionEpoch.instance.value;
     final activeRoomId = ref.read(activeRoomIdProvider);
     final currentUser = ref.read(authControllerProvider).value;
     final incrementUnread =
         activeRoomId != chatMessage.roomId &&
         currentUser?.userId != chatMessage.senderId;
+    var effectMessage = chatMessage;
     try {
-      final inserted = await _enqueueMessageWrite(
-        () => ref
-            .read(localDataSourceProvider)
-            .applyIncomingMessage(
-              chatMessage,
-              incrementUnread: incrementUnread,
-              clearUnread: activeRoomId == chatMessage.roomId,
-            ),
-      );
+      final inserted = await _enqueueMessageWrite(() async {
+        final local = ref.read(localDataSourceProvider);
+        if (currentUser != null &&
+            chatMessage.senderId == currentUser.userId &&
+            chatMessage.clientMsgId?.isNotEmpty == true) {
+          final original = await local.getMessageByClientMsgId(
+            chatMessage.clientMsgId!,
+          );
+          // 回显先到时也沿用本地原发送时间，避免离线旧消息用新时间补播。
+          if (original != null) {
+            effectMessage = chatMessage.copyWith(timestamp: original.timestamp);
+          }
+        }
+        return local.applyIncomingMessage(
+          chatMessage,
+          incrementUnread: incrementUnread,
+          clearUnread: activeRoomId == chatMessage.roomId,
+        );
+      });
+      if (!ref.mounted || epoch != SessionEpoch.instance.value) return;
+      // 自己的回显可能已经按 clientMsgId 落过库，仍需与 ACK 归一去重。
+      if (inserted ||
+          (currentUser != null && chatMessage.senderId == currentUser.userId)) {
+        ref
+            .read(chatEffectDispatcherProvider)
+            .offer(effectMessage, observedAt: observedAt);
+      }
       if (!inserted) return;
     } catch (error, stackTrace) {
       debugLog('缓存入站消息失败', error, stackTrace);
@@ -418,6 +442,9 @@ class ChatMessages extends _$ChatMessages {
     int? seq,
     int? timestamp,
   }) async {
+    final observedAt = DateTime.now();
+    final epoch = SessionEpoch.instance.value;
+    ChatMessage? effectMessage;
     await _enqueueMessageWrite(() async {
       final local = ref.read(localDataSourceProvider);
       final message = await local.getMessageByClientMsgId(clientMsgId);
@@ -431,7 +458,18 @@ class ChatMessages extends _$ChatMessages {
           deliveryStatus: DeliveryStatus.sent,
         ),
       );
+      // 新鲜度沿用原发送时间，防止离线重试的旧祝福因新 ACK 时间补播。
+      effectMessage = message.copyWith(
+        messageId: messageId,
+        deliveryStatus: DeliveryStatus.sent,
+      );
     });
+    if (!ref.mounted || epoch != SessionEpoch.instance.value) return;
+    if (effectMessage case final message?) {
+      ref
+          .read(chatEffectDispatcherProvider)
+          .offer(message, observedAt: observedAt);
+    }
   }
 
   Future<void> markFailedByClientMsgId(

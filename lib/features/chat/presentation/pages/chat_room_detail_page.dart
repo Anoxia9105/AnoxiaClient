@@ -16,6 +16,7 @@ import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_det
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/group_announcement_banner.dart';
 import 'package:anoxia/features/chat/presentation/widgets/desktop_chat_drop_target.dart';
+import 'package:anoxia/features/chat/presentation/widgets/effects/chat_effect_layer.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
@@ -23,7 +24,6 @@ import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_ui_item_service.dart';
-import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -139,9 +139,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final chatUiListResult = ref.watch(chatUiListProvider(widget.roomId));
     final flatItems = chatUiListResult.items;
 
-    final messages = ref.watch(roomMessagesProvider(widget.roomId));
-    final showInitialSkeleton =
-        entryTask.isLoading && !messages.hasValue && flatItems.isEmpty;
+    final showInitialSkeleton = ref.watch(
+      chatInitialLoadingProvider(widget.roomId),
+    );
     final selection = ref.watch(
       forwardSelectionControllerProvider(widget.roomId),
     );
@@ -200,47 +200,50 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
             .insertPickedFiles(controller, files, isActive: isActive);
         if (isActive()) ref.read(chatFocusNodeProvider(roomId)).requestFocus();
       },
-      child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        appBar: showInitialSkeleton
-            ? AppBar()
-            : ChatAppBar(roomId: widget.roomId),
-        drawerScrimColor: Colors.transparent,
-        body: Column(
-          children: [
-            if (!showInitialSkeleton && currentRoom.roomType == 1)
-              GroupAnnouncementBanner(
-                roomId: widget.roomId,
-                announcement: currentRoom.roomDescription ?? '',
-              ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: _buildChatBody(
-                  showInitialSkeleton: showInitialSkeleton,
-                  entryTask: entryTask,
-                  flatItems: flatItems,
-                  currentRoom: currentRoom,
+      child: ChatEffectLayer(
+        roomId: widget.roomId,
+        child: Scaffold(
+          resizeToAvoidBottomInset: false,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          appBar: showInitialSkeleton
+              ? AppBar()
+              : ChatAppBar(roomId: widget.roomId),
+          drawerScrimColor: Colors.transparent,
+          body: Column(
+            children: [
+              if (!showInitialSkeleton && currentRoom.roomType == 1)
+                GroupAnnouncementBanner(
+                  roomId: widget.roomId,
+                  announcement: currentRoom.roomDescription ?? '',
+                ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: _buildChatBody(
+                    showInitialSkeleton: showInitialSkeleton,
+                    entryTask: entryTask,
+                    flatItems: flatItems,
+                    currentRoom: currentRoom,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
+          floatingActionButton: _scrollController.showScrollDownButton
+              ? ChatRoomDetailScrollDownButton(
+                  onPressed: () =>
+                      _scrollController.scrollToBottom(animated: true),
+                )
+              : null,
+          bottomNavigationBar: selection.active
+              ? ForwardSelectionBar(roomId: widget.roomId)
+              : ChatRoomDetailBottomBar(
+                  showSkeleton: showInitialSkeleton,
+                  roomStatus: currentRoom.roomStatus,
+                  onFieldTap: () =>
+                      _scrollController.scrollToBottom(animated: true),
+                ),
         ),
-        floatingActionButton: _scrollController.showScrollDownButton
-            ? ChatRoomDetailScrollDownButton(
-                onPressed: () =>
-                    _scrollController.scrollToBottom(animated: true),
-              )
-            : null,
-        bottomNavigationBar: selection.active
-            ? ForwardSelectionBar(roomId: widget.roomId)
-            : ChatRoomDetailBottomBar(
-                showSkeleton: showInitialSkeleton,
-                roomStatus: currentRoom.roomStatus,
-                onFieldTap: () =>
-                    _scrollController.scrollToBottom(animated: true),
-              ),
       ),
     );
   }

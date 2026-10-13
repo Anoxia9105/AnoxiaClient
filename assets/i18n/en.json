@@ -1378,6 +1378,8 @@
   "settings_window_minimize_to_tray": "Minimize to tray on close",
   "settings_window_minimize_to_tray_desc": "Keep app in system tray instead of quitting",
   "settings_reduce_motion": "Reduce motion",
+  "settings_chat_effects": "Chat keyword effects",
+  "settings_chat_effects_desc": "Show falling emoji for messages such as “Happy Birthday” and “Miss you” in English, Chinese, or Japanese. Applies to this device only; paused when Reduce motion is on.",
   "settings_reduce_motion_desc": "Reduce animations and transitions for a calmer experience",
   "settings_text_scale": "Text scale",
   "settings_text_scale_desc": "Adjust global text and control scaling",

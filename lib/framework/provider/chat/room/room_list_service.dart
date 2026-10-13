@@ -540,11 +540,27 @@ class ActiveRoomId extends _$ActiveRoomId {
   }
 }
 
+/// 当前登录会话内完成过首次同步的房间，包含确实没有消息的房间。
+@Riverpod(keepAlive: true)
+class RoomInitialLoads extends _$RoomInitialLoads {
+  @override
+  Set<String> build() {
+    ref.watch(tokenCacheProvider);
+    return const {};
+  }
+
+  void markLoaded(String roomId) {
+    if (state.contains(roomId)) return;
+    state = {...state, roomId};
+  }
+}
+
 /// 进入房间时的初始化任务
 ///
 /// 确保消息和成员数据已同步到本地
 @riverpod
 Future<void> roomEntryTask(Ref ref, String roomId) async {
+  ref.watch(tokenCacheProvider);
   final room = ref.watch(currentRoomProvider(roomId));
 
   // 官方虚拟房间无需同步消息 / 成员
@@ -557,6 +573,8 @@ Future<void> roomEntryTask(Ref ref, String roomId) async {
     ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId),
   ]);
 
+  if (!ref.mounted) return;
+  ref.read(roomInitialLoadsProvider.notifier).markLoaded(roomId);
   ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
 }
 

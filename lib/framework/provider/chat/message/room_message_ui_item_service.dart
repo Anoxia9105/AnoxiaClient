@@ -1,9 +1,27 @@
 ﻿import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'room_message_service.dart';
+import '../room/room_list_service.dart';
 
 part 'room_message_ui_item_service.g.dart';
+
+/// 消息区与输入区共用的首次加载状态。
+@riverpod
+bool chatInitialLoading(Ref ref, String roomId) {
+  final entryTask = ref.watch(roomEntryTaskProvider(roomId));
+  final messages = ref.watch(roomMessagesProvider(roomId));
+  final items = ref.watch(chatUiListProvider(roomId)).items;
+  final hasLoaded = ref.watch(
+    roomInitialLoadsProvider.select((rooms) => rooms.contains(roomId)),
+  );
+  if (items.isNotEmpty || entryTask.hasError) return false;
+  // 本地空列表只代表缓存为空，不能代替首次远端同步完成。
+  // 切回已加载房间时继续使用缓存；缓存失效则等待消息流首批数据。
+  return (entryTask.isLoading && !hasLoaded) ||
+      (messages.isLoading && !messages.hasValue);
+}
 
 /// 聊天 UI 列表计算服务
 ///

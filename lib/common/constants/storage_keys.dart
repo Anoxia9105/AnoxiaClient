@@ -50,6 +50,9 @@ class StorageKeys {
   /// 是否减少动效
   static const String reduceMotion = 'REDUCE_MOTION';
 
+  /// 本设备是否播放聊天关键词特效。
+  static const String chatEffectsEnabled = 'CHAT_EFFECTS_ENABLED';
+
   /// 界面字号缩放（double）
   static const String textScaleFactor = 'TEXT_SCALE_FACTOR';
 

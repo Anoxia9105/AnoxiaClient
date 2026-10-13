@@ -2,6 +2,7 @@ import 'package:anoxia/framework/domain/official_room_config.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/desktop/launch_at_startup_provider.dart';
 import 'package:anoxia/framework/provider/setting/general_settings_provider.dart';
+import 'package:anoxia/framework/provider/setting/chat_effect_settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/hide_official_room_provider.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/platform/shims/auto_start_shim.dart';
@@ -27,6 +28,7 @@ class SettingsGeneralSection extends ConsumerWidget {
     final sendShortcut = ref.watch(chatSendShortcutProvider);
     final messagePreview = ref.watch(messagePreviewProvider);
     final autoPlay = ref.watch(autoPlayMediaProvider);
+    final chatEffects = ref.watch(chatEffectsEnabledProvider);
     final autoDownloadUpdate = ref.watch(autoDownloadUpdateProvider);
     final updateCellularDownload = ref.watch(updateCellularDownloadProvider);
     final launchAtStartup = ref.watch(launchAtStartupProvider);
@@ -70,6 +72,14 @@ class SettingsGeneralSection extends ConsumerWidget {
         _GroupLabel(icon: HugeIcons.strokeRoundedMessage02, title: 'settings_general_group_messages'.tr()),
         _SettingsCard(
           children: [
+            _SwitchTile(
+              icon: HugeIcons.strokeRoundedSparkles,
+              title: 'settings_chat_effects'.tr(),
+              subtitle: 'settings_chat_effects_desc'.tr(),
+              value: chatEffects,
+              onChanged: (v) => ref.read(chatEffectsEnabledProvider.notifier).setEnabled(v),
+            ),
+            _Divider(),
             // 发送快捷键依赖实体键盘的 Ctrl/Enter，手机/平板（触屏、无实体键盘）
             // 直接隐藏，与桌面端保持区分；按布局宽度判定，Web 窄窗口同样隐藏。
             if (DeviceUtil.isDesktop(context)) ...[

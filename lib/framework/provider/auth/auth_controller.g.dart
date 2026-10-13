@@ -45,7 +45,7 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'f4f289fd4b0d083c1133f417b16eeea9cfad5263';
+String _$authControllerHash() => r'73cea027802a4a9dcd654c62ce3f23779ed06de9';
 
 /// 认证状态管理器
 ///
@@ -151,4 +151,4 @@ final class GuestLoginEnabledProvider
   }
 }
 
-String _$guestLoginEnabledHash() => r'6b4ea4962c1956ee8da23351206eea44bdb5e101';
+String _$guestLoginEnabledHash() => r'd27569dc6cdf96276edde5cdf028c11f71545573';
