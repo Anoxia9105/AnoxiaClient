@@ -64,16 +64,20 @@ class QuillStyleConfig {
     BuildContext context, {
     Color? color,
     bool compact = false,
+    bool forEditing = false,
     QuillCheckboxBuilder? checkboxBuilder,
     VerticalSpacing? listLineSpacing,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final String? fontFamily = theme.textTheme.bodyLarge?.fontFamily;
 
     //  基础文本样式
     final baseTextStyle = TextStyle(
-      fontFamily: fontFamily,
+      fontFamily: theme.textTheme.bodyLarge?.fontFamily,
+      fontFamilyFallback: theme.textTheme.bodyLarge?.fontFamilyFallback,
+      // 可变字体显式设置字重轴，让中文输入笔画更清晰，避免只合成加粗。
+      fontWeight: forEditing ? FontWeight.w500 : null,
+      fontVariations: forEditing ? const [FontVariation('wght', 500)] : null,
       fontSize: 14,
       color: color ?? colorScheme.onSurface,
     );
@@ -88,6 +92,12 @@ class QuillStyleConfig {
     final codeTextStyle = QuillStyleConfig.codeTextStyle(context);
 
     return DefaultStyles(
+      bold: forEditing
+          ? const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontVariations: [FontVariation('wght', 700)],
+            )
+          : null,
       // 正文段落样式
       paragraph: DefaultTextBlockStyle(
         baseTextStyle,

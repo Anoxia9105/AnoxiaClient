@@ -17,9 +17,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/platform/shims/tray_manager_shim.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
-import 'common/constants/storage_keys.dart';
 import 'common/utils/device_util.dart';
-import 'common/utils/sp_util.dart';
+import 'common/widgets/desktop/desktop_window_close_behavior.dart';
 import 'common/widgets/toast.dart';
 import 'framework/provider/setting/general_settings_provider.dart';
 import 'framework/core/app_globals.dart';
@@ -47,7 +46,8 @@ class App extends ConsumerStatefulWidget {
   ConsumerState createState() => _AppState();
 }
 
-class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
+class _AppState extends ConsumerState<App>
+    with WindowListener, DesktopWindowCloseBehavior, TrayListener {
   /// 未读消息角标订阅（移动端应用图标、macOS Dock、Windows 任务栏）
   ProviderSubscription<int>? _unreadBadgeSubscription;
   ProviderSubscription<int>? _callThemeSubscription;
@@ -68,13 +68,8 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     // 桌面端：初始化托盘和窗口事件监听
     if (DeviceUtil.isRealDesktop()) {
       _initTray();
-      final minimizeToTray =
-          SPUtil.instance.getBool(
-            StorageKeys.windowMinimizeToTray,
-            defValue: true,
-          ) ??
-          true;
-      windowManager.setPreventClose(minimizeToTray);
+      // 统一拦截原生关闭事件，由监听器根据实时设置决定隐藏或退出。
+      windowManager.setPreventClose(true);
       windowManager.addListener(this);
       trayManager.addListener(this);
       _callThemeSubscription = ref.listenManual<int>(themeIndexProvider, (
@@ -86,9 +81,6 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
         ref
             .read(callWindowControllerProvider.notifier)
             .updateSettings(themeIndex: next);
-      });
-      ref.listenManual<bool>(windowMinimizeToTrayProvider, (previous, next) {
-        windowManager.setPreventClose(next);
       });
     }
 
@@ -207,8 +199,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
 
   @override
   void onTrayIconMouseDown() {
-    windowManager.show();
-    windowManager.focus();
+    unawaited(showMainWindow());
   }
 
   @override
@@ -219,16 +210,19 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {
     if (menuItem.key == 'show_window') {
-      windowManager.show();
-      windowManager.focus();
+      unawaited(showMainWindow());
     } else if (menuItem.key == 'hide_window') {
       windowManager.hide();
     } else if (menuItem.key == 'exit_app') {
-      unawaited(_exitApplication());
+      unawaited(exitApplication());
     }
   }
 
-  Future<void> _exitApplication() async {
+  @override
+  bool get minimizeToTray => ref.read(windowMinimizeToTrayProvider);
+
+  @override
+  Future<void> exitApplication() async {
     try {
       await ref
           .read(wsControllerProvider.notifier)

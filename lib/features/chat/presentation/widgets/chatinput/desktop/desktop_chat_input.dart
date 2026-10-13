@@ -354,7 +354,7 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
               placeholder: 'chat_input_placeholder'.tr(),
               autoFocus: false,
               padding: const EdgeInsets.all(8),
-              customStyles: QuillStyleConfig.get(context),
+              customStyles: QuillStyleConfig.get(context, forEditing: true),
               // flutter_quill 的 onKeyPressed 仍是 experimental，但这是当前版本
               // 处理键盘快捷键（Ctrl+B/I/U 等）的唯一入口，故忽略该提示。
               // ignore: experimental_member_use

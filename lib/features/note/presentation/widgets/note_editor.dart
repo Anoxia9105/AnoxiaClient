@@ -431,6 +431,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
                                       ),
                                       customStyles: QuillStyleConfig.get(
                                         context,
+                                        forEditing: true,
                                         checkboxBuilder:
                                             const NoteTaskCheckboxBuilder(),
                                         listLineSpacing: const VerticalSpacing(

@@ -102,7 +102,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
           padding: EdgeInsets.zero,
           hoverColor: Colors.red,
           onPressed: () {
-            windowManager.hide();
+            windowManager.close();
           },
           style: ButtonStyle(
             shape: WidgetStateProperty.all(
