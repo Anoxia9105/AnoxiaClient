@@ -1,7 +1,10 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:anoxia/domain/models/chat_effect_rule.dart';
 import 'package:flutter/material.dart';
+
+import 'chat_effect_sprite_atlas.dart';
 
 /// 仅绘制下落粒子，不展示卡片、弹窗或文字，不重建下面的消息列表。
 class ChatEffectRain extends StatefulWidget {
@@ -23,7 +26,8 @@ class ChatEffectRain extends StatefulWidget {
 class _ChatEffectRainState extends State<ChatEffectRain>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final _RainPainter _painter;
+  _RainPainter? _painter;
+  double? _pixelRatio;
 
   @override
   void initState() {
@@ -32,7 +36,6 @@ class _ChatEffectRainState extends State<ChatEffectRain>
       vsync: this,
       duration: widget.rule.duration,
     );
-    _painter = _RainPainter(_controller, widget.rule, widget.particleCount);
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) widget.onCompleted();
     });
@@ -40,9 +43,24 @@ class _ChatEffectRainState extends State<ChatEffectRain>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ratio = MediaQuery.devicePixelRatioOf(context).clamp(1.0, 3.0);
+    if (_pixelRatio == ratio) return;
+    _pixelRatio = ratio;
+    _painter?.dispose();
+    _painter = _RainPainter(
+      _controller,
+      widget.rule,
+      widget.particleCount,
+      ratio,
+    );
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
-    _painter.dispose();
+    _painter?.dispose();
     super.dispose();
   }
 
@@ -72,68 +90,79 @@ class _RainParticle {
 }
 
 class _RainPainter extends CustomPainter {
-  _RainPainter(this.animation, ChatEffectRule rule, int count)
-    : super(repaint: animation) {
-    // 每种 emoji 只排版一次，随机轨迹也只在动画开始时生成。
-    for (final emoji in rule.emojis) {
-      _sprites.add(
-        TextPainter(
-          text: TextSpan(
-            text: emoji,
-            style: const TextStyle(
-              fontSize: 32,
-              fontFamilyFallback: [
-                'Apple Color Emoji',
-                'Segoe UI Emoji',
-                'Noto Color Emoji',
-              ],
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout(),
-      );
-    }
+  _RainPainter(
+    this.animation,
+    ChatEffectRule rule,
+    int count,
+    double pixelRatio,
+  ) : _atlas = ChatEffectSpriteAtlas(rule.emojis, pixelRatio),
+      _transforms = Float32List(count * 4),
+      _rects = Float32List(count * 4),
+      _colors = Int32List(count),
+      super(repaint: animation) {
     final random = math.Random();
     _particles = List.generate(
       count,
-      (_) => _RainParticle(random, _sprites.length),
+      (_) => _RainParticle(random, rule.emojis.length),
     );
+    for (var i = 0; i < count; i++) {
+      final cell = _atlas.cells[_particles[i].sprite];
+      final offset = i * 4;
+      _rects[offset] = cell.left;
+      _rects[offset + 1] = cell.top;
+      _rects[offset + 2] = cell.right;
+      _rects[offset + 3] = cell.bottom;
+    }
   }
 
   final Animation<double> animation;
-  final _sprites = <TextPainter>[];
+  final ChatEffectSpriteAtlas _atlas;
+  final Float32List _transforms, _rects;
+  final Int32List _colors;
+  final _paint = Paint()..filterQuality = FilterQuality.low;
   late final List<_RainParticle> _particles;
 
   @override
   void paint(Canvas canvas, Size size) {
     final progress = animation.value;
     final opacity = ((1 - progress) / .12).clamp(0.0, .9);
-    canvas.saveLayer(
-      Offset.zero & size,
-      Paint()..color = Colors.white.withValues(alpha: opacity),
-    );
-    for (final particle in _particles) {
+    final color = ((opacity * 255).round() << 24) | 0x00ffffff;
+    final anchor = _atlas.cellPixels / 2;
+    for (var i = 0; i < _particles.length; i++) {
+      final particle = _particles[i];
+      final offset = i * 4;
+      _colors[i] = color;
       final t = (progress - particle.delay) / (1 - particle.delay);
-      if (t < 0 || t > 1) continue;
-      final sprite = _sprites[particle.sprite];
+      if (t < 0 || t > 1) {
+        _transforms[offset] = 0;
+        _transforms[offset + 1] = 0;
+        continue;
+      }
       final x = particle.x * math.max(0, size.width - 40) + particle.drift * t;
       final y = -60 + (size.height + 120) * t;
-      canvas.save();
-      canvas.translate(x + 16, y + 16);
-      canvas.rotate(particle.rotation * t);
-      canvas.scale(particle.scale);
-      sprite.paint(canvas, Offset(-sprite.width / 2, -sprite.height / 2));
-      canvas.restore();
+      final scale = particle.scale / _atlas.pixelRatio;
+      final angle = particle.rotation * t;
+      final scos = math.cos(angle) * scale;
+      final ssin = math.sin(angle) * scale;
+      _transforms[offset] = scos;
+      _transforms[offset + 1] = ssin;
+      _transforms[offset + 2] = x + 16 - anchor * scos + anchor * ssin;
+      _transforms[offset + 3] = y + 16 - anchor * ssin - anchor * scos;
     }
-    canvas.restore();
+    // 每帧一次纹理批量绘制，透明度逐粒子调制，避免全屏 saveLayer。
+    canvas.drawRawAtlas(
+      _atlas.image,
+      _transforms,
+      _rects,
+      _colors,
+      BlendMode.modulate,
+      null,
+      _paint,
+    );
   }
 
   @override
   bool shouldRepaint(covariant _RainPainter oldDelegate) => oldDelegate != this;
 
-  void dispose() {
-    for (final sprite in _sprites) {
-      sprite.dispose();
-    }
-  }
+  void dispose() => _atlas.dispose();
 }
