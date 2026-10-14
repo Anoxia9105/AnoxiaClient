@@ -94,6 +94,8 @@ void main() {
     offer('m1');
     await tester.pump();
     expect(find.byType(ChatEffectRain), findsOneWidget);
+    final rain = tester.widget<ChatEffectRain>(find.byType(ChatEffectRain));
+    expect(rain.particleCount, 24); // 800 宽基础档 24 × 生日规则 1.0
     expect(find.byType(Dialog), findsNothing);
     expect(find.text('生日快乐'), findsNothing);
     await tester.tap(find.text('点我'));
@@ -103,13 +105,14 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('想你了只播放星星下落，关闭共用开关立即停止', (tester) async {
+  testWidgets('想你了落亲亲红心并按满屏密度播放，关闭共用开关立即停止', (tester) async {
     await tester.pumpWidget(app());
-    offer('stars1', text: '想你了');
+    offer('kiss1', text: '想你了');
     await tester.pump();
     final rain = tester.widget<ChatEffectRain>(find.byType(ChatEffectRain));
-    expect(rain.rule.id, 'miss_you');
-    expect(rain.rule.emojis, ['⭐', '🌟', '✨']);
+    expect(rain.rule.id, 'kiss');
+    expect(rain.rule.emojis, ['💋', '❤️']);
+    expect(rain.particleCount, 36); // 24 × 满屏密度 1.5
     expect(find.byType(Dialog), findsNothing);
     expect(find.text('想你了'), findsNothing);
     await tester.tap(find.text('点我'));

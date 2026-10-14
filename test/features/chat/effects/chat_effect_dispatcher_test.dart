@@ -40,7 +40,9 @@ void main() {
   tearDown(() => dispatcher.dispose());
 
   test('中文祝福和英文词组命中生日，普通聊天不命中', () {
-    expect(matchChatEffect(message())?.id, 'birthday');
+    final rule = matchChatEffect(message());
+    expect(rule?.id, 'birthday');
+    expect(rule?.emojis, ['🎂']); // 只掉生日蛋糕，不再混入气球与切片蛋糕
     expect(matchChatEffect(message(text: 'HAPPY   BIRTHDAY!'))?.id, 'birthday');
     expect(matchChatEffect(message(text: 'unhappy birthdayish')), isNull);
     expect(matchChatEffect(message(text: '晚安')), isNull);
@@ -80,24 +82,28 @@ void main() {
     );
   });
 
-  test('想你了支持中英日三语并选择星星，普通聊天不触发', () {
+  test('亲亲词库支持中英日三语并掉落亲亲与红心，普通聊天不触发', () {
     for (final text in [
+      '么么哒！',
       '我想你了！',
+      '好想你哦',
+      '我爱你',
+      '爱心发射',
       'I MISS   YOU!',
-      'Miss you ❤️',
+      'Love you ❤️',
       '君に会いたいです',
       'あいたい！',
     ]) {
       final rule = matchChatEffect(message(text: text));
-      expect(rule?.id, 'miss_you', reason: text);
-      expect(rule?.emojis, ['⭐', '🌟', '✨']);
+      expect(rule?.id, 'kiss', reason: text);
+      expect(rule?.emojis, ['💋', '❤️']);
     }
     expect(matchChatEffect(message(text: 'dismiss yourself')), isNull);
     expect(matchChatEffect(message(text: '会いたくない')), isNull);
     expect(matchChatEffect(message(text: '想了想今天的安排')), isNull);
   });
 
-  test('富文本想念触发星星，ACK 回显去重且同条生日按优先级播放', () {
+  test('富文本想念触发亲亲红心，ACK 回显去重且同条生日按优先级播放', () {
     final richText = message(
       type: MessageType.richText,
       payload: MessagePayload(
@@ -113,7 +119,7 @@ void main() {
     dispatcher.offer(richText, observedAt: now);
     dispatcher.offer(richText.copyWith(messageId: 'server1'), observedAt: now);
     expect(events, hasLength(1));
-    expect(events.single.rule.id, 'miss_you');
+    expect(events.single.rule.id, 'kiss');
     expect(matchChatEffect(message(text: '生日快乐，想你了'))?.id, 'birthday');
   });
 
@@ -191,6 +197,62 @@ void main() {
       )?.id,
       'birthday',
     );
+  });
+
+  test('节日词库：新年与圣诞混合掉落，中秋、情人节单一表情', () {
+    final newYear = matchChatEffect(message(text: '新年快乐！'));
+    expect(newYear?.id, 'new_year');
+    expect(newYear?.emojis, ['🧨', '🧧']);
+    expect(matchChatEffect(message(text: 'Happy   New Year!'))?.id, 'new_year');
+    expect(matchChatEffect(message(text: 'happy new yearish')), isNull);
+    expect(matchChatEffect(message(text: '春节快乐'))?.id, 'new_year');
+
+    final christmas = matchChatEffect(message(text: '圣诞快乐'));
+    expect(christmas?.id, 'christmas');
+    expect(christmas?.emojis, ['🎄', '❄️']);
+    expect(matchChatEffect(message(text: '圣诞节快乐'))?.id, 'christmas');
+    expect(matchChatEffect(message(text: 'Merry Christmas!'))?.id, 'christmas');
+
+    expect(matchChatEffect(message(text: '中秋快乐'))?.id, 'mid_autumn');
+    expect(matchChatEffect(message(text: '中秋节快乐'))?.id, 'mid_autumn');
+    expect(matchChatEffect(message(text: '情人节快乐'))?.id, 'valentine');
+  });
+
+  test('发财优先于恭喜：恭喜发财掉金币红包，单独恭喜才掉彩带', () {
+    final fortune = matchChatEffect(message(text: '恭喜发财！'));
+    expect(fortune?.id, 'fortune');
+    expect(fortune?.emojis, ['🪙', '🧧', '💰']);
+    expect(matchChatEffect(message(text: '祝你发财'))?.id, 'fortune');
+    expect(matchChatEffect(message(text: '财源广进'))?.id, 'fortune');
+    expect(matchChatEffect(message(text: '恭喜你呀'))?.id, 'congrats');
+    expect(matchChatEffect(message(text: '大家撒花~'))?.id, 'congrats');
+  });
+
+  test('日常情绪词各掉单一表情，满屏词密度更高', () {
+    final merit = matchChatEffect(message(text: '功德无量'));
+    expect(merit?.id, 'merit');
+    expect(merit?.emojis, ['📿']);
+
+    final stars = matchChatEffect(message(text: '今晚的星星真多'));
+    expect(stars?.id, 'stars');
+    expect(stars?.emojis, ['⭐']);
+    expect(stars?.density, greaterThan(1));
+    expect(matchChatEffect(message(text: '满天繁星'))?.id, 'stars');
+
+    expect(matchChatEffect(message(text: '你去吃屎吧'))?.id, 'poop');
+    expect(matchChatEffect(message(text: '小丑竟是我自己'))?.id, 'clown');
+    expect(matchChatEffect(message(text: '我也是服了'))?.id, 'speechless');
+    expect(matchChatEffect(message(text: '真无语'))?.id, 'speechless');
+    expect(matchChatEffect(message(text: '加油！'))?.id, 'cheer');
+  });
+
+  test('单字「嘘」只在独立成句时触发，词内出现不误报', () {
+    for (final text in ['嘘', '嘘！', '嘘嘘嘘', '嘘……', '嘘，别说话']) {
+      expect(matchChatEffect(message(text: text))?.id, 'shh', reason: text);
+    }
+    for (final text in ['他在吹嘘自己', '嘘寒问暖', '嘘声一片']) {
+      expect(matchChatEffect(message(text: text)), isNull, reason: text);
+    }
   });
 
   test('扩展词库无需改变分发链路', () {

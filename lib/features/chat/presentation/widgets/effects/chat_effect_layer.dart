@@ -115,7 +115,11 @@ class _ChatEffectLayerState extends ConsumerState<ChatEffectLayer>
             child: ChatEffectRain(
               key: ObjectKey(event),
               rule: event.rule,
-              particleCount: MediaQuery.sizeOf(context).width > 1000 ? 36 : 24,
+              // 基础数量按窗口宽度取档，规则可声明 density 换取「满屏」。
+              particleCount:
+                  ((MediaQuery.sizeOf(context).width > 1000 ? 36 : 24) *
+                          event.rule.density)
+                      .round(),
               onCompleted: () {
                 if (mounted) setState(() => _playing = null);
               },
