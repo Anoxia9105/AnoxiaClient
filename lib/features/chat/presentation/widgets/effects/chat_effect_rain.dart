@@ -77,16 +77,21 @@ class _ChatEffectRainState extends State<ChatEffectRain>
 }
 
 class _RainParticle {
-  _RainParticle(math.Random random, int spriteCount)
-    : x = random.nextDouble(),
-      delay = random.nextDouble() * .22,
-      drift = random.nextDouble() * 100 - 50,
-      rotation = random.nextDouble() * 1.4 - .7,
-      scale = .7 + random.nextDouble() * .5,
+  _RainParticle(math.Random random, int spriteCount, int index, int count)
+    : depth = math.min(2, index * 3 ~/ count),
+      x = random.nextDouble(),
+      // 每层均匀铺开相位，随机扰动避免整排同时进入。
+      phase =
+          (index % ((count / 3).ceil()) + random.nextDouble()) /
+          (count / 3).ceil(),
+      speed = .9 + random.nextDouble() * .2,
+      drift = random.nextDouble() * 50 - 25,
+      rotation = random.nextDouble() * .8 - .4,
+      scale = .9 + random.nextDouble() * .2,
       sprite = random.nextInt(spriteCount);
 
-  final double x, delay, drift, rotation, scale;
-  final int sprite;
+  final double x, phase, speed, drift, rotation, scale;
+  final int sprite, depth;
 }
 
 class _RainPainter extends CustomPainter {
@@ -103,7 +108,7 @@ class _RainPainter extends CustomPainter {
     final random = math.Random();
     _particles = List.generate(
       count,
-      (_) => _RainParticle(random, rule.emojis.length),
+      (i) => _RainParticle(random, rule.emojis.length, i, count),
     );
     for (var i = 0; i < count; i++) {
       final cell = _atlas.cells[_particles[i].sprite];
@@ -125,23 +130,27 @@ class _RainPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final progress = animation.value;
-    final opacity = ((1 - progress) / .12).clamp(0.0, .9);
-    final color = ((opacity * 255).round() << 24) | 0x00ffffff;
+    final envelope = math.min(
+      (progress / .08).clamp(0.0, 1.0),
+      ((1 - progress) / .18).clamp(0.0, 1.0),
+    );
     final anchor = _atlas.cellPixels / 2;
     for (var i = 0; i < _particles.length; i++) {
       final particle = _particles[i];
       final offset = i * 4;
-      _colors[i] = color;
-      final t = (progress - particle.delay) / (1 - particle.delay);
-      if (t < 0 || t > 1) {
-        _transforms[offset] = 0;
-        _transforms[offset + 1] = 0;
-        continue;
-      }
-      final x = particle.x * math.max(0, size.width - 40) + particle.drift * t;
+      final depth = particle.depth;
+      final opacity = (.38 + depth * .26) * envelope;
+      _colors[i] = ((opacity * 255).round() << 24) | 0x00ffffff;
+      // 远层慢、近层快；离开底部后从顶部补入，整场雨幕保持纵向分布。
+      final t =
+          (particle.phase + progress * (.85 + depth * .55) * particle.speed) %
+          1.0;
+      final sway = math.sin(t * math.pi * 2 + particle.phase * math.pi * 2);
+      final x =
+          particle.x * math.max(0, size.width - 40) + particle.drift * sway;
       final y = -60 + (size.height + 120) * t;
-      final scale = particle.scale / _atlas.pixelRatio;
-      final angle = particle.rotation * t;
+      final scale = particle.scale * (.55 + depth * .3) / _atlas.pixelRatio;
+      final angle = particle.rotation * sway;
       final scos = math.cos(angle) * scale;
       final ssin = math.sin(angle) * scale;
       _transforms[offset] = scos;

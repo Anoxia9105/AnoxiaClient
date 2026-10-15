@@ -41,6 +41,26 @@ Future<CustomPainter> _startRain(
 }
 
 void main() {
+  testWidgets('雨幕覆盖多个高度并具有远近透明度，后段仍持续下落', (tester) async {
+    final painter = await _startRain(tester, chatEffectRules.first);
+    final canvas = _PaintCalls();
+    for (var frame = 0; frame < 2; frame++) {
+      painter.paint(canvas, const Size(1080, 720));
+      final transforms =
+          canvas.atlasCall!.positionalArguments[1] as Float32List;
+      final colors = canvas.atlasCall!.positionalArguments[3] as Int32List;
+      final heights = <int>{};
+      for (var i = 0; i < colors.length; i++) {
+        final y = transforms[i * 4 + 3];
+        if (y >= 0 && y < 720) heights.add((y / 240).floor());
+      }
+      expect(heights, containsAll([0, 1, 2]));
+      expect(colors.toSet().length, greaterThanOrEqualTo(3));
+      await tester.pump(const Duration(milliseconds: 1300));
+    }
+    await tester.pumpWidget(const SizedBox());
+  });
+
   for (final rule in chatEffectRules) {
     testWidgets('${rule.id} 每帧只批量绘制一次，不合成全屏离屏层或重复绘制文字', (tester) async {
       final painter = await _startRain(tester, rule);
@@ -76,7 +96,7 @@ void main() {
         ((canvas.atlasCall!.positionalArguments[3] as Int32List).first >> 24) &
         255;
     final initialAlpha = alpha();
-    expect(initialAlpha, 230);
+    expect(initialAlpha, inInclusiveRange(70, 230));
     await tester.runAsync(() async {
       final recorder = ui.PictureRecorder();
       painter.paint(Canvas(recorder), const Size(1080, 720));
