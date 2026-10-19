@@ -55,8 +55,8 @@
 | # | 要确认的事实 | 影响任务 | 核实落点 |
 |---|-------------|---------|---------|
 | F1 | `chatMembers` 接口 / `ChatRoomMemberVO` 是否已带对端 `readSeq` | P0-2 | `room_member_service.dart`、服务端 `ChatController#getMembers` |
-| F2 | talker 能否同步取最近 N 条历史日志（`talker_flutter` history/stream） | INF-2 | `lib/framework/logs/` |
-| F3 | `feedback/submit` 是否已支持文件参数（当前只有 images） | INF-2 | `BugFeedbackController` |
+| F2 | talker 能否同步取最近 N 条历史日志（`talker_flutter` history/stream） | INF-2 | ✅ 已解决：talker 实际未接线（`lib/framework/logs/` 只有 debug_log）；改用 drift `sync_logs` 表（发布版可见）+ debug 环形缓冲 `AppRuntimeLog` |
+| F3 | `feedback/submit` 是否已支持文件参数（当前只有 images） | INF-2 | ✅ 已解决：`files` 被 `FeedbackImagePolicy` 魔数校验锁死在图片；诊断走新增独立 `diagnostics` 文本字段 + `bug_feedback.diagnostics` 列（`FeedbackDiagnosticsPolicy` 清洗/截断） |
 | F4 | 主框架导航结构（desktop 侧栏 / mobile 底栏现有项） | P0-4、P1-2 入口 | `main_layout_page.dart`、`MobileBottomBar.dart` |
 | F5 | AI 可用性门控 provider 现名（`ai_feature_flags_provider.dart`） | P0-3 | 直接读取确认 |
 
