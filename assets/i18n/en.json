@@ -567,6 +567,8 @@
   "file_open_failed": "Failed to open file: {}",
   "chat_me": "Me",
   "chat_unknown_user": "Unknown user",
+  "chat_read": "Read",
+  "chat_delivered": "Delivered",
   "chat_message_format_error": "Message format error",
   "chat_message_parse_error": "[Message parse error]",
   "chat_send_failed_not_friend": "Send failed: you are no longer friends, message cannot be sent",

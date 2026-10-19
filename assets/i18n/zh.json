@@ -567,6 +567,8 @@
   "file_open_failed": "打开文件失败: {}",
   "chat_me": "我",
   "chat_unknown_user": "未知用户",
+  "chat_read": "已读",
+  "chat_delivered": "已送达",
   "chat_message_format_error": "消息格式错误",
   "chat_message_parse_error": "[消息解析错误]",
   "chat_send_failed_not_friend": "发送失败：你们已不是好友，无法发送消息",

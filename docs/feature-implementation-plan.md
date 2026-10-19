@@ -11,7 +11,7 @@
 | INF-1 | 测试盲区补强 | Client | 中 | ✅ 完成（commit 8965364e，新增 42 个用例） |
 | INF-2 | 反馈附带运行日志导出 | Client（+Server 小改） | 中低 | ✅ 完成（client 46cf972b + server f5cc87a5；线上库需执行 `2026-10-19-bug-feedback-diagnostics.sql`） |
 | P0-1 | 会话输入草稿持久化 | Client | 低 | ✅ 完成（InputDrafts 表 schema v4 + 500ms debounce store + 控制器恢复/flush/清除，migration/test 套件同步） |
-| P0-2 | 单聊双向已读回执 UI | Client（视 P0-2 调研结果） | 低 | ☐ 待做 |
+| P0-2 | 单聊双向已读回执 UI | Client（视 P0-2 调研结果） | 低 | ✅ 完成（F1：成员接口已带对端 readSeq；VO 补 lastReadSeq 解析 + 纯函数判定 + 气泡「已读/已送达」态，三语 i18n） |
 | P0-3 | AI 翻译 + 未读一键总结 | Client | 中低 | ☐ 待做 |
 | P0-4 | 聊天媒体时间线（媒体/文件/链接） | Client | 中低 | ☐ 待做 |
 | P0-5 | 应用锁（生物识别/PIN） | Client | 中 | ☐ 待做 |
@@ -54,7 +54,7 @@
 
 | # | 要确认的事实 | 影响任务 | 核实落点 |
 |---|-------------|---------|---------|
-| F1 | `chatMembers` 接口 / `ChatRoomMemberVO` 是否已带对端 `readSeq` | P0-2 | `room_member_service.dart`、服务端 `ChatController#getMembers` |
+| F1 | `chatMembers` 接口 / `ChatRoomMemberVO` 是否已带对端 `readSeq` | P0-2 | ✅ 已解决：`ChatRoomMemberMapper.xml#selectRoomMemberList` 本就输出 `crm.read_seq AS lastReadSeq`；客户端 `ChatRoomMemberVO` 原先没解析，P0-2 补了 `lastReadSeq` 字段即可，零协议改动 |
 | F2 | talker 能否同步取最近 N 条历史日志（`talker_flutter` history/stream） | INF-2 | ✅ 已解决：talker 实际未接线（`lib/framework/logs/` 只有 debug_log）；改用 drift `sync_logs` 表（发布版可见）+ debug 环形缓冲 `AppRuntimeLog` |
 | F3 | `feedback/submit` 是否已支持文件参数（当前只有 images） | INF-2 | ✅ 已解决：`files` 被 `FeedbackImagePolicy` 魔数校验锁死在图片；诊断走新增独立 `diagnostics` 文本字段 + `bug_feedback.diagnostics` 列（`FeedbackDiagnosticsPolicy` 清洗/截断） |
 | F4 | 主框架导航结构（desktop 侧栏 / mobile 底栏现有项） | P0-4、P1-2 入口 | `main_layout_page.dart`、`MobileBottomBar.dart` |

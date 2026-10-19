@@ -567,6 +567,8 @@
   "file_open_failed": "ファイルを開けませんでした: {}",
   "chat_me": "自分",
   "chat_unknown_user": "不明なユーザー",
+  "chat_read": "既読",
+  "chat_delivered": "配信済み",
   "chat_message_format_error": "メッセージ形式エラー",
   "chat_message_parse_error": "[メッセージ解析エラー]",
   "chat_send_failed_not_friend": "送信失敗：すでに友だちではないため送信できません",
