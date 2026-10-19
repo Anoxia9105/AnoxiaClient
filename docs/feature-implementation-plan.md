@@ -130,9 +130,9 @@
 - Provider：`chat/media/media_timeline_provider.dart` 按房间 family。
 - 测试：查询正确性种子测试（参照 `room_messages_cache_test.dart`）、URL 提取用例、路由回退测试。
 
-### P0-3 AI 翻译 + 未读一键总结
+### P0-3 AI 翻译 + 未读一键总结 ✅
 
-- 前置门控：全部入口先查 F5 的 AI 可用性 flags（现成 `ai_feature_flags_provider.dart`），不可用时不显示。
+- 实现结论：门控全部用 `aiFeatureFlagsProvider.chatAvailable`（flags off 时菜单翻译项 / 问 AI / 未读引导条 / 弹层重试入口同口径隐藏）；数据链复用 `aiRepositoryProvider.askStream`（`/chat/ai/stream`，prompt 客户端组，目标语言 = 当前 UI locale）；翻译 Provider `chat/message/ai_message_tools_provider.dart` `AiTranslateController`（按消息 family `messageId|targetLang`，内存即缓存）、总结 `AiUnreadSummaryController`（按房间 family，本地 drift `seq > lastReadSeq` 文本 + 媒体统计，记录最早未读 ID）；未读取文本查询进 `MessageDao.getMessagesForConversationAfterSeq`（无 schema 变更）；prompt 组装/文本提取单独 `ai_prompt_builder.dart` 纯函数（richText 的 payload.content plainText 直取 + 历史 Delta JSON 展平兜底）；UI：长按菜单「翻译」+ `AiTranslateSheet`、未读 ≥ 20 顶部引导条 + `AiUnreadSummarySheet`（跳最早未读复用 `reply_jump_provider`）；SSE 状态推进 `foldAiToolEvent` 纯函数（done 兜底/空结果/迟到增量），断流无 done 也强制清 streaming；已挂 `session_reset_service` 清理清单。
 - 翻译：
   - 消息长按菜单加「翻译」（仅 text/代码消息）；面板内显示译文 + 目标语言 = 当前 UI locale。
   - Provider：`chat/message/ai_message_tools_provider.dart`（按 message family；内存缓存 key=`messageId+targetLang`）；SSE 复用 `framework/network/sse_client.dart` 与 `/chat/ai/stream`（请求体协议照抄 `ai_chat_controller.dart` 现有形态，prompt 客户端组）。

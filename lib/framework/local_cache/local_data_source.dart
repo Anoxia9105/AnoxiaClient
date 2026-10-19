@@ -75,6 +75,29 @@ class LocalDataSource {
         .map((rows) => rows.reversed.map(_messageFromRow).toList());
   }
 
+  /// 未读总结用文本查询（P0-3）：`seq > afterSeq` 的可总结类型
+  /// （text/richText/codeSnippet），返回按时间顺序（旧 → 新）。
+  /// 上限 [limit] 保底防 prompt 过长（provider 侧还会二次裁剪）。
+  Future<List<ChatMessage>> getUnreadTextMessages(
+    String convId, {
+    required int afterSeq,
+    int limit = 200,
+  }) {
+    final codes = [
+      MessageType.text.code,
+      MessageType.richText.code,
+      MessageType.codeSnippet.code,
+    ];
+    return db.messageDao
+        .getMessagesForConversationAfterSeq(
+          convId,
+          afterSeq: afterSeq,
+          typeCodes: codes,
+          limit: limit,
+        )
+        .then((rows) => rows.map(_messageFromRow).toList());
+  }
+
   /// 媒体/文件/链接时间线分页查询（P0-4）。
   ///
   /// [typeCodes] 传 MessageType 协议编码（媒体=[3,5]，文件=[6]，链接=[1]）。

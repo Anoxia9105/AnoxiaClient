@@ -414,6 +414,32 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
         .get();
   }
 
+  /// 未读总结用：取 `seq > afterSeq` 的指定类型消息，返回新→旧 desc
+  /// 然后 reversed = 旧→新（总结 prompt 需要时间顺序）。
+  ///
+  /// 乐观未确认（seq 0）消息不计入阅读水位，天然被 `seq > afterSeq` 过滤。
+  Future<List<CachedMessage>> getMessagesForConversationAfterSeq(
+    String conversationId, {
+    required int afterSeq,
+    required List<int> typeCodes,
+    int limit = 200,
+  }) async {
+    final rows = await (select(messages)
+          ..where(
+            (tbl) =>
+                tbl.conversationId.equals(conversationId) &
+                tbl.isDeleted.equals(false) &
+                tbl.messageType.isIn(typeCodes) &
+                tbl.seq.isBiggerThanValue(afterSeq),
+          )
+          ..orderBy([
+            (tbl) => OrderingTerm(expression: tbl.seq, mode: OrderingMode.desc),
+          ])
+          ..limit(limit))
+        .get();
+    return rows.reversed.toList();
+  }
+
   Stream<List<CachedMessage>> watchMessagesForConversation(
     String conversationId, {
     int? limit = 50,

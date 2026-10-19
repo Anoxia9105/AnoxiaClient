@@ -15,6 +15,7 @@ import 'package:anoxia/features/chat/presentation/widgets/message_bubble/chat_me
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_detail_skeleton.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/group_announcement_banner.dart';
+import 'package:anoxia/features/chat/presentation/widgets/message_menu/ai_unread_summary.dart';
 import 'package:anoxia/features/chat/presentation/widgets/desktop_chat_drop_target.dart';
 import 'package:anoxia/features/chat/presentation/widgets/effects/chat_effect_layer.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
@@ -216,6 +217,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                   roomId: widget.roomId,
                   announcement: currentRoom.roomDescription ?? '',
                 ),
+              if (!showInitialSkeleton)
+                AiUnreadSummaryBanner(roomId: widget.roomId),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),

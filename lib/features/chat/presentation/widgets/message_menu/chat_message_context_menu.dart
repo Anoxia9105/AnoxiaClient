@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:hugeicons/hugeicons.dart';
 import 'dart:convert';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
+import 'package:anoxia/framework/provider/chat/message/ai_prompt_builder.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
@@ -20,6 +22,7 @@ import 'package:anoxia/framework/provider/chat/message/room_message_service.dart
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
 import 'ai_ask_bubble.dart';
+import 'ai_translate_sheet.dart';
 import '../forward/forward_message_dialog.dart';
 import '../message_bubble/message_resender.dart';
 import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
@@ -142,14 +145,15 @@ class _ChatMessageContextMenuState
       );
     }
 
+    final chatEnabled =
+        ref.watch(aiFeatureFlagsProvider).value?.chatAvailable ?? true;
+
     if (widget.message.messageType == MessageType.text ||
         widget.message.messageType == MessageType.richText) {
       items.add(
         _buildItem('copy', HugeIcons.strokeRoundedCopy01, 'chat_copy'.tr()),
       );
-      // 问AI：人工开关与上游探测同时满足才展示，任一不满足即隐藏入口
-      final chatEnabled =
-          ref.watch(aiFeatureFlagsProvider).value?.chatAvailable ?? true;
+      // 问AI/翻译：人工开关与上游探测同时满足才展示，任一不满足即隐藏入口
       if (chatEnabled) {
         items.add(
           _buildItem(
@@ -160,6 +164,19 @@ class _ChatMessageContextMenuState
           ),
         );
       }
+    }
+
+    // 翻译（P0-3）：仅 text/richText/codeSnippet 且有非空文本；
+    // codeSnippet 原有菜单不复制/问AI，只加翻译项。
+    if (chatEnabled && isTranslatableMessage(widget.message)) {
+      items.add(
+        _buildItem(
+          'translate',
+          HugeIcons.strokeRoundedTranslate,
+          'chat_ai.translate'.tr(),
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      );
     }
 
     final canReply =
@@ -265,6 +282,13 @@ class _ChatMessageContextMenuState
         break;
       case 'aiAsk':
         _handleAiAsk(context);
+        break;
+      case 'translate':
+        // 翻译面板（P0-3）：presentAdaptivePage 承载（桌面模态/移动全屏）
+        presentAdaptivePage(
+          context,
+          builder: (_) => AiTranslateSheet(message: widget.message),
+        );
         break;
       case 'favorite':
         unawaited(_handleFavorite(context));
