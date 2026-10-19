@@ -384,6 +384,36 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
         .get();
   }
 
+  /// 获取指定会话中指定类型（协议编码）的消息，用于媒体/文件/链接时间线
+  ///
+  /// [beforeSeq] 可选，获取该序号之前的消息用于分页加载（与
+  /// [getMessagesForConversation] 相同口径：seq < beforeSeq，不用 offset）。
+  /// [typeCodes] 传 MessageType 协议编码列表，如媒体 = [3, 5]。
+  Future<List<CachedMessage>> getMessagesForConversationByTypes(
+    String conversationId,
+    List<int> typeCodes, {
+    int limit = 60,
+    int? beforeSeq,
+  }) {
+    return (select(messages)
+          ..where(
+            (tbl) =>
+                tbl.conversationId.equals(conversationId) &
+                tbl.isDeleted.equals(false) &
+                tbl.messageType.isIn(typeCodes) &
+                (beforeSeq == null
+                    ? const Constant(true)
+                    : tbl.seq.isSmallerThanValue(beforeSeq)),
+          )
+          ..orderBy([
+            (tbl) =>
+                OrderingTerm(expression: tbl.sentAt, mode: OrderingMode.desc),
+            (tbl) => OrderingTerm(expression: tbl.seq, mode: OrderingMode.desc),
+          ])
+          ..limit(limit))
+        .get();
+  }
+
   Stream<List<CachedMessage>> watchMessagesForConversation(
     String conversationId, {
     int? limit = 50,

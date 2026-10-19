@@ -14,6 +14,7 @@ List<RouteBase> get $appRoutes => [
   $splashRoute,
   $errorRoute,
   $imageMessageDetailRoute,
+  $mediaTimelineRoute,
   $addFriendRoute,
   $createGroupRoute,
   $updateRoute,
@@ -195,6 +196,37 @@ mixin $ImageMessageDetailRoute on GoRouteData {
       if (_self.roomId != null) 'room-id': _self.roomId,
       if (_self.currentUrl != null) 'current-url': _self.currentUrl,
     },
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $mediaTimelineRoute => GoRouteData.$route(
+  path: '/media-timeline',
+  factory: $MediaTimelineRoute._fromState,
+);
+
+mixin $MediaTimelineRoute on GoRouteData {
+  static MediaTimelineRoute _fromState(GoRouterState state) =>
+      MediaTimelineRoute(roomId: state.uri.queryParameters['room-id']!);
+
+  MediaTimelineRoute get _self => this as MediaTimelineRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/media-timeline',
+    queryParams: {'room-id': _self.roomId},
   );
 
   @override

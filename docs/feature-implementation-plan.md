@@ -116,7 +116,10 @@
 - UI 细节：气泡右下小对勾文字态（i18n `chat.read`），遵循减少动效设置；主题 32 色下对比度可用现有 `ColorScheme` 派生色。
 - 测试：判定纯函数（seq 边界：等于/小于/空）单测；气泡渲染 widget 测试（按 AGENTS.md 的 easy_localization 测试要求：mock SP、`initEasyLocation`、内层 MaterialApp 挂 `context.localizationDelegates`、自定义同步 AssetLoader、显式 `startLocale`）。
 
-### P0-4 聊天媒体时间线
+### P0-4 聊天媒体时间线 ✅
+
+- 实现结论：入口落在 `RoomDetailSettingsBody` 通用 tile「媒体与链接」，手机 push 详情页 / 桌面右栏面板 / 群详情三端共用；数据 3 类查询进 `MessageDao.getMessagesForConversationByTypes`（`MessageType` IN 过滤 + `seq < beforeSeq` 分页，无 schema 变更）；URL 提取抽公共 util `common/utils/message_url_extractor.dart`，`link_preview_card.extractFirstUrl` 改薄代理原行为不变（中文标点不剥离是原口径，测试已固化）；UI 三 Tab（媒体九宫格按消息类型取附件、文件行系统打开、链接行浏览器打开）+ `ImageViewer` 复用 + autoDispose family provider（查询失败降级空段、缺 seq 无游标即收口）；测试净增 19（种子查询 / URL 提取 / 三 Tab 页面 / 路由 location）。
+- 入口（依 F4）：聊天 App 右侧菜单「媒体与链接」+ 群详情页入口；路由 go_router 新 `MediaTimelineRoute`（builder 生成器产物一并提交）。
 
 - 入口（依 F4）：聊天 App 右侧菜单「媒体与链接」+ 群详情页入口；路由 go_router 新 `MediaTimelineRoute`（builder 生成器产物一并提交）。
 - 数据：`LocalDataSource` 新增三类查询（按 `conversationId + messageType`）：

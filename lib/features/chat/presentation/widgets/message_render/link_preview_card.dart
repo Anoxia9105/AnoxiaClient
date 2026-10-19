@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:anoxia/common/utils/message_url_extractor.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 
@@ -95,31 +96,10 @@ class MessageLinkPreview extends StatefulWidget {
 
   /// 从文本中提取第一个有效 URL。
   ///
-  /// 自动处理末尾标点符号，并为 `www.` 前缀补全 `https://` 协议。
-  static String? extractFirstUrl(String text) {
-    final match = RegExp(
-      r'((?:https?:\/\/|www\.)[^\s<>"\]\)]+)',
-      caseSensitive: false,
-    ).firstMatch(text);
-    if (match == null) return null;
-
-    final rawUrl = match.group(1)?.trim();
-    if (rawUrl == null || rawUrl.isEmpty) return null;
-
-    var url = rawUrl;
-    while (url.isNotEmpty && '.,!?;:'.contains(url[url.length - 1])) {
-      url = url.substring(0, url.length - 1);
-    }
-    if (url.toLowerCase().startsWith('www.')) url = 'https://$url';
-
-    final uri = Uri.tryParse(url);
-    if (uri == null ||
-        (uri.scheme != 'http' && uri.scheme != 'https') ||
-        uri.host.isEmpty) {
-      return null;
-    }
-    return url;
-  }
+  /// 实现已抽到公共 util（`common/utils/message_url_extractor.dart`，
+  /// 链接时间线复用同一口径）；此处保留薄代理，调用方行为不变。
+  static String? extractFirstUrl(String text) =>
+      extractFirstMessageUrl(text);
 
   /// Fetches rich metadata through the bounded background-isolate queue.
   static Future<LinkPreviewMetadata> fetchMetadata(String link) {

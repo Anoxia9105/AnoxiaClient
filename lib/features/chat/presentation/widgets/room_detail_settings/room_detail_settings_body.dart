@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/framework/provider/core/room_repository_provider.dart';
+import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:anoxia/features/chat/presentation/widgets/group_avatar_picker.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
@@ -127,6 +128,19 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               ],
             ),
           ),
+
+        // 媒体与链接（P0-4）：图片/视频/文件/链接一站回看，单聊群聊共用
+        RoomSectionCaption('chat_media_timeline_title'.tr()),
+        RoomCard(
+          children: [
+            RoomSettingTile(
+              icon: HugeIcons.strokeRoundedImage01,
+              tint: SettingIconTint.blue,
+              title: Text('chat_media_timeline_title'.tr()),
+              onTap: () => MediaTimelineRoute(roomId: roomId).push(context),
+            ),
+          ],
+        ),
 
         // 快捷工具：已存在二级页的前置入口
         RoomSectionCaption('chat_detail_quick_tools'.tr()),

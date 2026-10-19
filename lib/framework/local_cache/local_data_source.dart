@@ -75,6 +75,28 @@ class LocalDataSource {
         .map((rows) => rows.reversed.map(_messageFromRow).toList());
   }
 
+  /// 媒体/文件/链接时间线分页查询（P0-4）。
+  ///
+  /// [typeCodes] 传 MessageType 协议编码（媒体=[3,5]，文件=[6]，链接=[1]）。
+  /// 注意返回顺序与 [getMessagesForConversation] 相反：这里直接返回
+  /// 查询结果（新 → 旧，seq/sentAt 倒序），时间线天然按新在前展示；
+  /// 分页口径一致：seq < beforeSeq 向前翻页，不用 offset。
+  Future<List<ChatMessage>> getMediaTimelineMessages(
+    String convId, {
+    required List<int> typeCodes,
+    int limit = 60,
+    int? beforeSeq,
+  }) {
+    return db.messageDao
+        .getMessagesForConversationByTypes(
+          convId,
+          typeCodes,
+          limit: limit,
+          beforeSeq: beforeSeq,
+        )
+        .then((rows) => rows.map(_messageFromRow).toList());
+  }
+
   /// Persists an inbound message and its conversation projection atomically.
   /// This is the only write path for messages received from WebSocket.
   Future<bool> applyIncomingMessage(

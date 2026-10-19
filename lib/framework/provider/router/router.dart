@@ -1,5 +1,6 @@
 import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/media_timeline_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/open_source_licenses_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/image_viewer.dart';
 import 'package:anoxia/features/app/presentation/pages/error_page.dart';
@@ -215,6 +216,17 @@ class ImageMessageDetailRoute extends GoRouteData
       currentUrl: currentUrl,
     );
   }
+}
+
+/// 媒体/文件/链接时间线路由（P0-4；入口在聊天详情，双端共用）
+@TypedGoRoute<MediaTimelineRoute>(path: '/media-timeline')
+class MediaTimelineRoute extends GoRouteData with $MediaTimelineRoute {
+  final String roomId;
+  const MediaTimelineRoute({required this.roomId});
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      MediaTimelinePage(roomId: roomId);
 }
 
 /// 添加好友页路由
