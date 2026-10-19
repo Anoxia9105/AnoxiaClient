@@ -44,7 +44,7 @@ final class InputDraftStoreProvider
   }
 }
 
-String _$inputDraftStoreHash() => r'008cc15a1a9dbbe8ce2632fecec55da516ccf63e';
+String _$inputDraftStoreHash() => r'8eb74049e0f157f011eeda0bd49846779dd2a1f4';
 
 /// 会话输入草稿存取服务（每会话最多一行草稿）。
 
