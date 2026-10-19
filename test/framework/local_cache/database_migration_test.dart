@@ -1,14 +1,15 @@
 // drift 迁移回归测试。
 //
 // 策略（「先真实建库、再手工降级、最后跑迁移」）：
-// 1. 用 AppDatabase 在文件库上写入 v3 真实 schema 与种子数据；
+// 1. 用 AppDatabase 在文件库上写入 v4 真实 schema 与种子数据；
 // 2. 用原生 sqlite3 手工把库降级到旧版本结构（v1：无 cached_contacts、
-//    conversations 无 last_message_type，并把 user_version 重置）；
-// 3. 再次用 AppDatabase 打开同一文件，触发 onUpgrade(1 → 3)；
-// 4. 断言旧数据完好、丢失结构补齐、user_version 推进到 3。
+//    conversations 无 last_message_type；v3：无 input_drafts），
+//    并把 user_version 重置；
+// 3. 再次用 AppDatabase 打开同一文件，触发对应 onUpgrade 分支；
+// 4. 断言旧数据完好、丢失结构补齐、user_version 推进到当前版本。
 //
-// 这是 P0-1（InputDrafts 表）等后续 schema 变更的迁移测试模板：
-// 改表时必须同步 bump AppDatabase.schemaVersion 并新增 onUpgrade 分支。
+// P0-1（InputDrafts 表）已消费此模板；后续 schema 变更（P0-4 媒体查询这类
+// 只读扩展除外）照抄「真实建库 → 降级 → 重开」写法并补分支断言。
 import 'dart:io';
 
 import 'package:anoxia/framework/local_cache/database.dart';
@@ -79,6 +80,14 @@ void _degradeToV1(String path) {
   sqlite.close();
 }
 
+/// 手工把库降级到 v3 结构：删掉 v4 新增的输入草稿表并重置 user_version。
+void _degradeToV3(String path) {
+  final sqlite = sqlite3.open(path);
+  sqlite.execute('DROP TABLE input_drafts');
+  sqlite.execute('PRAGMA user_version = 3');
+  sqlite.close();
+}
+
 void main() {
   late Directory tempDir;
 
@@ -100,9 +109,9 @@ void main() {
 
   String dbPath(String name) => '${tempDir.path}/$name.db';
 
-  test('新版 schemaVersion 仍为 3：改表必须同步迁移策略', () async {
+  test('新版 schemaVersion 仍为 4：改表必须同步迁移策略', () async {
     final db = AppDatabase(NativeDatabase.memory());
-    expect(db.schemaVersion, 3);
+    expect(db.schemaVersion, 4);
     await db.close();
   });
 
@@ -112,40 +121,38 @@ void main() {
         (await db.customSelect('PRAGMA foreign_keys').get()).first.data;
     expect(fkRow['foreign_keys'], 1);
 
-    final indexNames = (await db
-            .customSelect("PRAGMA index_list('conversations')")
-            .get())
-        .map((e) => e.data['name'] as String)
-        .toSet();
+    final indexNames =
+        (await db.customSelect("PRAGMA index_list('conversations')").get())
+            .map((e) => e.data['name'] as String)
+            .toSet();
     expect(indexNames, contains('idx_conversations_updated_at'));
     expect(indexNames, contains('idx_conversations_peer_id'));
 
-    final messageIndexNames = (await db
-            .customSelect("PRAGMA index_list('messages')")
-            .get())
-        .map((e) => e.data['name'] as String)
-        .toSet();
+    final messageIndexNames =
+        (await db.customSelect("PRAGMA index_list('messages')").get())
+            .map((e) => e.data['name'] as String)
+            .toSet();
     expect(messageIndexNames, contains('idx_messages_conversation_seq'));
     expect(messageIndexNames, contains('idx_messages_delivery_status'));
     await db.close();
   });
 
-  test('v1 → v3：旧会话/消息保留，联系人表与 last_message_type 列补齐', () async {
+  test('v1 → v4：旧会话/消息保留，联系人表、last_message_type、草稿表补齐', () async {
     final path = dbPath('v1.db');
     await _seedFreshDatabase(path);
     _degradeToV1(path);
 
     final db = AppDatabase(NativeDatabase(File(path)));
-    final conversation = await (db.select(db.conversations)
-          ..where((tbl) => tbl.id.equals('room-seed')))
-        .getSingleOrNull();
+    final conversation = await (db.select(
+      db.conversations,
+    )..where((tbl) => tbl.id.equals('room-seed'))).getSingleOrNull();
     expect(conversation, isNotNull);
     expect(conversation!.unreadCount, 3);
     expect(conversation.name, '种子会话');
 
-    final message = await (db.select(db.messages)
-          ..where((tbl) => tbl.id.equals('msg-seed')))
-        .getSingleOrNull();
+    final message = await (db.select(
+      db.messages,
+    )..where((tbl) => tbl.id.equals('msg-seed'))).getSingleOrNull();
     expect(message, isNotNull);
     expect(message!.content, '旧消息');
     expect(message.seq, 12);
@@ -155,10 +162,67 @@ void main() {
     expect(contacts, isEmpty);
     // v3 结构恢复：last_message_type 列为 NULL
     expect(conversation.lastMessageType, isNull);
+    // v4 结构恢复：草稿表为空表可用
+    expect(await db.select(db.inputDrafts).get(), isEmpty);
 
     final version =
         (await db.customSelect('PRAGMA user_version').get()).first.data;
-    expect(version['user_version'], 3);
+    expect(version['user_version'], 4);
+    await db.close();
+  });
+
+  test('v3 → v4：input_drafts 表补齐，旧会话/消息不受影响', () async {
+    final path = dbPath('v3_to_v4.db');
+    await _seedFreshDatabase(path);
+    _degradeToV3(path);
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final conversation = await (db.select(
+      db.conversations,
+    )..where((tbl) => tbl.id.equals('room-seed'))).getSingleOrNull();
+    expect(conversation, isNotNull);
+    expect(conversation!.name, '种子会话');
+
+    // v4 结构恢复：草稿表为空表可用
+    final drafts = await db.select(db.inputDrafts).get();
+    expect(drafts, isEmpty);
+
+    final version =
+        (await db.customSelect('PRAGMA user_version').get()).first.data;
+    expect(version['user_version'], 4);
+    await db.close();
+  });
+
+  test('v4：输入草稿跨重启保留，clearSessionCache 时一并清除', () async {
+    final path = dbPath('draft.db');
+    // 第一段：真实建库并写一份草稿
+    final first = AppDatabase(NativeDatabase(File(path)));
+    await first
+        .into(first.inputDrafts)
+        .insert(
+          InputDraftsCompanion.insert(
+            roomId: 'room-a',
+            deltaJson: const Value('[{"insert":"草稿内容\\n"}]'),
+            plainText: const Value('草稿内容'),
+            updatedAt: seedTime,
+          ),
+        );
+    final seededCount = await first.select(first.inputDrafts).get();
+    expect(seededCount, hasLength(1));
+    await first.close();
+
+    // 第二段：重新打开（模拟重启），草稿仍在
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final draft = await (db.select(
+      db.inputDrafts,
+    )..where((tbl) => tbl.roomId.equals('room-a'))).getSingleOrNull();
+    expect(draft, isNotNull);
+    expect(draft!.plainText, '草稿内容');
+    expect(draft.deltaJson, '[{"insert":"草稿内容\\n"}]');
+
+    // 登出/切账号：clearSessionCache 必须带走个人草稿
+    await db.clearSessionCache();
+    expect(await db.select(db.inputDrafts).get(), isEmpty);
     await db.close();
   });
 }

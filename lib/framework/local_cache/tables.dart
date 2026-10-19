@@ -118,3 +118,21 @@ class SyncLogs extends Table {
   DateTimeColumn get nextRetryAt => dateTime().nullable()();
   IntColumn get retryCount => integer().withDefault(const Constant(0))();
 }
+
+@DataClassName('InputDraft')
+class InputDrafts extends Table {
+  /// 会话 ID（主键，每个会话最多保留一份草稿）
+  TextColumn get roomId => text()();
+
+  /// Quill Delta JSON（完整文档），恢复输入框富文本用
+  TextColumn get deltaJson => text().withDefault(const Constant(''))();
+
+  /// 纯文本快照（会话列表预览、光标定位、无富文本能力的端恢复用）
+  TextColumn get plainText => text().withDefault(const Constant(''))();
+
+  /// 最后保存时间
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {roomId};
+}

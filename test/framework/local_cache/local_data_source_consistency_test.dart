@@ -83,6 +83,43 @@ void main() {
     expect(await source.getMessagesForConversation('room'), isEmpty);
   });
 
+  group('输入草稿（P0-1）', () {
+    test('保存/读取/覆盖/清除往返', () async {
+      await source.saveInputDraft(
+        roomId: 'draft-room',
+        deltaJson: '[{"insert":"第一版\\n"}]',
+        plainText: '第一版',
+      );
+      final first = await source.loadInputDraft('draft-room');
+      expect(first, isNotNull);
+      expect(first!.plainText, '第一版');
+      expect(first.deltaJson, '[{"insert":"第一版\\n"}]');
+
+      // 覆盖写：同会话始终只有一行
+      await source.saveInputDraft(
+        roomId: 'draft-room',
+        deltaJson: '[{"insert":"第二版\\n"}]',
+        plainText: '第二版',
+      );
+      final second = await source.loadInputDraft('draft-room');
+      expect(second!.plainText, '第二版');
+      expect(await db.select(db.inputDrafts).get(), hasLength(1));
+
+      await source.clearInputDraft('draft-room');
+      expect(await source.loadInputDraft('draft-room'), isNull);
+    });
+
+    test('clearSessionCache 一并清空草稿', () async {
+      await source.saveInputDraft(
+        roomId: 'draft-room',
+        deltaJson: '[{"insert":"草稿\\n"}]',
+        plainText: '草稿',
+      );
+      await db.clearSessionCache();
+      expect(await db.select(db.inputDrafts).get(), isEmpty);
+    });
+  });
+
   test('联系人权威同步移除列表之外的缓存联系人', () async {
     await source.upsertContacts([
       ChatContactVO(contactId: 1, nickName: '保留'),

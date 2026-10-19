@@ -10,7 +10,7 @@
 |------|------|----|---------|------|
 | INF-1 | 测试盲区补强 | Client | 中 | ✅ 完成（commit 8965364e，新增 42 个用例） |
 | INF-2 | 反馈附带运行日志导出 | Client（+Server 小改） | 中低 | ✅ 完成（client 46cf972b + server f5cc87a5；线上库需执行 `2026-10-19-bug-feedback-diagnostics.sql`） |
-| P0-1 | 会话输入草稿持久化 | Client | 低 | ☐ 待做 |
+| P0-1 | 会话输入草稿持久化 | Client | 低 | ✅ 完成（InputDrafts 表 schema v4 + 500ms debounce store + 控制器恢复/flush/清除，migration/test 套件同步） |
 | P0-2 | 单聊双向已读回执 UI | Client（视 P0-2 调研结果） | 低 | ☐ 待做 |
 | P0-3 | AI 翻译 + 未读一键总结 | Client | 中低 | ☐ 待做 |
 | P0-4 | 聊天媒体时间线（媒体/文件/链接） | Client | 中低 | ☐ 待做 |

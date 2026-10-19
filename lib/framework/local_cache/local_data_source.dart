@@ -563,10 +563,9 @@ class LocalDataSource {
         // 否则房间列表会一直残留已撤回的原文。
         final affected = <String>{};
         if (message != null) affected.add(message.conversationId);
-        final stale =
-            await (db.select(
-              db.conversations,
-            )..where((t) => t.lastMessageId.equals(messageId))).get();
+        final stale = await (db.select(
+          db.conversations,
+        )..where((t) => t.lastMessageId.equals(messageId))).get();
         for (final row in stale) {
           affected.add(row.id);
         }
@@ -685,6 +684,44 @@ class LocalDataSource {
   /// 不要在 Provider 层直接拼 drift 查询。
   Future<List<SyncLogEntry>> recentSyncFailureLogs({int limit = 50}) {
     return db.syncLogDao.getRecentDiagnosticLogs(limit: limit);
+  }
+
+  /// 读取会话输入草稿（无草稿返回 null）。
+  ///
+  /// 只读查询；解析/恢复在 Provider 层做，这里只负责取原始行。
+  Future<InputDraft?> loadInputDraft(String roomId) {
+    return (db.select(
+      db.inputDrafts,
+    )..where((tbl) => tbl.roomId.equals(roomId))).getSingleOrNull();
+  }
+
+  /// 保存会话输入草稿（按 roomId 覆盖写入）。
+  Future<void> saveInputDraft({
+    required String roomId,
+    required String deltaJson,
+    required String plainText,
+  }) {
+    return _write(() async {
+      await db
+          .into(db.inputDrafts)
+          .insertOnConflictUpdate(
+            InputDraftsCompanion.insert(
+              roomId: roomId,
+              deltaJson: Value(deltaJson),
+              plainText: Value(plainText),
+              updatedAt: DateTime.now(),
+            ),
+          );
+    });
+  }
+
+  /// 清除会话输入草稿（发送成功 / 编辑内容被清空时调用）。
+  Future<void> clearInputDraft(String roomId) {
+    return _write(
+      () => (db.delete(
+        db.inputDrafts,
+      )..where((tbl) => tbl.roomId.equals(roomId))).go(),
+    );
   }
 
   Future<ConversationsCompanion> _mergeConversationProjection(

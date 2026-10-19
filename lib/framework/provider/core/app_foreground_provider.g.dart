@@ -44,7 +44,7 @@ final class AppForegroundProvider
   }
 }
 
-String _$appForegroundHash() => r'ff11df1036f8239060d89b4fa65e86e86ae508a9';
+String _$appForegroundHash() => r'2e9e21f823f4facbb6b554e64eceb155413c804c';
 
 /// 桌面窗口可见、聚焦、未最小化且生命周期处于前台时才允许自动已读。
 

@@ -1,5 +1,6 @@
 // ignore_for_file: experimental_member_use
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -20,6 +21,7 @@ import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:anoxia/framework/protocol/message/room_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/delta_processor.dart';
+import 'package:anoxia/framework/provider/chat/input/input_draft_store_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
@@ -35,6 +37,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -56,6 +59,9 @@ class ChatInputController extends _$ChatInputController {
   bool _isEnforcingInputLimit = false;
   bool _isSending = false;
   DateTime? _lastLimitNoticeAt;
+
+  /// 恢复草稿过程中忽略编辑器监听（避免把恢复内容回写/误发输入状态）。
+  bool _isRestoringDraft = false;
 
   /// 「即时发送」链路里仍在上传/待重传的本地草稿（key = clientMsgId）
   ///
@@ -107,12 +113,63 @@ class ChatInputController extends _$ChatInputController {
     // 监听文本变化
     controller.addListener(_onTextChanged);
 
+    // riverpod 3：onDispose 里不能再 ref.read，先在 build 期拿到 store。
+    final draftStore = ref.read(inputDraftStoreProvider.notifier);
+
     ref.onDispose(() {
+      // 切房间/销毁：还在 debounce 窗口里的草稿立即落盘
+      unawaited(draftStore.flush(roomId));
       _typingMachine.dispose();
       controller.dispose();
     });
 
+    // 异步恢复草稿：仅当编辑器仍为空时恢复（用户抢先打字则丢弃）
+    unawaited(_restoreInputDraftAsync(draftStore));
+
     return controller;
+  }
+
+  /// 异步恢复本地草稿。
+  ///
+  /// 从 [InputDraftStore] 读取该会话的草稿行，编辑器仍为空（只有初始换行）时
+  /// 换入完整文档并定位光标（光标定位到恢复文本末尾）。
+  /// 恢复期间置 `_isRestoringDraft`，抑制监听器造成的保存/输入状态副作用。
+  /// 任何一步失败只记日志，绝不阻塞输入框可用性。
+  Future<void> _restoreInputDraftAsync(InputDraftStore draftStore) async {
+    final snapshot = await draftStore.load(roomId);
+    if (!ref.mounted) return;
+    _isRestoringDraft = true;
+    try {
+      final controller = state;
+      // 防竞态：用户已提前打字则放弃恢复。
+      if (controller.document.length > 1) return;
+      final raw = snapshot?.deltaJson ?? '';
+      if (raw.isEmpty) return;
+      final delta = Delta.fromJson(jsonDecode(raw) as List<dynamic>);
+      if (delta.isEmpty) return;
+      controller.document = Document.fromDelta(delta);
+      // 光标定位到恢复文本末尾（文档以换行结尾，length-1 即正文末尾）。
+      controller.updateSelection(
+        TextSelection.collapsed(offset: controller.document.length - 1),
+        ChangeSource.local,
+      );
+    } catch (e, st) {
+      debugLog('restore input draft failed: $e', e, st);
+    } finally {
+      _isRestoringDraft = false;
+    }
+  }
+
+  /// 排队保存当前输入草稿（由 [InputDraftStore] 做 debounce 合并）。
+  void _queueDraftSave() {
+    final controller = state;
+    ref
+        .read(inputDraftStoreProvider.notifier)
+        .save(
+          roomId: roomId,
+          deltaJson: jsonEncode(controller.document.toDelta().toJson()),
+          plainText: controller.document.toPlainText(),
+        );
   }
 
   /// 文本变化回调
@@ -123,12 +180,15 @@ class ChatInputController extends _$ChatInputController {
   /// - 检测 '@' 字符以显示@提及选择器，并实时更新搜索文本
   /// - 若光标离开 @ 区域（输入空格、换行或位置变化）则自动关闭提及选择器
   void _onTextChanged() {
+    if (_isRestoringDraft) return;
     if (!ref.mounted) return;
     final controller = state;
     _pruneDeletedUploads(controller);
     if (_enforceInputLimit(controller)) return;
     final bool hasContent = controller.document.length > 1;
     _typingMachine.onTextChanged(hasContent: hasContent);
+    // 内容变化 → debounce 保存草稿（store 内部合并/去重/清空判定）
+    _queueDraftSave();
 
     // 延迟执行光标位置和@提及检测，确保 UI 更新完成
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -285,6 +345,7 @@ class ChatInputController extends _$ChatInputController {
         .sendMessage(ImPacketV6.encodeTypingFrame(room.roomId!, isTyping));
     return true;
   }
+
   /// 发送消息（从编辑器内容构建）
   ///
   /// 处理流程：
@@ -1032,6 +1093,8 @@ class ChatInputController extends _$ChatInputController {
     _typingMachine.resetSilently();
     ref.read(mentionStateProvider.notifier).hide();
     ref.read(replyTargetControllerProvider.notifier).clear(roomId);
+    // 发送后清除草稿（还会经过 state.clear() 的监听回写，这里统一盖掉）
+    unawaited(ref.read(inputDraftStoreProvider.notifier).clear(roomId));
   }
 
   /// 为消息添加回复目标（如果消息类型支持且存在回复目标）

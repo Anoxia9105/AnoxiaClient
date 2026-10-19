@@ -99,7 +99,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'9bd7ca81ec98b23126afa5b0ca4da4e189171c41';
+String _$roomListServiceHash() => r'4f58eaddf8a13ff2e813189c048e4062d3654fdd';
 
 /// 聊天室列表服务
 ///
@@ -161,7 +161,7 @@ final class ActiveRoomIdProvider
   }
 }
 
-String _$activeRoomIdHash() => r'415f2b8b3d222f0c8bc78a9612e586e5887955a6';
+String _$activeRoomIdHash() => r'33753d0544bd9452fe3bcad6d7f882bd192ea1ee';
 
 /// 当前选中的聊天室 ID 全局指针
 

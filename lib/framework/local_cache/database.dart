@@ -21,6 +21,7 @@ part 'database.g.dart';
     SyncStates,
     SyncLogs,
     CachedContacts,
+    InputDrafts,
   ],
   daos: [
     UserDao,
@@ -39,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// 清除会话缓存
   ///
@@ -52,6 +53,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(syncStates).go();
       await delete(syncLogs).go();
       await delete(cachedUsers).go();
+      await delete(inputDrafts).go();
     });
   }
 
@@ -69,6 +71,10 @@ class AppDatabase extends _$AppDatabase {
       // restore system-message semantics after app restart.
       if (from < 3) {
         await m.addColumn(conversations, conversations.lastMessageType);
+      }
+      // v3 → v4: 会话输入草稿表（每会话一行，切换房间/重启恢复）
+      if (from < 4) {
+        await m.createTable(inputDrafts);
       }
     },
     beforeOpen: (details) async {

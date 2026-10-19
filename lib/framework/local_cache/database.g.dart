@@ -3908,6 +3908,327 @@ class CachedContactsCompanion extends UpdateCompanion<CachedContact> {
   }
 }
 
+class $InputDraftsTable extends InputDrafts
+    with TableInfo<$InputDraftsTable, InputDraft> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InputDraftsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _roomIdMeta = const VerificationMeta('roomId');
+  @override
+  late final GeneratedColumn<String> roomId = GeneratedColumn<String>(
+    'room_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deltaJsonMeta = const VerificationMeta(
+    'deltaJson',
+  );
+  @override
+  late final GeneratedColumn<String> deltaJson = GeneratedColumn<String>(
+    'delta_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _plainTextMeta = const VerificationMeta(
+    'plainText',
+  );
+  @override
+  late final GeneratedColumn<String> plainText = GeneratedColumn<String>(
+    'plain_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    roomId,
+    deltaJson,
+    plainText,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'input_drafts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<InputDraft> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('room_id')) {
+      context.handle(
+        _roomIdMeta,
+        roomId.isAcceptableOrUnknown(data['room_id']!, _roomIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roomIdMeta);
+    }
+    if (data.containsKey('delta_json')) {
+      context.handle(
+        _deltaJsonMeta,
+        deltaJson.isAcceptableOrUnknown(data['delta_json']!, _deltaJsonMeta),
+      );
+    }
+    if (data.containsKey('plain_text')) {
+      context.handle(
+        _plainTextMeta,
+        plainText.isAcceptableOrUnknown(data['plain_text']!, _plainTextMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {roomId};
+  @override
+  InputDraft map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return InputDraft(
+      roomId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}room_id'],
+      )!,
+      deltaJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delta_json'],
+      )!,
+      plainText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plain_text'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $InputDraftsTable createAlias(String alias) {
+    return $InputDraftsTable(attachedDatabase, alias);
+  }
+}
+
+class InputDraft extends DataClass implements Insertable<InputDraft> {
+  /// 会话 ID（主键，每个会话最多保留一份草稿）
+  final String roomId;
+
+  /// Quill Delta JSON（完整文档），恢复输入框富文本用
+  final String deltaJson;
+
+  /// 纯文本快照（会话列表预览、光标定位、无富文本能力的端恢复用）
+  final String plainText;
+
+  /// 最后保存时间
+  final DateTime updatedAt;
+  const InputDraft({
+    required this.roomId,
+    required this.deltaJson,
+    required this.plainText,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['room_id'] = Variable<String>(roomId);
+    map['delta_json'] = Variable<String>(deltaJson);
+    map['plain_text'] = Variable<String>(plainText);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  InputDraftsCompanion toCompanion(bool nullToAbsent) {
+    return InputDraftsCompanion(
+      roomId: Value(roomId),
+      deltaJson: Value(deltaJson),
+      plainText: Value(plainText),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory InputDraft.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return InputDraft(
+      roomId: serializer.fromJson<String>(json['roomId']),
+      deltaJson: serializer.fromJson<String>(json['deltaJson']),
+      plainText: serializer.fromJson<String>(json['plainText']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'roomId': serializer.toJson<String>(roomId),
+      'deltaJson': serializer.toJson<String>(deltaJson),
+      'plainText': serializer.toJson<String>(plainText),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  InputDraft copyWith({
+    String? roomId,
+    String? deltaJson,
+    String? plainText,
+    DateTime? updatedAt,
+  }) => InputDraft(
+    roomId: roomId ?? this.roomId,
+    deltaJson: deltaJson ?? this.deltaJson,
+    plainText: plainText ?? this.plainText,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  InputDraft copyWithCompanion(InputDraftsCompanion data) {
+    return InputDraft(
+      roomId: data.roomId.present ? data.roomId.value : this.roomId,
+      deltaJson: data.deltaJson.present ? data.deltaJson.value : this.deltaJson,
+      plainText: data.plainText.present ? data.plainText.value : this.plainText,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InputDraft(')
+          ..write('roomId: $roomId, ')
+          ..write('deltaJson: $deltaJson, ')
+          ..write('plainText: $plainText, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(roomId, deltaJson, plainText, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is InputDraft &&
+          other.roomId == this.roomId &&
+          other.deltaJson == this.deltaJson &&
+          other.plainText == this.plainText &&
+          other.updatedAt == this.updatedAt);
+}
+
+class InputDraftsCompanion extends UpdateCompanion<InputDraft> {
+  final Value<String> roomId;
+  final Value<String> deltaJson;
+  final Value<String> plainText;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const InputDraftsCompanion({
+    this.roomId = const Value.absent(),
+    this.deltaJson = const Value.absent(),
+    this.plainText = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  InputDraftsCompanion.insert({
+    required String roomId,
+    this.deltaJson = const Value.absent(),
+    this.plainText = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : roomId = Value(roomId),
+       updatedAt = Value(updatedAt);
+  static Insertable<InputDraft> custom({
+    Expression<String>? roomId,
+    Expression<String>? deltaJson,
+    Expression<String>? plainText,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (roomId != null) 'room_id': roomId,
+      if (deltaJson != null) 'delta_json': deltaJson,
+      if (plainText != null) 'plain_text': plainText,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  InputDraftsCompanion copyWith({
+    Value<String>? roomId,
+    Value<String>? deltaJson,
+    Value<String>? plainText,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return InputDraftsCompanion(
+      roomId: roomId ?? this.roomId,
+      deltaJson: deltaJson ?? this.deltaJson,
+      plainText: plainText ?? this.plainText,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (roomId.present) {
+      map['room_id'] = Variable<String>(roomId.value);
+    }
+    if (deltaJson.present) {
+      map['delta_json'] = Variable<String>(deltaJson.value);
+    }
+    if (plainText.present) {
+      map['plain_text'] = Variable<String>(plainText.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InputDraftsCompanion(')
+          ..write('roomId: $roomId, ')
+          ..write('deltaJson: $deltaJson, ')
+          ..write('plainText: $plainText, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3917,6 +4238,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SyncStatesTable syncStates = $SyncStatesTable(this);
   late final $SyncLogsTable syncLogs = $SyncLogsTable(this);
   late final $CachedContactsTable cachedContacts = $CachedContactsTable(this);
+  late final $InputDraftsTable inputDrafts = $InputDraftsTable(this);
   late final UserDao userDao = UserDao(this as AppDatabase);
   late final ConversationDao conversationDao = ConversationDao(
     this as AppDatabase,
@@ -3936,6 +4258,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     syncStates,
     syncLogs,
     cachedContacts,
+    inputDrafts,
   ];
 }
 
@@ -6416,6 +6739,187 @@ typedef $$CachedContactsTableProcessedTableManager =
       CachedContact,
       PrefetchHooks Function()
     >;
+typedef $$InputDraftsTableCreateCompanionBuilder =
+    InputDraftsCompanion Function({
+      required String roomId,
+      Value<String> deltaJson,
+      Value<String> plainText,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$InputDraftsTableUpdateCompanionBuilder =
+    InputDraftsCompanion Function({
+      Value<String> roomId,
+      Value<String> deltaJson,
+      Value<String> plainText,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$InputDraftsTableFilterComposer
+    extends Composer<_$AppDatabase, $InputDraftsTable> {
+  $$InputDraftsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get roomId => $composableBuilder(
+    column: $table.roomId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deltaJson => $composableBuilder(
+    column: $table.deltaJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get plainText => $composableBuilder(
+    column: $table.plainText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$InputDraftsTableOrderingComposer
+    extends Composer<_$AppDatabase, $InputDraftsTable> {
+  $$InputDraftsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get roomId => $composableBuilder(
+    column: $table.roomId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deltaJson => $composableBuilder(
+    column: $table.deltaJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get plainText => $composableBuilder(
+    column: $table.plainText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$InputDraftsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InputDraftsTable> {
+  $$InputDraftsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get roomId =>
+      $composableBuilder(column: $table.roomId, builder: (column) => column);
+
+  GeneratedColumn<String> get deltaJson =>
+      $composableBuilder(column: $table.deltaJson, builder: (column) => column);
+
+  GeneratedColumn<String> get plainText =>
+      $composableBuilder(column: $table.plainText, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$InputDraftsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $InputDraftsTable,
+          InputDraft,
+          $$InputDraftsTableFilterComposer,
+          $$InputDraftsTableOrderingComposer,
+          $$InputDraftsTableAnnotationComposer,
+          $$InputDraftsTableCreateCompanionBuilder,
+          $$InputDraftsTableUpdateCompanionBuilder,
+          (
+            InputDraft,
+            BaseReferences<_$AppDatabase, $InputDraftsTable, InputDraft>,
+          ),
+          InputDraft,
+          PrefetchHooks Function()
+        > {
+  $$InputDraftsTableTableManager(_$AppDatabase db, $InputDraftsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InputDraftsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InputDraftsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InputDraftsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> roomId = const Value.absent(),
+                Value<String> deltaJson = const Value.absent(),
+                Value<String> plainText = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => InputDraftsCompanion(
+                roomId: roomId,
+                deltaJson: deltaJson,
+                plainText: plainText,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String roomId,
+                Value<String> deltaJson = const Value.absent(),
+                Value<String> plainText = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => InputDraftsCompanion.insert(
+                roomId: roomId,
+                deltaJson: deltaJson,
+                plainText: plainText,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$InputDraftsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $InputDraftsTable,
+      InputDraft,
+      $$InputDraftsTableFilterComposer,
+      $$InputDraftsTableOrderingComposer,
+      $$InputDraftsTableAnnotationComposer,
+      $$InputDraftsTableCreateCompanionBuilder,
+      $$InputDraftsTableUpdateCompanionBuilder,
+      (
+        InputDraft,
+        BaseReferences<_$AppDatabase, $InputDraftsTable, InputDraft>,
+      ),
+      InputDraft,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6432,6 +6936,8 @@ class $AppDatabaseManager {
       $$SyncLogsTableTableManager(_db, _db.syncLogs);
   $$CachedContactsTableTableManager get cachedContacts =>
       $$CachedContactsTableTableManager(_db, _db.cachedContacts);
+  $$InputDraftsTableTableManager get inputDrafts =>
+      $$InputDraftsTableTableManager(_db, _db.inputDrafts);
 }
 
 mixin _$UserDaoMixin on DatabaseAccessor<AppDatabase> {
