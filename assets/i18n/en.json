@@ -270,6 +270,8 @@
   "settings_feedback_images_helper": "Up to 3 PNG, JPG, or WebP images, 5 MB each",
   "settings_feedback_images_add": "Choose images",
   "settings_feedback_image_remove": "Remove image: {}",
+  "settings_feedback_diagnostics_title": "Attach sanitized diagnostics",
+  "settings_feedback_diagnostics_subtitle": "When enabled, recent sanitized sync failure diagnostics are attached to help locate issues. Chat content is never included.",
   "settings_feedback_image_limit": "You can attach up to 3 images",
   "settings_feedback_image_too_large": "{} is larger than 5 MB and was not added",
   "settings_feedback_submit": "Submit Feedback",

@@ -38,6 +38,10 @@ class StorageKeys {
   /// 是否隐藏官方虚拟房间（布尔值，true=隐藏）
   static const String officialRoomHidden = 'OFFICIAL_ROOM_HIDDEN';
 
+  /// 问题反馈是否附带脱敏诊断日志（开关，默认关）。
+  static const String feedbackAttachDiagnostics =
+      'FEEDBACK_ATTACH_DIAGNOSTICS';
+
   /// 自定义强调色（int color value，null 表示跟随预设）
   static const String customAccentColor = 'CUSTOM_ACCENT_COLOR';
 

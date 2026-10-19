@@ -13,6 +13,8 @@ class SettingsFeedbackSection extends StatelessWidget {
   final TextEditingController contactController;
   final List<FeedbackImageAttachment> images;
   final bool submitting;
+  final bool attachDiagnostics;
+  final ValueChanged<bool> onToggleDiagnostics;
   final VoidCallback onPickImages;
   final ValueChanged<int> onRemoveImage;
   final VoidCallback onSubmit;
@@ -25,6 +27,8 @@ class SettingsFeedbackSection extends StatelessWidget {
     required this.contactController,
     required this.images,
     required this.submitting,
+    required this.attachDiagnostics,
+    required this.onToggleDiagnostics,
     required this.onPickImages,
     required this.onRemoveImage,
     required this.onSubmit,
@@ -133,6 +137,12 @@ class SettingsFeedbackSection extends StatelessWidget {
             onPickImages: onPickImages,
             onRemoveImage: onRemoveImage,
           ),
+          const SizedBox(height: SpacingToken.md),
+          _DiagnosticsToggleRow(
+            attached: attachDiagnostics,
+            enabled: !submitting,
+            onToggle: onToggleDiagnostics,
+          ),
           const SizedBox(height: 20),
           FilledButton.icon(
             key: const ValueKey('feedback-submit-button'),
@@ -187,7 +197,9 @@ class SettingsFeedbackSection extends StatelessWidget {
       filled: true,
       fillColor: colorScheme.surfaceContainerLowest,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
+      ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(RadiusToken.lg),
         borderSide: BorderSide(color: colorScheme.outlineVariant),
@@ -195,6 +207,70 @@ class SettingsFeedbackSection extends StatelessWidget {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(RadiusToken.lg),
         borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+      ),
+    );
+  }
+}
+
+/// 「附带诊断日志」开关行。
+///
+/// 开启后提交反馈时附上脱敏诊断文本（同步失败记录等），
+/// 默认关闭；提交过程中禁用避免与上传内容不一致。
+class _DiagnosticsToggleRow extends StatelessWidget {
+  final bool attached;
+  final bool enabled;
+  final ValueChanged<bool> onToggle;
+
+  const _DiagnosticsToggleRow({
+    required this.attached,
+    required this.enabled,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: SpacingToken.sm,
+      ),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedInformationCircle,
+            color: colorScheme.onSurfaceVariant,
+            size: 20,
+          ),
+          const SizedBox(width: SpacingToken.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'settings_feedback_diagnostics_title'.tr(),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'settings_feedback_diagnostics_subtitle'.tr(),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(value: attached, onChanged: enabled ? onToggle : null),
+        ],
       ),
     );
   }

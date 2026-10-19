@@ -23,6 +23,7 @@ import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart'
 import 'package:anoxia/framework/provider/chat/message/chat_content_density_controller.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
+import 'package:anoxia/framework/provider/setting/feedback_diagnostics_provider.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
@@ -131,6 +132,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final clientType = DeviceUtil.isMobile(context)
         ? 'mobile'
         : (DeviceUtil.isDesktop(context) ? 'desktop' : 'tablet');
+    final attachDiagnostics = ref.read(feedbackAttachDiagnosticsProvider);
 
     final result = await ref
         .read(settingsPageControllerProvider.notifier)
@@ -139,6 +141,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           content: _feedbackContentController.text.trim(),
           contact: _feedbackContactController.text.trim(),
           clientType: clientType,
+          attachDiagnostics: attachDiagnostics,
           images: _feedbackImages,
         );
 
@@ -286,30 +289,43 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       brightness: ref.read(effectiveBrightnessProvider),
                       accentIndex: ref.read(themeAccentProvider),
                     );
-                    ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
+                    ref
+                        .read(themeIndexProvider.notifier)
+                        .setTheme(compatibilityIndex);
                     if (ref.read(customAccentColorProvider) != null) {
                       // 保持自定义色时同步更新兼容索引（避免切回预设时跳色）
-                      ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
+                      ref
+                          .read(themeIndexProvider.notifier)
+                          .setTheme(compatibilityIndex);
                     }
                   },
                   onAccentChanged: (index) {
-                    ref.read(customAccentColorProvider.notifier).setCustomColor(null);
+                    ref
+                        .read(customAccentColorProvider.notifier)
+                        .setCustomColor(null);
                     ref.read(themeAccentProvider.notifier).setAccent(index);
                     final compatibilityIndex = AppTheme.compatibilityThemeIndex(
                       brightness: ref.read(effectiveBrightnessProvider),
                       accentIndex: index,
                     );
-                    ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
+                    ref
+                        .read(themeIndexProvider.notifier)
+                        .setTheme(compatibilityIndex);
                   },
                   onCustomColorChanged: (color) {
-                    ref.read(customAccentColorProvider.notifier).setCustomColor(color);
+                    ref
+                        .read(customAccentColorProvider.notifier)
+                        .setCustomColor(color);
                     if (color != null) {
                       // 自定义色不依赖 accentIndex，兼容索引仍以当前预设为准
-                      final compatibilityIndex = AppTheme.compatibilityThemeIndex(
-                        brightness: ref.read(effectiveBrightnessProvider),
-                        accentIndex: ref.read(themeAccentProvider),
-                      );
-                      ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
+                      final compatibilityIndex =
+                          AppTheme.compatibilityThemeIndex(
+                            brightness: ref.read(effectiveBrightnessProvider),
+                            accentIndex: ref.read(themeAccentProvider),
+                          );
+                      ref
+                          .read(themeIndexProvider.notifier)
+                          .setTheme(compatibilityIndex);
                     }
                   },
                 ),
@@ -382,6 +398,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               contactController: _feedbackContactController,
               images: _feedbackImages,
               submitting: pageState.submittingFeedback,
+              attachDiagnostics: ref.watch(feedbackAttachDiagnosticsProvider),
+              onToggleDiagnostics: (enabled) => ref
+                  .read(feedbackAttachDiagnosticsProvider.notifier)
+                  .setEnabled(enabled),
               onPickImages: _pickFeedbackImages,
               onRemoveImage: _removeFeedbackImage,
               onSubmit: _submitFeedback,

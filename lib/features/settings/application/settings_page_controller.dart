@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/core/diagnostics_report_provider.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -111,6 +112,7 @@ class SettingsPageController extends Notifier<SettingsPageState> {
     required String content,
     required String contact,
     required String clientType,
+    required bool attachDiagnostics,
     List<FeedbackImageAttachment> images = const [],
   }) async {
     if (state.submittingFeedback) {
@@ -123,6 +125,12 @@ class SettingsPageController extends Notifier<SettingsPageState> {
     state = state.copyWith(submittingFeedback: true);
     try {
       final appVersion = await ref.read(appVersionProvider.future);
+      String? diagnostics;
+      if (attachDiagnostics) {
+        diagnostics = await ref
+            .read(diagnosticsReportServiceProvider)
+            .collectReport(appVersion: appVersion);
+      }
       final result = await ref
           .read(settingsRepositoryProvider)
           .submitFeedback(
@@ -132,6 +140,7 @@ class SettingsPageController extends Notifier<SettingsPageState> {
             clientType: clientType,
             appVersion: appVersion,
             images: images,
+            diagnostics: diagnostics ?? '',
           );
 
       if (result.success) {

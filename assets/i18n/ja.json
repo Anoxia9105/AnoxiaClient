@@ -270,6 +270,8 @@
   "settings_feedback_images_helper": "PNG・JPG・WebPを3枚まで、1枚5MB以下",
   "settings_feedback_images_add": "画像を選択",
   "settings_feedback_image_remove": "画像を削除：{}",
+  "settings_feedback_diagnostics_title": "脱敏済み診断ログを添付",
+  "settings_feedback_diagnostics_subtitle": "有効にすると、直近の同期失敗などの脱敏診断情報を添付して問題特定を支援します。チャット内容は含まれません。",
   "settings_feedback_image_limit": "画像は3枚まで添付できます",
   "settings_feedback_image_too_large": "{} は5MBを超えているため追加されませんでした",
   "settings_feedback_submit": "フィードバックを送信",

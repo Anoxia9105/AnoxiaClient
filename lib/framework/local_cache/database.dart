@@ -700,6 +700,18 @@ class SyncLogDao extends DatabaseAccessor<AppDatabase> with _$SyncLogDaoMixin {
         .get();
   }
 
+  /// 诊断导出用：最近 [limit] 条同步日志（按插入时间倒序）。
+  ///
+  /// 供「反馈附带诊断日志」读取，只读不改表。
+  Future<List<SyncLogEntry>> getRecentDiagnosticLogs({int limit = 50}) {
+    return (select(syncLogs)
+          ..orderBy([
+            (tbl) => OrderingTerm(expression: tbl.id, mode: OrderingMode.desc),
+          ])
+          ..limit(limit))
+        .get();
+  }
+
   /// 插入一条同步日志
   Future<int> insertLog(SyncLogsCompanion log) async {
     return transaction(() async {

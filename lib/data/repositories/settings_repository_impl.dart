@@ -17,14 +17,17 @@ class SettingsRepositoryImpl implements SettingsRepository {
     required String clientType,
     required String appVersion,
     List<FeedbackImageAttachment> images = const [],
+    String diagnostics = '',
   }) async {
     try {
+      final diagnosticsText = diagnostics.trim();
       final formData = FormData.fromMap({
         'title': title,
         'content': content,
         'contact': contact,
         'clientType': clientType,
         'appVersion': appVersion,
+        if (diagnosticsText.isNotEmpty) 'diagnostics': diagnosticsText,
         if (images.isNotEmpty)
           'files': images
               .map(

@@ -270,6 +270,8 @@
   "settings_feedback_images_helper": "最多 3 张，支持 PNG、JPG、WebP，每张不超过 5 MB",
   "settings_feedback_images_add": "选择图片",
   "settings_feedback_image_remove": "移除图片：{}",
+  "settings_feedback_diagnostics_title": "附带脱敏诊断日志",
+  "settings_feedback_diagnostics_subtitle": "开启后提交时附带最近的同步失败记录等脱敏诊断信息，便于定位问题；不包含聊天内容。",
   "settings_feedback_image_limit": "最多只能添加 3 张图片",
   "settings_feedback_image_too_large": "图片 {} 超过 5 MB，未添加",
   "settings_feedback_submit": "提交反馈",

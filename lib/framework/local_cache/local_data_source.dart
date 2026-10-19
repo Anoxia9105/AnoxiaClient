@@ -679,6 +679,14 @@ class LocalDataSource {
     });
   }
 
+  /// 诊断导出：最近的同步失败日志（默认 50 条，按时间倒序，只读）。
+  ///
+  /// 「反馈附带诊断日志」读取发布版可见的失败记录从这里走，
+  /// 不要在 Provider 层直接拼 drift 查询。
+  Future<List<SyncLogEntry>> recentSyncFailureLogs({int limit = 50}) {
+    return db.syncLogDao.getRecentDiagnosticLogs(limit: limit);
+  }
+
   Future<ConversationsCompanion> _mergeConversationProjection(
     ChatRoomVO room,
   ) async {

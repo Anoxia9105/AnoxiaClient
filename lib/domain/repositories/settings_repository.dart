@@ -34,6 +34,9 @@ abstract interface class SettingsRepository {
     required String clientType,
     required String appVersion,
     List<FeedbackImageAttachment> images = const [],
+
+    /// 可选的脱敏诊断日志文本（已脱敏且已截断，空串表示不附带）。
+    String diagnostics = '',
   });
 
   /// 检查应用更新
