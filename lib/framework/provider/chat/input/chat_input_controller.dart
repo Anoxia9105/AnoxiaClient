@@ -1,6 +1,5 @@
 // ignore_for_file: experimental_member_use
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -42,6 +41,9 @@ import 'package:uuid/uuid.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import '../room/room_member_service.dart';
 
+import 'package:anoxia/framework/provider/chat/input/chat_send_timeout.dart';
+import 'package:anoxia/framework/provider/chat/input/typing_status_machine.dart';
+
 part 'chat_input_controller.g.dart';
 
 /// 聊天输入控制器
@@ -51,39 +53,19 @@ part 'chat_input_controller.g.dart';
 /// 回复目标、输入超时等核心交互逻辑。
 @Riverpod(keepAlive: true)
 class ChatInputController extends _$ChatInputController {
-  bool _isTyping = false;
   bool _isEnforcingInputLimit = false;
   bool _isSending = false;
   DateTime? _lastLimitNoticeAt;
-  Timer? _typingTimer;
-  Timer? _typingThrottle;
 
   /// 「即时发送」链路里仍在上传/待重传的本地草稿（key = clientMsgId）
   ///
   /// 只在内存里，应用重启即丢失 —— 与"本地文件已不可用"的事实相符。
   final Map<String, _LocalMediaDraft> _pendingMedia = {};
 
-  /// 计算发送超时时间（秒）
-  ///
-  /// 根据消息类型和附件数量动态计算：
-  /// - 基础值 10 秒 + 每个附件 2 秒
-  /// - 若为音频、文件或视频类型额外加 5 秒
-  /// - 最终限制在 10~30 秒之间
-  int _resolveSendTimeoutSeconds({
-    required MessageType type,
-    List<Attachment>? attachments,
-  }) {
-    final attachmentCount = attachments?.length ?? 0;
-    var timeout = 10 + (attachmentCount * 2);
-
-    if (type == MessageType.audio ||
-        type == MessageType.file ||
-        type == MessageType.video) {
-      timeout += 5;
-    }
-
-    return timeout.clamp(10, 30);
-  }
+  /// 「正在输入」节流与自动结束状态机（含 2s idle 自动结束、3s 重复节流）。
+  late final TypingStatusMachine _typingMachine = TypingStatusMachine(
+    trySend: _sendTypingStatus,
+  );
 
   /// 构建 QuillController 实例
   ///
@@ -126,8 +108,7 @@ class ChatInputController extends _$ChatInputController {
     controller.addListener(_onTextChanged);
 
     ref.onDispose(() {
-      _typingTimer?.cancel();
-      _typingThrottle?.cancel();
+      _typingMachine.dispose();
       controller.dispose();
     });
 
@@ -147,20 +128,7 @@ class ChatInputController extends _$ChatInputController {
     _pruneDeletedUploads(controller);
     if (_enforceInputLimit(controller)) return;
     final bool hasContent = controller.document.length > 1;
-
-    if (hasContent) {
-      _isTyping = true;
-      _sendTypingStatus(true);
-    }
-
-    _typingTimer?.cancel();
-    _typingTimer = Timer(const Duration(seconds: 2), () {
-      if (!ref.mounted) return;
-      if (_isTyping) {
-        _isTyping = false;
-        _sendTypingStatus(false);
-      }
-    });
+    _typingMachine.onTextChanged(hasContent: hasContent);
 
     // 延迟执行光标位置和@提及检测，确保 UI 更新完成
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -236,10 +204,10 @@ class ChatInputController extends _$ChatInputController {
     ref.read(chatFileUploadControllerProvider.notifier).retain(ids);
   }
 
-  /// 发送输入状态（正在输入/结束输入）给聊天对方
+  /// 强制截断超限输入。
   ///
-  /// 通过 WebSocket 发送 HighMessage 类型 TYPING_STATUS，
-  /// 前提是对方在线且房间成员已同步。
+  /// 编辑器内容超过 [ChatInputLimit.maxCharacters] 时裁掉溢出部分并提示；
+  /// `_isEnforcingInputLimit` 防止 replaceText 触发的再次监听造成递归。
   bool _enforceInputLimit(QuillController controller) {
     if (_isEnforcingInputLimit) return true;
     if (controller.document.length <= ChatInputLimit.maxCharacters + 1) {
@@ -280,17 +248,23 @@ class ChatInputController extends _$ChatInputController {
         );
   }
 
-  void _sendTypingStatus(bool isTyping) {
-    if (!ref.mounted) return;
-    if (isTyping && _typingThrottle != null) return;
+  /// 发送输入状态（正在输入/结束输入）给聊天对方。
+  ///
+  /// 通过 WebSocket 发送 HighMessage 类型 TYPING_STATUS，
+  /// 前提是对方在线且房间成员已同步。
+  /// 返回 false 表示校验未通过、实际未发出；节流与 idle 定时器都在
+  /// [TypingStatusMachine] 内管理，这里不再持有节流状态（与原实现一致：
+  /// 校验失败时不触碰任何节流状态）。
+  bool _sendTypingStatus(bool isTyping) {
+    if (!ref.mounted) return false;
     final room = ref.read(currentRoomProvider(roomId));
-    if (room == null || room.peerId == null) return;
+    if (room == null || room.peerId == null) return false;
 
     final roomMembers = ref.read(roomMembersProvider(room.roomId!));
 
     // 成员未同步则跳过
     if (roomMembers.isEmpty) {
-      return;
+      return false;
     }
 
     // 查找对方成员
@@ -299,22 +273,18 @@ class ChatInputController extends _$ChatInputController {
         .toList();
     final peerMember = matchedMembers.isEmpty ? null : matchedMembers.first;
 
-    if (peerMember == null) return;
+    if (peerMember == null) return false;
 
     // 对方不在线则不发送
     if (peerMember.onlineStatus != true) {
-      return;
+      return false;
     }
 
-    _typingThrottle?.cancel();
-    _typingThrottle = isTyping
-        ? Timer(const Duration(seconds: 3), () => _typingThrottle = null)
-        : null;
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(ImPacketV6.encodeTypingFrame(room.roomId!, isTyping));
+    return true;
   }
-
   /// 发送消息（从编辑器内容构建）
   ///
   /// 处理流程：
@@ -898,25 +868,7 @@ class ChatInputController extends _$ChatInputController {
   /// 更新输入状态、重置定时器，但不处理 @提及（因为 Android 使用单独机制）。
   void handlePlainTextChanged(String text) {
     final hasContent = text.trim().isNotEmpty;
-
-    if (hasContent) {
-      _isTyping = true;
-      _sendTypingStatus(true);
-    }
-
-    _typingTimer?.cancel();
-    _typingTimer = Timer(const Duration(seconds: 2), () {
-      if (!ref.mounted) return;
-      if (_isTyping) {
-        _isTyping = false;
-        _sendTypingStatus(false);
-      }
-    });
-
-    if (!hasContent && _isTyping) {
-      _isTyping = false;
-      _sendTypingStatus(false);
-    }
+    _typingMachine.onPlainTextChanged(hasContent: hasContent);
   }
 
   /// 发送语音消息
@@ -1060,7 +1012,7 @@ class ChatInputController extends _$ChatInputController {
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    final timeoutSeconds = _resolveSendTimeoutSeconds(
+    final timeoutSeconds = resolveSendTimeoutSeconds(
       type: MessageType.audio,
       attachments: attachments,
     );
@@ -1077,7 +1029,7 @@ class ChatInputController extends _$ChatInputController {
   /// 清空输入框内容，重置输入状态，隐藏 @提及选择器，清除回复目标
   void clearInput() {
     state.clear();
-    _isTyping = false;
+    _typingMachine.resetSilently();
     ref.read(mentionStateProvider.notifier).hide();
     ref.read(replyTargetControllerProvider.notifier).clear(roomId);
   }
@@ -1155,7 +1107,7 @@ class ChatInputController extends _$ChatInputController {
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    final timeoutSeconds = _resolveSendTimeoutSeconds(
+    final timeoutSeconds = resolveSendTimeoutSeconds(
       type: type,
       attachments: derivedAttachments,
     );

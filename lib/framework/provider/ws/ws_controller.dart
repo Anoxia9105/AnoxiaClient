@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
 import 'dart:io' as io;
-import 'dart:math' as math;
+import 'package:anoxia/framework/provider/ws/ws_reconnect_backoff.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/core/device_identity.dart';
@@ -663,7 +663,8 @@ class WsController extends _$WsController {
 
   /// 指数退避重连
   ///
-  /// 重连间隔：2s, 4s, 8s... 最大 30s
+  /// 重连间隔：2s, 4s, 8s... 最大 30s，带 Full Jitter，
+  /// 具体算法见 `calculateReconnectDelaySeconds`（有单测锁定）。
   void _retryConnection() {
     _reconnectTimer?.cancel();
 
@@ -672,18 +673,12 @@ class WsController extends _$WsController {
     final user = ref.read(authControllerProvider).value;
     if (user == null) return;
 
-    final delaySeconds = _calculateReconnectDelay();
+    final delaySeconds = calculateReconnectDelaySeconds(_reconnectAttempts);
 
     _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
       _reconnectAttempts++;
       _initConnection();
     });
-  }
-
-  int _calculateReconnectDelay() {
-    final baseDelay = (1 << _reconnectAttempts).clamp(2, 30);
-    final jitterMs = math.Random().nextInt(baseDelay * 1000);
-    return math.max(1, (jitterMs / 1000).round());
   }
 
   /// 登出时主动断开连接
