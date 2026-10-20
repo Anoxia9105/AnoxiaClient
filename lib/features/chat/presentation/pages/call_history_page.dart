@@ -1,0 +1,368 @@
+import 'dart:async';
+
+import 'package:anoxia/common/utils/date_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/framework/domain/call_log_entry.dart';
+import 'package:anoxia/framework/provider/chat/call/call_history_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/layout/layout_controller.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+/// 通话记录页面
+///
+/// 主框架新增独立页签：跨房间按会话聚合的最近通话列表。
+/// - 条目：对端/群名 + 呼出/呼入 + 状态（完成显示时长）+ 服务器时间；
+/// - 点击条目跳转对应会话（设置 activeRoomId 后切到聊天页签）；
+/// - 下拉刷新 + 滚动到底自动加载下一页。
+class CallHistoryPage extends ConsumerWidget {
+  const CallHistoryPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(callHistoryListProvider);
+    final colors = Theme.of(context).colorScheme;
+    final isMobile = DeviceUtil.isMobile(context);
+
+    final Widget content;
+    if (state.entries.isEmpty && state.initialLoading) {
+      content = const Center(child: CircularProgressIndicator());
+    } else if (state.entries.isEmpty && state.error != null) {
+      content = _ErrorView(
+        onRetry: () =>
+            unawaited(ref.read(callHistoryListProvider.notifier).refresh()),
+      );
+    } else if (state.entries.isEmpty) {
+      content = _EmptyView(colors: colors);
+    } else {
+      content = NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          final metrics = notification.metrics;
+          if (notification.depth == 0 &&
+              metrics.pixels >= metrics.maxScrollExtent - 240) {
+            unawaited(ref.read(callHistoryListProvider.notifier).loadMore());
+          }
+          return false;
+        },
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: state.entries.length + 1,
+          separatorBuilder: (context, index) =>
+              Divider(height: 1, thickness: 0.5, color: colors.outlineVariant),
+          itemBuilder: (context, index) {
+            if (index == state.entries.length) return _ListFooter(state: state);
+            return _CallEntryTile(entry: state.entries[index]);
+          },
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: colors.surface,
+      appBar: isMobile
+          ? AppBar(
+              centerTitle: true,
+              titleSpacing: 16,
+              title: Text('call.history'.tr()),
+              backgroundColor: colors.surface,
+              surfaceTintColor: Colors.transparent,
+            )
+          : null,
+      body: SafeArea(
+        top: !isMobile,
+        child: Column(
+          children: [
+            if (!isMobile)
+              _DesktopHeader(
+                state: state,
+                onRefresh: () =>
+                    ref.read(callHistoryListProvider.notifier).refresh(),
+              ),
+            const Divider(height: 1),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: ref.read(callHistoryListProvider.notifier).refresh,
+                child: content,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 桌面端页头：标题 + 刷新按钮
+class _DesktopHeader extends StatelessWidget {
+  final CallHistoryState state;
+  final VoidCallback onRefresh;
+
+  const _DesktopHeader({required this.state, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'call.history'.tr(),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: colors.onSurface,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'call.history.refresh'.tr(),
+            onPressed: state.initialLoading ? null : onRefresh,
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedRefresh,
+              size: 20,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 空列表占位
+class _EmptyView extends StatelessWidget {
+  final ColorScheme colors;
+
+  const _EmptyView({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.5,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                HugeIcon(
+                  icon: HugeIcons.strokeRoundedCall,
+                  size: 40,
+                  color: colors.onSurfaceVariant.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'call.history.empty'.tr(),
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 加载失败占位（点击重试）
+class _ErrorView extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _ErrorView({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.5,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                HugeIcon(
+                  icon: HugeIcons.strokeRoundedAlert02,
+                  size: 36,
+                  color: colors.error,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'call.history.load_failed'.tr(),
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
+                const SizedBox(height: 8),
+                TextButton(onPressed: onRetry, child: Text('retry'.tr())),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 列表尾部：加载下一页指示 / 没有更多
+class _ListFooter extends StatelessWidget {
+  final CallHistoryState state;
+
+  const _ListFooter({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    if (state.loadingMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+    if (!state.hasMore) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Text(
+          'call.history.no_more'.tr(),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.onSurfaceVariant.withValues(alpha: 0.7),
+          ),
+        ),
+      );
+    }
+    return const SizedBox(height: 12);
+  }
+}
+
+/// 单条通话记录
+class _CallEntryTile extends ConsumerWidget {
+  final CallLogEntry entry;
+
+  const _CallEntryTile({required this.entry});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final title = entry.displayName.isEmpty
+        ? 'call.history.unknown_peer'.tr()
+        : entry.displayName;
+
+    return InkWell(
+      onTap: () => _openRoom(ref),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            AvatarWidget(url: entry.peerAvatar, name: title, size: 42),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: colors.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  _subtitle(colors),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              DateUtil.formatTime(entry.startAt),
+              style: TextStyle(
+                fontSize: 12,
+                color: colors.onSurfaceVariant.withValues(alpha: 0.75),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 副标题行：呼出/呼入 + 状态（进行中/已拒绝/已取消/时长）
+  Widget _subtitle(ColorScheme colors) {
+    final directionKey = entry.outgoing
+        ? 'call.history.outgoing'
+        : 'call.history.incoming';
+    final directionIcon = entry.outgoing
+        ? Icons.call_made
+        : Icons.call_received;
+
+    final (String statusText, Color statusColor) = switch (entry.status) {
+      CallLogStatus.ongoing => (
+        'call.history.ongoing'.tr(),
+        colors.primary,
+      ),
+      CallLogStatus.rejected => (
+        'call.history.rejected'.tr(),
+        colors.error,
+      ),
+      CallLogStatus.canceled => (
+        'call.history.canceled'.tr(),
+        colors.onSurfaceVariant,
+      ),
+      CallLogStatus.completed => (
+        entry.durationText ?? '',
+        colors.onSurfaceVariant,
+      ),
+    };
+
+    return Row(
+      children: [
+        Icon(directionIcon, size: 13, color: colors.onSurfaceVariant),
+        const SizedBox(width: 3),
+        Text(
+          directionKey.tr(),
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '·',
+          style: TextStyle(fontSize: 12, color: colors.outlineVariant),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            statusText,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 12, color: statusColor),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 跳转对应会话：设置活跃房间并切到聊天页签。
+  ///
+  /// 与全局搜索/群名片详情一致（[setActive] + 回聊天页签）；
+  /// 本页常驻 IndexedStack，无弹栈可清理。
+  void _openRoom(WidgetRef ref) {
+    ref.read(activeRoomIdProvider.notifier).setActive(entry.roomId);
+    ref.read(layoutControllerProvider.notifier).setIndex(0);
+  }
+}

@@ -216,6 +216,9 @@ class API {
   /// 移出通话参与者
   static const String callRemoveParticipant = '/call/participant/remove';
 
+  /// 通话记录（服务端把 CALL_STARTED/终态系统消息按房间折叠聚合）
+  static const String callHistory = '/call/history';
+
   // ======================== AI 聊天接口 ========================
   /// AI 对话流式接口（SSE，支持 thinking / 多轮 conversationId）
   static const String chatAiStream = '/chat/ai/stream';

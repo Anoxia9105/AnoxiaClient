@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:anoxia/domain/repositories/call_repository.dart';
+import 'package:anoxia/framework/domain/call_log_entry.dart';
 import 'package:anoxia/framework/domain/room_call_status.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
@@ -24,6 +25,14 @@ class _PendingCallRepository implements CallRepository {
 
   @override
   Future<bool> removeParticipant(String roomId, String identity) =>
+      throw UnimplementedError();
+
+  @override
+  Future<CallHistoryPageData> fetchCallHistory({
+    required int pageNum,
+    required int pageSize,
+    required String orderBy,
+  }) =>
       throw UnimplementedError();
 }
 
