@@ -178,8 +178,29 @@ class MessageBubbleRow extends ConsumerWidget {
           isMentionedMe: view.isMentionedMe,
           isCurrentUser: view.isCurrentUser,
         ),
+        // 「已编辑」角标（P1-1）：编辑消息行会带 edited 标记（服务端写 properties）
+        if (message.isEdited) const _EditedBadge(),
         SizedBox(width: trailingSpace),
       ],
+    );
+  }
+}
+
+/// 「已编辑」角标
+class _EditedBadge extends StatelessWidget {
+  const _EditedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 2),
+      child: Text(
+        'chat_edited'.tr(),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: colorScheme.outline),
+      ),
     );
   }
 }

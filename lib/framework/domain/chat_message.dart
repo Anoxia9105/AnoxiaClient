@@ -44,6 +44,12 @@ class ChatMessage {
   /// 消息序号。
   final int? seq;
 
+  /// 消息是否被编辑过。
+  ///
+  /// 服务端在编辑时会把 `edited` 标记写进消息 properties（历史/同步读行自带）；
+  /// 实时收到的编辑事件则由客户端在应用编辑时本地补写该标记。
+  bool get isEdited => properties['edited'] != null;
+
   ChatMessage({
     this.messageId,
     this.clientMsgId,

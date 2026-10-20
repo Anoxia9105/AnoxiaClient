@@ -39,6 +39,33 @@ class RemoteDataSource {
     }).toList();
   }
 
+  /// 编辑同步补拉：与撤回同款游标分页，附带最终 payload JSON 快照。
+  Future<List<({int id, String messageId, String payload})>> fetchEdits(
+    String roomId,
+    int afterId,
+  ) async {
+    final res = await _client.get(
+      '/chat/edits',
+      queryParameters: {'roomId': roomId, 'afterId': afterId, 'pageSize': 100},
+    );
+    final data = res.data['data'];
+    if (data is! List) throw const FormatException('invalid edit response');
+    return data.map((item) {
+      final id = int.tryParse(item['id'].toString());
+      final messageId = item['messageId']?.toString();
+      final payload = item['payload']?.toString();
+      if (id == null ||
+          id <= afterId ||
+          messageId == null ||
+          messageId.isEmpty ||
+          payload == null ||
+          payload.isEmpty) {
+        throw const FormatException('invalid edit record');
+      }
+      return (id: id, messageId: messageId, payload: payload);
+    }).toList();
+  }
+
   /// 获取会话列表
   ///
   /// [since] 可选，获取该时间之后更新的会话，用于增量同步。

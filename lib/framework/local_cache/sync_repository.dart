@@ -135,6 +135,12 @@ class SyncRepository implements ChatRepository {
         // 服务端滚动升级时可能尚无补偿接口；不能因此中断普通消息恢复。
         debugLog('syncRecalls failed: $convId', e, st);
       }
+      try {
+        await _syncEdits(convId);
+      } catch (e, st) {
+        // 编辑补偿接口升级前不可用时同理，普通消息恢复不受影响。
+        debugLog('syncEdits failed: $convId', e, st);
+      }
       var lastSeq = await _local.messageSyncWatermark(convId);
       var maxSeq = lastSeq;
 
@@ -184,6 +190,22 @@ class SyncRepository implements ChatRepository {
       await _local.applyRecalls(recalls.map((r) => r.messageId));
       cursor = recalls.map((r) => r.id).reduce((a, b) => a > b ? a : b);
       if (recalls.length < 100) return;
+    }
+  }
+
+  /// 编辑补偿循环：游标分页，把离线期间错过的编辑按 payload 快照回放到消息行。
+  Future<void> _syncEdits(String roomId) async {
+    var cursor = 0;
+    while (true) {
+      final edits = await _remote.fetchEdits(roomId, cursor);
+      if (edits.isEmpty) return;
+      await _local.applyEdits(
+        edits
+            .map((e) => (messageId: e.messageId, payloadJson: e.payload))
+            .toList(),
+      );
+      cursor = edits.map((e) => e.id).reduce((a, b) => a > b ? a : b);
+      if (edits.length < 100) return;
     }
   }
 

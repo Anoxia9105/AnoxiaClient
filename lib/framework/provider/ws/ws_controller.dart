@@ -492,6 +492,25 @@ class WsController extends _$WsController {
                   .read(chatMessagesProvider.notifier)
                   .removeMessage(messageId, roomId);
             }
+          } else if (opType == 2) {
+            // 消息编辑：metadata 携带最终 payload 快照，统一走应用编辑入口
+            final metadata = op['metadata'];
+            final payloadJson =
+                metadata is Map ? metadata['edited_payload_json'] : null;
+            if (messageId.isNotEmpty &&
+                roomId.isNotEmpty &&
+                payloadJson is String &&
+                payloadJson.isNotEmpty) {
+              unawaited(
+                ref
+                    .read(chatMessagesProvider.notifier)
+                    .applyEditMessage(
+                      messageId: messageId,
+                      roomId: roomId,
+                      payloadJson: payloadJson,
+                    ),
+              );
+            }
           }
           debugLog('[WsController] V6 operation: $op');
           break;

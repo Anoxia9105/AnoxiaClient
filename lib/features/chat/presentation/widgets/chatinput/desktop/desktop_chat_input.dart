@@ -17,9 +17,11 @@ import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart'
 import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/edit_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/edit_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/ai/smart_reply_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
@@ -283,12 +285,24 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     final controller = ref.watch(chatInputControllerProvider(widget.roomId));
     final focusNode = ref.watch(chatFocusNodeProvider(widget.roomId));
     final replyTarget = ref.watch(replyTargetProvider(widget.roomId));
+    final editTarget = ref.watch(editTargetProvider(widget.roomId));
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (replyTarget != null)
+        if (editTarget != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+            child: EditPreviewBar(
+              onCancel: () {
+                ref
+                    .read(chatInputControllerProvider(widget.roomId).notifier)
+                    .cancelEdit();
+              },
+            ),
+          )
+        else if (replyTarget != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
             child: ReplyPreviewBar(

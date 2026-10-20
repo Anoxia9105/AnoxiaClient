@@ -673,6 +673,72 @@ class LocalDataSource {
     });
   }
 
+  /// 应用编辑补拉：按 payload 快照刷新消息行（payloadJson/content/messageType/properties）。
+  ///
+  /// 幂等：同样的快照重复应用结果一致；行不存在（未同步过）则跳过。
+  /// 编辑只更新内容相关列，不动 seq/时间戳，消息排序保持原位。
+  Future<void> applyEdits(
+    Iterable<({String messageId, String payloadJson})> edits,
+  ) async {
+    return _write(() async {
+      for (final edit in edits) {
+        if (edit.messageId.isEmpty || edit.payloadJson.isEmpty) continue;
+        final row = await db.messageDao.getMessageById(edit.messageId);
+        if (row == null) continue;
+        Map<String, dynamic>? payloadMap;
+        try {
+          final decoded = jsonDecode(edit.payloadJson);
+          if (decoded is Map<String, dynamic>) payloadMap = decoded;
+        } catch (_) {
+          continue;
+        }
+        if (payloadMap == null) continue;
+        MessagePayload payload;
+        try {
+          payload = MessagePayload.fromJson(payloadMap);
+        } catch (_) {
+          continue;
+        }
+        await (db.update(db.messages)..where(
+              (t) => t.id.equals(edit.messageId),
+            )).write(
+          MessagesCompanion(
+            payloadJson: Value(edit.payloadJson),
+            content: Value(payload.content ?? ''),
+            messageType: Value(
+              MessageType.toCode(
+                (payload.quillDelta?.isNotEmpty == true)
+                    ? MessageType.richText
+                    : MessageType.text,
+              ),
+            ),
+            propertiesJson: Value(
+              _jsonEncodeOrNull({
+                ...?_decodeJsonMap(row.propertiesJson),
+                'edited': '1',
+              }),
+            ),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+        // 若被编辑的正是会话末条消息，同步刷新列表预览；
+        // updateLastMessage 内置 seq/时间守卫，编辑更早的消息时是 no-op。
+        await db.conversationDao.updateLastMessage(
+          conversationId: row.conversationId,
+          messageId: edit.messageId,
+          preview: payload.content ?? '',
+          messageType: MessageType.toCode(
+            (payload.quillDelta?.isNotEmpty == true)
+                ? MessageType.richText
+                : MessageType.text,
+          ),
+          seq: row.seq,
+          sentAt: row.sentAt,
+        );
+      }
+    });
+  }
+
   Future<void> deleteMessagesForConversation(String conversationId) {
     return _write(() async {
       return db.messageDao.deleteMessagesForConversation(conversationId);

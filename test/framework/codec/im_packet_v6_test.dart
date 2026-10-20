@@ -110,6 +110,50 @@ void main() {
     expect(frame.sendMessage.payload.text.content, 'hello');
   });
 
+  test('edit frame keeps field 15 command and text payload on the wire', () {
+    final bytes = ImPacketV6.encodeEditFrame(
+      'room-1',
+      'server-1',
+      MessageType.text,
+      const MessagePayload(content: 'edited'),
+      requestId: 'edit-1',
+    );
+
+    final frame = v6.ClientFrame.fromBuffer(bytes);
+    expect(frame.hasEditMessage(), isTrue);
+    expect(frame.editMessage.roomId, 'room-1');
+    expect(frame.editMessage.messageId, 'server-1');
+    expect(frame.editMessage.payload.text.content, 'edited');
+
+    // 固定 wire 回归（按权威 im.proto 手写，不用生成类拼装）：
+    // request_id(1)="edit-1"；edit_message(15, tag 0x7a) 内
+    // room_id(1)/message_id(2)/payload(3)=text(1){content(1)="edited", format(2)=PLAIN}。
+    // 注意 _toUserMessagePayload 对 text 恒写 format=PLAIN(1)。
+    const fixture = <int>[
+      0x0a, 0x06, 0x65, 0x64, 0x69, 0x74, 0x2d, 0x31, // request_id
+      0x7a, 0x20, // edit_message
+      0x0a, 0x06, 0x72, 0x6f, 0x6f, 0x6d, 0x2d, 0x31, // room_id
+      0x12, 0x08, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2d, 0x31, // message_id
+      0x1a, 0x0c, // payload
+      0x0a, 0x0a, // text
+      0x0a, 0x06, 0x65, 0x64, 0x69, 0x74, 0x65, 0x64, // content
+      0x10, 0x01, // format = TEXT_FORMAT_PLAIN
+    ];
+    expect(bytes, fixture);
+  });
+
+  test('edit frame rejects non text/richText payloads', () {
+    expect(
+      () => ImPacketV6.encodeEditFrame(
+        'room-1',
+        'server-1',
+        MessageType.image,
+        null,
+      ),
+      throwsArgumentError,
+    );
+  });
+
   test('ACK keeps request correlation separate from server message id', () {
     final bytes = v6.ServerFrame(
       requestId: 'client-1',

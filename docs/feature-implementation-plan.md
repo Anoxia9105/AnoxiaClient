@@ -15,7 +15,7 @@
 | P0-3 | AI 翻译 + 未读一键总结 | Client | 中低 | ☐ 待做 |
 | P0-4 | 聊天媒体时间线（媒体/文件/链接） | Client | 中低 | ☐ 待做 |
 | P0-5 | 应用锁（生物识别/PIN） | Client | 中 | ☐ 待做 |
-| P1-1 | 消息编辑 | Protocol + Server + Client | 中 | ☐ 待做 |
+| P1-1 | 消息编辑 | Protocol + Server + Client | 中 | ✅ 完成（协议 6.2.0 增 `edit_message=15`；服务端 EditMessageRequestHandler + 行内更新 payload + `GET /chat/edits` 补拉 + MESSAGE_EDIT 广播；客户端菜单/编辑态/已编辑角标/离线补拉，三语 i18n） |
 | P1-2 | 通话记录页 | Server + Client | 中 | ☐ 待做 |
 | P1-3 | 会话设置云同步（免打扰/置顶） | Server + Client | 中低 | ☐ 待做 |
 | P2-1 | 消息表情回应 Reactions | Protocol + Server + Client | 大 | ☐ 待做 |
@@ -159,7 +159,7 @@
 
 ## 批次三：P1（跨仓）
 
-### P1-1 消息编辑（唯一动协议任务，随批次走标准流程）
+### P1-1 消息编辑（唯一动协议任务，随批次走标准流程） ✅
 
 - 协议（AnoxiaProtocol）：
   - `ClientFrame.body` 追加 `EditMessageCommand`（新字段号 15）：`room_id`、`message_id`、`payload`（仅 Text/RichText 两种）。

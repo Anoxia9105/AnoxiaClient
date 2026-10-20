@@ -17,6 +17,7 @@ import 'package:anoxia/framework/provider/chat/message/ai_prompt_builder.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
+import 'package:anoxia/framework/provider/chat/input/edit_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
@@ -193,6 +194,17 @@ class _ChatMessageContextMenuState
       );
     }
 
+    // 编辑（P1-1）：仅本人、Text/RichText（富文本不带 embed）、15 分钟窗口内
+    if (canEditMessage(widget.message, currentUser?.userId)) {
+      items.add(
+        _buildItem(
+          'edit',
+          HugeIcons.strokeRoundedEdit01,
+          'chat_edit'.tr(),
+        ),
+      );
+    }
+
     items.add(
       _buildItem(
         'favorite',
@@ -290,6 +302,9 @@ class _ChatMessageContextMenuState
           builder: (_) => AiTranslateSheet(message: widget.message),
         );
         break;
+      case 'edit':
+        _handleEdit();
+        break;
       case 'favorite':
         unawaited(_handleFavorite(context));
         break;
@@ -375,6 +390,18 @@ class _ChatMessageContextMenuState
     ref
         .read(replyTargetControllerProvider.notifier)
         .set(roomId, widget.message);
+    ref.read(chatFocusNodeProvider(roomId)).requestFocus();
+  }
+
+  /// 进入编辑模式：清回复态 → 回填输入框 → 聚焦。
+  void _handleEdit() {
+    final roomId = widget.message.roomId;
+    if (roomId == null || roomId.isEmpty) return;
+    // 编辑与回复互斥：先清回复目标，避免编辑内容被附加 replyTo
+    ref.read(replyTargetControllerProvider.notifier).clear(roomId);
+    ref
+        .read(chatInputControllerProvider(roomId).notifier)
+        .startEdit(widget.message);
     ref.read(chatFocusNodeProvider(roomId)).requestFocus();
   }
 

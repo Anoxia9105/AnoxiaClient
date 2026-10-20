@@ -26,6 +26,7 @@ import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/edit_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -358,12 +359,157 @@ class ChatInputController extends _$ChatInputController {
     if (_isSending) return;
     final room = ref.read(currentRoomProvider(roomId));
     if (room == null || room.isOfficial || state.document.isEmpty()) return;
+    // 编辑模式下发送走编辑命令，不经新消息发送链路（不进离线重试队列）
+    final editTarget = ref.read(editTargetProvider(roomId));
+    if (editTarget != null) {
+      await _sendEdit(editTarget);
+      return;
+    }
     _isSending = true;
     try {
       await _sendMessageInternal();
     } finally {
       _isSending = false;
     }
+  }
+
+  /// 编辑模式下发送：组合当前输入为最终 payload，走 V6 编辑命令。
+  ///
+  /// 与新消息发送共用 DeltaProcessor 口径；组合结果不是 Text/RichText
+  /// （如图片/语音/表情）时提示不可编辑并返回，不会误发新消息。
+  /// 本地内容不在此处直接改写——成功后由服务端广播的 EDITED 事件统一刷新，
+  /// 失败（超窗/无权限）时输入框内容保持原样，可继续修改后重试。
+  Future<void> _sendEdit(ChatMessage target) async {
+    final messageId = target.messageId;
+    if (messageId == null || messageId.isEmpty) return;
+    final room = ref.read(currentRoomProvider(roomId));
+    if (room == null || room.isOfficial) return;
+
+    final uploadState = {
+      ...ref.read(chatImageUploadControllerProvider.notifier).urlMap,
+      ...ref.read(chatFileUploadControllerProvider.notifier).urlMap,
+    };
+    final processor = DeltaProcessor(state.document.toDelta(), uploadState);
+
+    // 编辑仅支持 Text/RichText：带媒体（图片/视频/文件/语音）不被输入框忠实重放
+    if (processor.images.isNotEmpty ||
+        processor.videos.isNotEmpty ||
+        processor.files.isNotEmpty) {
+      ref
+          .read(toastServiceProvider)
+          .showToast('chat_edit_unsupported'.tr(), type: ToastType.warning);
+      return;
+    }
+
+    if (processor.plainText.isEmpty &&
+        processor.mentionedUserIds.isEmpty &&
+        !processor.mentionAll) {
+      return;
+    }
+    final cleanDelta = processor.filteredDelta;
+    if (cleanDelta.length == 0 ||
+        (cleanDelta.length == 1 &&
+            cleanDelta.first.data == '\n' &&
+            processor.mentionedUserIds.isEmpty &&
+            !processor.mentionAll)) {
+      return;
+    }
+
+    final MessageType type;
+    final MessagePayload payload;
+    if (processor.isSingleEmoji) {
+      // 表情消息不在可编辑范围内
+      ref
+          .read(toastServiceProvider)
+          .showToast('chat_edit_unsupported'.tr(), type: ToastType.warning);
+      return;
+    } else {
+      final isRich =
+          processor.hasAttributes ||
+          processor.mentionedUserIds.isNotEmpty ||
+          processor.mentionAll;
+      type = isRich ? MessageType.richText : MessageType.text;
+      payload = isRich
+          ? MessagePayload(
+              content: processor.plainText.characters.take(100).toString(),
+              quillDelta: jsonEncode(cleanDelta.toJson()),
+              mentions: processor.mentionedUserIds,
+              mentionAll: processor.mentionAll,
+            )
+          : MessagePayload(content: processor.plainText);
+    }
+
+    _isSending = true;
+    try {
+      final ok = await ref
+          .read(chatMessagesProvider.notifier)
+          .editMessage(messageId, roomId, type, payload);
+      if (ok) {
+        ref.read(editTargetControllerProvider.notifier).clear(roomId);
+        clearInput();
+        ref
+            .read(toastServiceProvider)
+            .showToast('chat_edit_success'.tr(), type: ToastType.success);
+      } else {
+        ref
+            .read(toastServiceProvider)
+            .showToast('chat_edit_failed'.tr(), type: ToastType.error);
+      }
+    } catch (e) {
+      debugLog('编辑消息发送失败: $e');
+      ref
+          .read(toastServiceProvider)
+          .showToast('chat_edit_error'.tr(), type: ToastType.error);
+    } finally {
+      _isSending = false;
+    }
+  }
+
+  /// 进入编辑模式：把消息原文回填进输入框（文本 → 纯文本；富文本 → 原始 Delta）。
+  ///
+  /// 回填方式与草稿恢复一致（`_isRestoringDraft` 抑制监听副作用）；
+  /// 编辑与回复互斥，进入时先清掉回复目标。
+  void startEdit(ChatMessage message) {
+    final type = message.messageType;
+    if (type != MessageType.text && type != MessageType.richText) return;
+    final controller = state;
+    _isRestoringDraft = true;
+    try {
+      final payload = message.payload;
+      if (type == MessageType.richText &&
+          payload?.quillDelta?.isNotEmpty == true) {
+        final delta = Delta.fromJson(
+          jsonDecode(payload!.quillDelta!) as List<dynamic>,
+        );
+        controller.document = Document.fromDelta(delta);
+      } else {
+        final text = payload?.content ?? message.content;
+        controller.clear();
+        controller.replaceText(
+          0,
+          0,
+          text,
+          TextSelection.collapsed(offset: text.length),
+        );
+      }
+      controller.updateSelection(
+        TextSelection.collapsed(offset: controller.document.length - 1),
+        ChangeSource.local,
+      );
+    } catch (e, st) {
+      debugLog('startEdit failed: $e', e, st);
+      return;
+    } finally {
+      _isRestoringDraft = false;
+    }
+    ref.read(replyTargetControllerProvider.notifier).clear(roomId);
+    ref.read(editTargetControllerProvider.notifier).set(roomId, message);
+  }
+
+  /// 退出编辑模式：清空编辑目标与输入框内容。
+  void cancelEdit() {
+    ref.read(editTargetControllerProvider.notifier).clear(roomId);
+    clearInput();
   }
 
   /// 发送消息的内部实现（由 [sendMessage] 加防重入锁后调用）

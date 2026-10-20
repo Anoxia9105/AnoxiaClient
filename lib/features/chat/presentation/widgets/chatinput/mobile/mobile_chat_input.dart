@@ -18,11 +18,13 @@ import 'package:path/path.dart' as path;
 
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/edit_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/ai/smart_reply_bar.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/edit_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/mobile_chat_ai_panel.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
@@ -487,6 +489,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     final colorScheme = Theme.of(context).colorScheme;
     final focusNode = ref.watch(chatFocusNodeProvider(widget.roomId));
     final replyTarget = ref.watch(replyTargetProvider(widget.roomId));
+    final editTarget = ref.watch(editTargetProvider(widget.roomId));
 
     final isInPipMode = ref.watch(
       mobileCallSessionControllerProvider.select(
@@ -498,7 +501,18 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (replyTarget != null)
+        if (editTarget != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+            child: EditPreviewBar(
+              onCancel: () {
+                ref
+                    .read(chatInputControllerProvider(widget.roomId).notifier)
+                    .cancelEdit();
+              },
+            ),
+          )
+        else if (replyTarget != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
             child: ReplyPreviewBar(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert' show jsonDecode;
 import 'dart:math' show max;
 
 import 'package:anoxia/common/utils/media_url_util.dart';
@@ -11,6 +12,7 @@ import 'package:anoxia/framework/provider/core/favorite_repository_provider.dart
 import 'package:anoxia/framework/provider/core/message_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/chat_repository_provider.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
@@ -669,6 +671,90 @@ class ChatMessages extends _$ChatMessages {
       debugLog('撤回消息请求失败: $e');
       return false;
     }
+  }
+
+  /// 发送编辑命令。
+  ///
+  /// 仅把命令送达服务端并等待校验结果；本地内容不在此处修改——编辑成功后由
+  /// 服务端广播的 operation(EDITED) 事件统一驱动 [applyEditMessage]，
+  /// 失败（如超窗）也不会遗留本地脏数据，也不会进入离线重试队列。
+  Future<bool> editMessage(
+    String messageId,
+    String roomId,
+    MessageType type,
+    MessagePayload payload,
+  ) async {
+    try {
+      final requestId = 'edit_${DateTime.now().microsecondsSinceEpoch}';
+      final ack = await ref
+          .read(wsControllerProvider.notifier)
+          .sendCommand(
+            ImPacketV6.encodeEditFrame(
+              roomId,
+              messageId,
+              type,
+              payload,
+              requestId: requestId,
+            ),
+            requestId: requestId,
+          );
+      return ack.isSuccess;
+    } catch (e) {
+      debugLog('编辑消息请求失败: $e');
+      return false;
+    }
+  }
+
+  /// 应用编辑结果（operation 事件与 /chat/edits 补拉共用入口）。
+  ///
+  /// 解析 payload 快照 → 构造更新后的 [ChatMessage]（保留原 seq/时间戳，
+  /// 打上 edited 标记）→ upsert 落库；下钻 watch 流会自动刷新消息列表。
+  Future<void> applyEditMessage({
+    required String messageId,
+    required String roomId,
+    required String payloadJson,
+  }) async {
+    try {
+      if (messageId.isEmpty || roomId.isEmpty) return;
+      final decoded = jsonDecode(payloadJson);
+      if (decoded is! Map<String, dynamic>) return;
+      final payload = MessagePayload.fromJson(decoded);
+      final current = await ref
+          .read(localDataSourceProvider)
+          .getMessageById(messageId);
+      // 消息行尚未同步过（如刚清库）时无从合并既有字段，直接跳过等后续同步。
+      if (current == null) return;
+      final edited = ChatMessage(
+        messageId: current.messageId,
+        clientMsgId: current.clientMsgId,
+        roomId: current.roomId,
+        senderId: current.senderId,
+        messageType: _editedMessageType(payload, current.messageType),
+        content: payload.content ?? '',
+        payload: payload,
+        properties: {...current.properties, 'edited': '1'},
+        deliveryStatus: current.deliveryStatus,
+        timestamp: current.timestamp,
+        seq: current.seq,
+      );
+      await _enqueueMessageWrite(() async {
+        await ref.read(localDataSourceProvider).upsertMessage(edited);
+      });
+    } catch (e, st) {
+      debugLog('应用编辑消息失败', e, st);
+    }
+  }
+
+  /// 编辑后的消息类型由最终 payload 分支决定（编辑仅限 Text/RichText）。
+  MessageType _editedMessageType(
+    MessagePayload payload,
+    MessageType? fallback,
+  ) {
+    if (payload.quillDelta?.isNotEmpty == true) return MessageType.richText;
+    if (payload.content != null && payload.content!.isNotEmpty) {
+      return MessageType.text;
+    }
+    return fallback ?? MessageType.text;
   }
 
   Future<bool> addFavorite(String messageId) async {

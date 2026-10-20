@@ -20,9 +20,11 @@ class _Connected implements Connectivity {
 
 class _Remote extends RemoteDataSource {
   List<({int id, String messageId})> recalls = [];
+  List<({int id, String messageId, String payload})> edits = [];
   List<ChatMessage> messages = [];
   List<ChatRoomVO> rooms = [];
   bool failRecalls = false;
+  bool failEdits = false;
   bool failRooms = false;
 
   @override
@@ -32,6 +34,15 @@ class _Remote extends RemoteDataSource {
   ) async {
     if (failRecalls) throw StateError('recall service unavailable');
     return recalls.where((r) => r.id > afterId).take(100).toList();
+  }
+
+  @override
+  Future<List<({int id, String messageId, String payload})>> fetchEdits(
+    String roomId,
+    int afterId,
+  ) async {
+    if (failEdits) throw StateError('edit service unavailable');
+    return edits.where((e) => e.id > afterId).take(100).toList();
   }
 
   @override
@@ -119,6 +130,30 @@ void main() {
 
   test('撤回接口失败时仍恢复普通消息', () async {
     remote.failRecalls = true;
+    remote.messages = [_message('visible', 1)];
+    await repository.syncMessages('room');
+    expect(await local.getMessageById('visible'), isNotNull);
+    expect(await local.messageSyncWatermark('room'), 1);
+  });
+
+  test('离线编辑补偿把 payload 快照回放到消息与末条预览', () async {
+    await local.upsertMessage(_message('original', 1));
+    remote.edits = [
+      (id: 1, messageId: 'original', payload: '{"text":{"text":"edited-final"}}'),
+    ];
+    await repository.syncMessages('room');
+    final target = (await local.getMessagesForConversation('room')).single;
+    expect(target.content, 'edited-final');
+    expect(target.isEdited, isTrue);
+    // 会话末条被编辑：列表预览同步刷新
+    expect(
+      (await db.conversationDao.getConversation('room'))?.lastMessagePreview,
+      'edited-final',
+    );
+  });
+
+  test('编辑接口失败时仍恢复普通消息', () async {
+    remote.failEdits = true;
     remote.messages = [_message('visible', 1)];
     await repository.syncMessages('room');
     expect(await local.getMessageById('visible'), isNotNull);

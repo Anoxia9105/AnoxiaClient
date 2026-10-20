@@ -80,6 +80,31 @@ class ImPacketV6 {
     return frame.writeToBuffer();
   }
 
+  /// 编码编辑命令（字段号 15：edit_message）
+  ///
+  /// 协议约定编辑仅允许 Text / RichText 负载，其它类型在本层直接拒绝。
+  static Uint8List encodeEditFrame(
+    String roomId,
+    String messageId,
+    MessageType type,
+    MessagePayload? payload, {
+    String? requestId,
+  }) {
+    if (type != MessageType.text && type != MessageType.richText) {
+      throw ArgumentError.value(type, 'type', 'edit only supports text/richText');
+    }
+    final cmd = v6.EditMessageCommand(
+      roomId: roomId,
+      messageId: messageId,
+      payload: _toUserMessagePayload(type, payload),
+    );
+    final frame = v6.ClientFrame(
+      requestId: requestId ?? 'edit_${DateTime.now().microsecondsSinceEpoch}',
+      editMessage: cmd,
+    );
+    return frame.writeToBuffer();
+  }
+
   /// 编码通话信令
   static Uint8List encodeCallSignalFrame({
     required String roomId,
