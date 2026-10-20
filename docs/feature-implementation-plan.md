@@ -186,7 +186,7 @@
   - 兼容：服务端未升级（旧部署）时字段为空 → 回落现行本地行为（与后端字段的兼容读取写在 repository 层）。
 - 测试：reconcile 用例（服务端覆盖本地、缺失字段回退本地）、乐观切换/失败回滚用例。
 
-### P1-2 通话记录页
+### P1-2 通话记录页 ✅
 
 - 服务端：聚合查询封装（CALL_STARTED/ENDED 系统事件已有的数据），新 REST `GET /call/history?orderBy&pageSize`（PageHelper 分页，规约照 `BaseController` + `startPage()`）；未结束的通话给进行中标记。
 - 客户端：
