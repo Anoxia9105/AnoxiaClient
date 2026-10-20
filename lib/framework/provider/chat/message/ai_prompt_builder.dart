@@ -1,4 +1,4 @@
-// AI 消息工具的 prompt 组装与文本提取（P0-3 翻译 + 未读总结）。
+// AI 消息工具的 prompt 组装与文本提取（P0-3 未读总结）。
 //
 // 全部为纯函数（无 Flutter/riverpod 依赖），便于单测：
 // - [messagePlainText]：消息 → 参与处理的纯文本。优先 `payload.content`
@@ -6,11 +6,14 @@
 //   Quill Delta JSON（`[{"insert":...}]` 形态）就地展平；首位兜底原文。
 // - [collectUnreadSummaryDraft]：把未读消息整理成总结草稿（纯文本行 +
 //   媒体/其他类型计数，媒体不上正文只进统计）。
-// - [buildTranslatePrompt] / [buildUnreadSummaryPrompt]：客户端组 prompt，
-//   目标语言跟随当前 UI locale，与 ai_chat_controller 的做法一致
-//   （服务端 `/chat/ai/stream` 不注入任务语义，prompt 全由客户端负责）。
+// - [buildUnreadSummaryPrompt]：客户端组 prompt，目标语言跟随当前 UI
+//   locale，与 ai_chat_controller 的做法一致（服务端 `/chat/ai/stream`
+//   不注入任务语义，prompt 全由客户端负责）。
 // - [aiLanguageName]：locale.languageCode → 语言显示名（zh/en/ja 三语在册，
 //   其它回退原码）。
+//
+// 备注：独立「翻译」面板的 isTranslatableMessage/buildTranslatePrompt
+// 已随右键菜单翻译入口一并下线（问AI 气泡自带翻译提示词）。
 import 'dart:convert';
 
 import 'package:anoxia/framework/domain/chat_message.dart';
@@ -46,17 +49,6 @@ String _unwrapDelta(String content) {
   } catch (_) {
     return content;
   }
-}
-
-/// 是否值得给 AI 处理（翻译入口用它判断：类型在册 + 有非空文本）
-bool isTranslatableMessage(ChatMessage message) {
-  final type = message.messageType;
-  if (type != MessageType.text &&
-      type != MessageType.richText &&
-      type != MessageType.codeSnippet) {
-    return false;
-  }
-  return messagePlainText(message).isNotEmpty;
 }
 
 /// 未读总结草稿：纯文本行 + 其他类型（媒体/文件等）计数
@@ -107,13 +99,6 @@ String aiLanguageName(String languageCode) {
     default:
       return languageCode;
   }
-}
-
-/// 翻译 prompt（只输出译文，不加解释/引号）
-String buildTranslatePrompt(String text, {required String language}) {
-  return '请把下面的内容翻译成「$language」。'
-      '直接输出译文，不要解释、不要添加引号或前缀，'
-      '代码片段保持原样不改写：\n\n$text';
 }
 
 /// 未读聊天记录总结 prompt

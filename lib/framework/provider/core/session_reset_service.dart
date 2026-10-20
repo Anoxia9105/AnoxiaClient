@@ -83,7 +83,6 @@ class SessionResetService {
     'callStatusControllerProvider',
     'stickerPacksProvider',
     'aiChatControllerProvider',
-    'aiTranslateControllerProvider(*)',
     'aiUnreadSummaryControllerProvider(*)',
     'desktopSearchControllerProvider',
     'createGroupControllerProvider',
@@ -166,10 +165,9 @@ class SessionResetService {
     // 表情包列表为当前账号的服务端数据，切账号后需重新拉取。
     container.invalidate(stickerPacksProvider);
 
-    // AI 对话历史 / 消息工具缓存（翻译按消息、总结按房间 family）/
+    // AI 对话历史 / 消息工具缓存（总结按房间 family）/
     // 桌面聚合搜索关键词与结果：上个账号的会话痕迹。
     container.invalidate(aiChatControllerProvider);
-    container.invalidate(aiTranslateControllerProvider);
     container.invalidate(aiUnreadSummaryControllerProvider);
     container.invalidate(desktopSearchControllerProvider);
 

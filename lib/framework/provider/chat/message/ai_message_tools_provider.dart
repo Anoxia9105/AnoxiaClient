@@ -1,10 +1,8 @@
-// AI 消息工具（P0-3）：翻译 + 未读一键总结。
+// AI 消息工具（P0-3）：未读一键总结。
 //
 // 数据链：
 // - SSE 复用 `aiRepositoryProvider.askStream`（`/chat/ai/stream`），协议与
 //   `ai_chat_controller` 同款；prompt 由客户端组（`ai_prompt_builder.dart`）。
-// - 翻译：按消息 family（key = `messageId|targetLang`，内存即缓存，同一
-//   消息反复打开面板不重复请求）；autoDispose，会话切换不驻留。
 // - 总结：按房间 family；本地 drift `seq > lastReadSeq` 的文本消息拼
 //   prompt（媒体只进统计），并记录最早未读消息 ID 供「跳到最早未读」。
 // - 状态推进抽成 [foldAiToolEvent] 纯函数便于单测；查询/流失败都降级为
@@ -12,6 +10,9 @@
 //   静默丢弃（onDispose 禁止 ref.read，销毁检测靠 catch 兜底）。
 // - 终态（done/error）上报上游健康（reportSuccess/reportFailure），
 //   与聊天 AI 入口的熔断共用同一阀。
+//
+// 备注：独立「翻译」面板（AiTranslateController/AiTranslateSheet）已下线，
+// 消息翻译统一走「问AI」气泡内的翻译提示词（ai_ask_bubble._askTranslate）。
 import 'dart:async';
 
 import 'package:anoxia/domain/ai_stream_event.dart';
@@ -82,25 +83,6 @@ AiToolState foldAiToolEvent(AiToolState state, AiStreamEvent event) {
   return state;
 }
 
-/// 翻译控制器：key = `messageId|targetLang`（按消息 family，内存即缓存）
-@riverpod
-class AiTranslateController extends _$AiTranslateController {
-  @override
-  AiToolState build(String key) => const AiToolState();
-
-  /// 发起翻译（失败可重试：会覆盖旧错误态重新跑一遍流）
-  Future<void> translate(String text, {required String language}) async {
-    if (state.streaming) return;
-    final prompt = buildTranslatePrompt(text, language: language);
-    await runAiToolPrompt(
-      ref: ref,
-      onState: (next) => state = next,
-      prompt: prompt,
-      failureFallbackKey: 'chat_ai.translate_failed',
-    );
-  }
-}
-
 /// 未读总结控制器：按房间 family（一次生成缓存，重开弹层不重拉）
 @riverpod
 class AiUnreadSummaryController extends _$AiUnreadSummaryController {
@@ -155,7 +137,7 @@ class AiUnreadSummaryController extends _$AiUnreadSummaryController {
   void reset() => state = const AiToolState();
 }
 
-/// 翻译与总结共用的流式执行体。
+/// 总结共用的流式执行体。
 ///
 /// 语义：
 /// - 收到 `AiDone` → `fold` 已落终态（有内容 / 空结果都算上游健康）；

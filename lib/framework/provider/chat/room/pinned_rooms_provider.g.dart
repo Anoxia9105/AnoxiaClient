@@ -56,7 +56,7 @@ final class PinnedRoomsProvider
   }
 }
 
-String _$pinnedRoomsHash() => r'a5439970dd41dd9fdf6742689d6f9988a83deb5d';
+String _$pinnedRoomsHash() => r'2e24a458fdcc23ad5d8d4a5a425cfcff920b7967';
 
 /// 聊天置顶房间的 Riverpod Provider
 ///

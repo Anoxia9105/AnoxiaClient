@@ -2,8 +2,8 @@
 //
 // - [foldAiToolEvent] 纯函数：thinking 忽略 / delta 累积 / done 兜底 /
 //   空结果 / 迟到增量。
-// - 控制器经 Fake `AiRepository` 注入流事件：done 终态 / AiException /
-//   断流（无 done 也要收口，不得悬挂 streaming）。
+// - 经 Fake `AiRepository` 注入流事件：done 终态 / 断流（无 done 也要
+//   收口，不得悬挂 streaming）。
 // - 总结控制器：内存 drift 种子 + currentRoom 覆写，验证未读文本组装、
 //   首条未读记录与空结果降级。
 import 'package:anoxia/domain/ai_stream_event.dart';
@@ -31,12 +31,6 @@ class _FakeRepository implements AiRepository {
 
   @override
   Never ask(String prompt) => throw UnimplementedError();
-}
-
-/// 抛 AiException 的流（模拟服务端 error 事件转异常）
-Stream<AiStreamEvent> errorStream() async* {
-  yield const AiDelta('部');
-  throw const AiException('AI 服务暂不可用');
 }
 
 ChatMessage textMsg(String id, int seq, String content) => ChatMessage(
@@ -98,98 +92,6 @@ void main() {
       final after = foldAiToolEvent(done, const AiDelta('迟到'));
       expect(after.text, '终稿');
       expect(after.streaming, isFalse);
-    });
-  });
-
-  group('AiTranslateController（Fake 流注入）', () {
-    test('done 终态：正文 + 非流式 + 无错误', () async {
-      final container = ProviderContainer(
-        overrides: [
-          aiRepositoryProvider.overrideWith(
-            (ref) => _FakeRepository(
-              Stream.fromIterable([
-                const AiThinking('思考'),
-                const AiDelta('你'),
-                const AiDelta('好'),
-                const AiDone(null, '', false),
-              ]),
-            ),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      await container
-          .read(aiTranslateControllerProvider('m1|zh').notifier)
-          .translate('hello', language: '简体中文');
-
-      final state = container.read(aiTranslateControllerProvider('m1|zh'));
-      expect(state.text, '你好');
-      expect(state.streaming, isFalse);
-      expect(state.error, isNull);
-    });
-
-    test('AiException → 错误态（服务端 message 直出）', () async {
-      final container = ProviderContainer(
-        overrides: [
-          aiRepositoryProvider.overrideWith(
-            (ref) => _FakeRepository(errorStream()),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      await container
-          .read(aiTranslateControllerProvider('m2|zh').notifier)
-          .translate('hello', language: '简体中文');
-
-      final state = container.read(aiTranslateControllerProvider('m2|zh'));
-      expect(state.error, 'AI 服务暂不可用');
-      expect(state.text, isNull);
-      expect(state.streaming, isFalse);
-    });
-
-    test('断流（无 done 且无内容）→ 兜底错误 key', () async {
-      final container = ProviderContainer(
-        overrides: [
-          aiRepositoryProvider.overrideWith(
-            (ref) => _FakeRepository(
-              Stream.fromIterable([const AiThinking('思考')]),
-            ),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      await container
-          .read(aiTranslateControllerProvider('m3|zh').notifier)
-          .translate('hello', language: '简体中文');
-
-      final state = container.read(aiTranslateControllerProvider('m3|zh'));
-      expect(state.error, 'chat_ai.translate_failed');
-      expect(state.streaming, isFalse);
-    });
-
-    test('断流（无 done 但有内容）→ 收口为非流式正文，不悬挂转圈', () async {
-      final container = ProviderContainer(
-        overrides: [
-          aiRepositoryProvider.overrideWith(
-            (ref) => _FakeRepository(
-              Stream.fromIterable([const AiDelta('半途结果')]),
-            ),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      await container
-          .read(aiTranslateControllerProvider('m4|zh').notifier)
-          .translate('hello', language: '简体中文');
-
-      final state = container.read(aiTranslateControllerProvider('m4|zh'));
-      expect(state.text, '半途结果');
-      expect(state.streaming, isFalse);
-      expect(state.error, isNull);
     });
   });
 

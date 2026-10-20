@@ -46,21 +46,6 @@ void main() {
     });
   });
 
-  group('isTranslatableMessage', () {
-    test('text/richText/codeSnippet 且文本非空 → true', () {
-      expect(isTranslatableMessage(msg(MessageType.text, 'hi')), isTrue);
-      expect(isTranslatableMessage(msg(MessageType.richText, 'hi')), isTrue);
-      expect(isTranslatableMessage(msg(MessageType.codeSnippet, 'x=1')), isTrue);
-    });
-
-    test('媒体/其它类型或空文本 → false', () {
-      expect(isTranslatableMessage(msg(MessageType.image, '[{json}]')), isFalse);
-      expect(isTranslatableMessage(msg(MessageType.file, 'a.pdf')), isFalse);
-      expect(isTranslatableMessage(msg(MessageType.text, '')), isFalse);
-      expect(isTranslatableMessage(msg(MessageType.text, '   ')), isFalse);
-    });
-  });
-
   group('collectUnreadSummaryDraft', () {
     test('文本分行收、其它类型计数', () {
       final draft = collectUnreadSummaryDraft([
@@ -88,15 +73,6 @@ void main() {
       final draft = collectUnreadSummaryDraft(const []);
       expect(draft.isEmpty, isTrue);
       expect(draft.otherCount, 0);
-    });
-  });
-
-  group('buildTranslatePrompt', () {
-    test('语言与原文注入到位', () {
-      final p = buildTranslatePrompt('hello', language: '简体中文');
-      expect(p, contains('简体中文'));
-      expect(p, contains('hello'));
-      expect(p.startsWith('请把'), isTrue);
     });
   });
 
