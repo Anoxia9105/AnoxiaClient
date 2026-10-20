@@ -20,7 +20,13 @@ part 'media_timeline_provider.g.dart';
 
 /// 单个分节的数据（媒体/文件/链接）
 class MediaTimelineSection {
-  const MediaTimelineSection({required this.items, required this.hasMore});
+  const MediaTimelineSection({
+    required this.items,
+    required this.hasMore,
+    this.sourceCursor,
+  });
+
+  final int? sourceCursor;
 
   /// 已加载条目（新 → 旧，即 seq 倒序）
   final List<ChatMessage> items;
@@ -33,7 +39,8 @@ class MediaTimelineSection {
   /// 下一次分页游标：最小的已加载 seq（缺 seq 的乐观消息按 0 处理，
   /// 再翻一页拿不到更旧数据自然会收口）
   int? get oldestSeq {
-    for (final item in items) {
+    if (sourceCursor != null) return sourceCursor;
+    for (final item in items.reversed) {
       final seq = item.seq;
       if (seq != null && seq > 0) return seq;
     }
@@ -110,10 +117,34 @@ class MediaTimelineController extends _$MediaTimelineController {
       ),
     ]);
 
+    var linkPage = results[2];
+    while (linkPage.length >= pageSize &&
+        !linkPage.any((m) => extractMessageUrls(m.content).isNotEmpty)) {
+      final seqs = linkPage
+          .map((m) => m.seq)
+          .whereType<int>()
+          .where((s) => s > 0);
+      if (seqs.isEmpty) break;
+      final cursor = seqs.reduce((a, b) => a < b ? a : b);
+      final next = await _safeQuery(
+        () => dataSource.getMediaTimelineMessages(
+          roomId,
+          typeCodes: linkTypeCodes,
+          limit: pageSize,
+          beforeSeq: cursor,
+        ),
+      );
+      if (next.isNotEmpty &&
+          !next.any((m) => m.seq != null && m.seq! < cursor)) {
+        linkPage = const [];
+        break;
+      }
+      linkPage = next;
+    }
     return MediaTimelineState(
       media: _section(results[0], isLinkSection: false),
       files: _section(results[1], isLinkSection: false),
-      links: _section(results[2], isLinkSection: true),
+      links: _section(linkPage, isLinkSection: true),
     );
   }
 
@@ -149,38 +180,78 @@ class MediaTimelineController extends _$MediaTimelineController {
       // 否则 beforeSeq=null 会重复拉取同页内容。
       if (cursor == null) return;
 
-      final page = await _safeQuery(
-        () => ref.read(localDataSourceProvider).getMediaTimelineMessages(
-          roomId,
-          typeCodes: typeCodes,
-          limit: pageSize,
-          beforeSeq: cursor,
-        ),
+      var page = await _safeQuery(
+        () => ref
+            .read(localDataSourceProvider)
+            .getMediaTimelineMessages(
+              roomId,
+              typeCodes: typeCodes,
+              limit: pageSize,
+              beforeSeq: cursor,
+            ),
       );
+      if (section == 'links') {
+        var source = page;
+        final matches = <ChatMessage>[];
+        while (true) {
+          matches.addAll(
+            source.where((m) => extractMessageUrls(m.content).isNotEmpty),
+          );
+          final seqs = source
+              .map((m) => m.seq)
+              .whereType<int>()
+              .where((s) => s > 0);
+          final next = seqs.isEmpty
+              ? null
+              : seqs.reduce((a, b) => a < b ? a : b);
+          final more =
+              source.length >= pageSize && next != null && next < cursor;
+          if (matches.isNotEmpty || !more) {
+            final merged = previous.appendUnique(matches, more);
+            state = AsyncValue.data(
+              MediaTimelineState(
+                media: current.media,
+                files: current.files,
+                links: MediaTimelineSection(
+                  items: merged.items,
+                  hasMore: more,
+                  sourceCursor: next,
+                ),
+              ),
+            );
+            return;
+          }
+          source = await _safeQuery(
+            () => ref
+                .read(localDataSourceProvider)
+                .getMediaTimelineMessages(
+                  roomId,
+                  typeCodes: typeCodes,
+                  limit: pageSize,
+                  beforeSeq: next,
+                ),
+          );
+        }
+      }
       final hasMore = page.length >= pageSize;
 
-      state = AsyncValue.data(
-        switch (section) {
-          'media' =>
-            MediaTimelineState(
-              media: previous.appendUnique(page, hasMore),
-              files: current.files,
-              links: current.links,
-            ),
-          'files' =>
-            MediaTimelineState(
-              media: current.media,
-              files: previous.appendUnique(page, hasMore),
-              links: current.links,
-            ),
-          _ =>
-            MediaTimelineState(
-              media: current.media,
-              files: current.files,
-              links: previous.appendUnique(page, hasMore),
-            ),
-        },
-      );
+      state = AsyncValue.data(switch (section) {
+        'media' => MediaTimelineState(
+          media: previous.appendUnique(page, hasMore),
+          files: current.files,
+          links: current.links,
+        ),
+        'files' => MediaTimelineState(
+          media: current.media,
+          files: previous.appendUnique(page, hasMore),
+          links: current.links,
+        ),
+        _ => MediaTimelineState(
+          media: current.media,
+          files: current.files,
+          links: previous.appendUnique(page, hasMore),
+        ),
+      });
     } finally {
       _loadingSections.remove(section);
     }
@@ -209,6 +280,11 @@ class MediaTimelineController extends _$MediaTimelineController {
         ? page.where((m) => extractMessageUrls(m.content).isNotEmpty).toList()
         : page;
     // 过滤后为空不代表源结束：满页仍显示「加载更多」
-    return MediaTimelineSection(items: items, hasMore: page.length >= pageSize);
+    final seqs = page.map((m) => m.seq).whereType<int>().where((s) => s > 0);
+    return MediaTimelineSection(
+      items: items,
+      hasMore: page.length >= pageSize && seqs.isNotEmpty,
+      sourceCursor: seqs.isEmpty ? null : seqs.reduce((a, b) => a < b ? a : b),
+    );
   }
 }

@@ -5,8 +5,9 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 class RoomCard extends StatelessWidget {
   final Widget? child;
   final List<Widget>? children;
+  final EdgeInsetsGeometry padding;
 
-  const RoomCard({super.key, this.child, this.children}) : assert(child != null || children != null);
+  const RoomCard({super.key, this.child, this.children, this.padding = EdgeInsets.zero}) : assert(child != null || children != null);
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +33,9 @@ class RoomCard extends StatelessWidget {
           ),
         ),
         clipBehavior: Clip.antiAlias,
-        child: children != null
+        child: Padding(padding: padding, child: children != null
             ? Column(mainAxisSize: MainAxisSize.min, children: children!)
-            : child,
+            : child),
       ),
     );
   }

@@ -11,6 +11,8 @@
 // - 三段空态/骨架/错误独立呈现；加载更多按钮随 hasMore 显隐
 //   （链接节过滤后为空但源满页时仍保留加载入口）。
 import 'package:anoxia/common/utils/file_util.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 import 'package:anoxia/common/utils/message_url_extractor.dart';
 import 'package:anoxia/common/widgets/attachment_image_view.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/image_viewer.dart';
@@ -27,9 +29,9 @@ import 'package:url_launcher/url_launcher.dart';
 String _formatTime(ChatMessage message) {
   final ts = message.timestamp;
   if (ts == null || ts <= 0) return '';
-  return DateFormat('yyyy-MM-dd HH:mm').format(
-    DateTime.fromMillisecondsSinceEpoch(ts),
-  );
+  return DateFormat(
+    'yyyy-MM-dd HH:mm',
+  ).format(DateTime.fromMillisecondsSinceEpoch(ts));
 }
 
 /// 媒体与链接时间线
@@ -86,11 +88,11 @@ class _MediaGridTab extends ConsumerWidget {
         if (cells.isEmpty) return const _EmptyHint();
         return GridView.builder(
           // 上下内填充：九宫格不贴 TabBar 与底部边缘
-          padding: const EdgeInsets.fromLTRB(4, 12, 4, 16),
+          padding: const EdgeInsets.all(SpacingToken.md),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            mainAxisSpacing: 4,
-            crossAxisSpacing: 4,
+            mainAxisSpacing: SpacingToken.sm,
+            crossAxisSpacing: SpacingToken.sm,
           ),
           itemCount: cells.length + (state.media.hasMore ? 1 : 0),
           itemBuilder: (context, index) {
@@ -160,20 +162,28 @@ class _MediaCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => _openViewer(context),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          AttachmentImageView(
-            url: _thumbUrl,
-            memCacheWidth: 480,
-            errorWidget: (context, url, error) =>
-                ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-          ),
-          if (attachment.isVideo)
-            const Center(
-              child: Icon(Icons.play_circle_fill, size: 40, color: Colors.white70),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            AttachmentImageView(
+              url: _thumbUrl,
+              memCacheWidth: 480,
+              errorWidget: (context, url, error) => ColoredBox(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              ),
             ),
-        ],
+            if (attachment.isVideo)
+              const Center(
+                child: Icon(
+                  Icons.play_circle_fill,
+                  size: 40,
+                  color: Colors.white70,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -184,7 +194,8 @@ class _MediaCell extends StatelessWidget {
       MaterialPageRoute(
         builder: (context) => ImageViewer(
           attachment: attachment,
-          heroTag: 'media_timeline_${message.messageId}_${attachment.id ?? attachment.url}',
+          heroTag:
+              'media_timeline_${message.messageId}_${attachment.id ?? attachment.url}',
           roomId: roomId,
           currentUrl: attachment.url,
         ),
@@ -210,9 +221,9 @@ class _FilesTab extends ConsumerWidget {
       data: (state) {
         if (state.files.isEmpty) return const _EmptyHint();
         return ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.all(SpacingToken.md),
           itemCount: state.files.items.length + (state.files.hasMore ? 1 : 0),
-          separatorBuilder: (_, _) => const Divider(height: 1),
+          separatorBuilder: (_, _) => const SizedBox(height: SpacingToken.sm),
           itemBuilder: (context, index) {
             if (index >= state.files.items.length) {
               return _LoadMoreTile(
@@ -242,13 +253,45 @@ class _FileRow extends StatelessWidget {
     final size = file?.size;
     final time = _formatTime(message);
 
-    return ListTile(
-      leading: const Icon(Icons.insert_drive_file_outlined),
-      title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text(time.isEmpty
-          ? (size == null ? '' : FileUtil.formatFileSize(size))
-          : (size == null ? time : '$time · ${FileUtil.formatFileSize(size)}')),
-      onTap: () => _open(file?.url),
+    final extension = name.split('.').last.toLowerCase();
+    final (icon, color) = switch (extension) {
+      'pdf' => (Icons.picture_as_pdf_outlined, Colors.red),
+      'doc' || 'docx' => (Icons.description_outlined, Colors.blue),
+      'xls' || 'xlsx' || 'csv' => (Icons.table_chart_outlined, Colors.green),
+      'zip' || 'rar' || '7z' => (Icons.folder_zip_outlined, Colors.orange),
+      'png' ||
+      'jpg' ||
+      'jpeg' ||
+      'gif' => (Icons.image_outlined, Colors.deepPurple),
+      'mp4' || 'mov' || 'webm' => (Icons.movie_outlined, Colors.cyan),
+      'mp3' || 'wav' || 'flac' => (Icons.audio_file_outlined, Colors.pink),
+      _ => (Icons.insert_drive_file_outlined, Colors.blueGrey),
+    };
+    return _TimelineCard(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: SpacingToken.md,
+          vertical: SpacingToken.xs,
+        ),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(RadiusToken.md),
+          ),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text(
+          time.isEmpty
+              ? (size == null ? '' : FileUtil.formatFileSize(size))
+              : (size == null
+                    ? time
+                    : '$time · ${FileUtil.formatFileSize(size)}'),
+        ),
+        onTap: () => _open(file?.url),
+      ),
     );
   }
 
@@ -283,7 +326,9 @@ class _LinksTab extends ConsumerWidget {
                   children: [
                     _LoadMoreTile(
                       onTap: () => ref
-                          .read(mediaTimelineControllerProvider(roomId).notifier)
+                          .read(
+                            mediaTimelineControllerProvider(roomId).notifier,
+                          )
                           .loadMore(section: 'links'),
                     ),
                   ],
@@ -291,9 +336,9 @@ class _LinksTab extends ConsumerWidget {
               : const _EmptyHint();
         }
         return ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.all(SpacingToken.md),
           itemCount: state.links.items.length + (state.links.hasMore ? 1 : 0),
-          separatorBuilder: (_, _) => const Divider(height: 1),
+          separatorBuilder: (_, _) => const SizedBox(height: SpacingToken.sm),
           itemBuilder: (context, index) {
             if (index >= state.links.items.length) {
               return _LoadMoreTile(
@@ -319,11 +364,30 @@ class _LinkRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final time = _formatTime(message);
     final url = extractFirstMessageUrl(message.content) ?? message.content;
-    return ListTile(
-      leading: const Icon(Icons.link),
-      title: Text(url, maxLines: 2, overflow: TextOverflow.ellipsis),
-      subtitle: Text(time),
-      onTap: () => _open(url),
+    final scheme = Theme.of(context).colorScheme;
+    return _TimelineCard(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: SpacingToken.md,
+          vertical: SpacingToken.sm,
+        ),
+        leading: const Icon(Icons.link),
+        title: Text(
+          Uri.tryParse(url)?.host ?? url,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(url, maxLines: 2, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: SpacingToken.xs),
+            Text(time, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+        onTap: () => _open(url),
+      ),
     );
   }
 
@@ -331,6 +395,27 @@ class _LinkRow extends StatelessWidget {
     final uri = Uri.tryParse(url);
     if (uri == null) return;
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
+
+class _TimelineCard extends StatelessWidget {
+  const _TimelineCard({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      color: scheme.surface,
+      elevation: 1,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(RadiusToken.md),
+        side: BorderSide(color: scheme.outlineVariant),
+      ),
+      child: child,
+    );
   }
 }
 
@@ -439,7 +524,10 @@ class _ListSkeleton extends StatelessWidget {
       itemBuilder: (context, index) => ListTile(
         leading: CircleAvatar(
           backgroundColor: color,
-          child: const Icon(Icons.insert_drive_file_outlined, color: Colors.white38),
+          child: const Icon(
+            Icons.insert_drive_file_outlined,
+            color: Colors.white38,
+          ),
         ),
         title: ColoredBox(color: color, child: const SizedBox(height: 14)),
         subtitle: ColoredBox(color: color, child: const SizedBox(height: 10)),

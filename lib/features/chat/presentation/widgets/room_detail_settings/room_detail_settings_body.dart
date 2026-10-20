@@ -134,6 +134,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
         // 移动端整页路由，桌面端模态弹窗；数据分别来自本地缓存/服务端按房间聚合）
         RoomSectionCaption('chat_media_timeline_title'.tr()),
         RoomCard(
+          padding: const EdgeInsets.all(8),
           children: _withDividers(context, [
             RoomSettingTile(
               icon: HugeIcons.strokeRoundedImage01,
