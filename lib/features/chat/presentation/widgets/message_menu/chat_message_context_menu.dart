@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:hugeicons/hugeicons.dart';
 import 'dart:convert';
-import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +12,6 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
-import 'package:anoxia/framework/provider/chat/message/ai_prompt_builder.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
@@ -23,7 +21,6 @@ import 'package:anoxia/framework/provider/chat/message/room_message_service.dart
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
 import 'ai_ask_bubble.dart';
-import 'ai_translate_sheet.dart';
 import '../forward/forward_message_dialog.dart';
 import '../message_bubble/message_resender.dart';
 import '../message_bubble/message_reaction_bar.dart'
@@ -156,7 +153,7 @@ class _ChatMessageContextMenuState
       items.add(
         _buildItem('copy', HugeIcons.strokeRoundedCopy01, 'chat_copy'.tr()),
       );
-      // 问AI/翻译：人工开关与上游探测同时满足才展示，任一不满足即隐藏入口
+      // 问AI：人工开关与上游探测同时满足才展示，任一不满足即隐藏入口
       if (chatEnabled) {
         items.add(
           _buildItem(
@@ -167,19 +164,6 @@ class _ChatMessageContextMenuState
           ),
         );
       }
-    }
-
-    // 翻译（P0-3）：仅 text/richText/codeSnippet 且有非空文本；
-    // codeSnippet 原有菜单不复制/问AI，只加翻译项。
-    if (chatEnabled && isTranslatableMessage(widget.message)) {
-      items.add(
-        _buildItem(
-          'translate',
-          HugeIcons.strokeRoundedTranslate,
-          'chat_ai.translate'.tr(),
-          color: Theme.of(context).colorScheme.primary,
-        ),
-      );
     }
 
     final canReply =
@@ -308,13 +292,6 @@ class _ChatMessageContextMenuState
       case 'aiAsk':
         _handleAiAsk(context);
         break;
-      case 'translate':
-        // 翻译面板（P0-3）：presentAdaptivePage 承载（桌面模态/移动全屏）
-        presentAdaptivePage(
-          context,
-          builder: (_) => AiTranslateSheet(message: widget.message),
-        );
-        break;
       case 'edit':
         _handleEdit();
         break;
@@ -345,16 +322,33 @@ class _ChatMessageContextMenuState
             (Overlay.of(context).context.findRenderObject() as RenderBox).size,
       ),
       menuPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      constraints: const BoxConstraints(minWidth: 232, maxWidth: 288),
+      constraints: const BoxConstraints(minWidth: 276, maxWidth: 288),
       items: [
-        for (final item in reactionEmojiPalette)
-          PopupMenuItem<String>(
-            value: item,
-            height: 40,
-            child: Center(
-              child: Text(item, style: const TextStyle(fontSize: 22)),
+        // 横向换行的一整块候选面板：12 个常用表情（ok/收到/合拍在列）
+        // 自适应排布，点击任一格 pop 菜单并回传 emoji，
+        // 保留 showMenu 的锚点定位与遮罩语义
+        PopupMenuItem<String>(
+          padding: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 2,
+              runSpacing: 2,
+              children: [
+                for (final item in reactionEmojiPalette)
+                  InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () => Navigator.of(context).pop(item),
+                    child: Padding(
+                      padding: const EdgeInsets.all(3),
+                      child: Text(item, style: const TextStyle(fontSize: 22)),
+                    ),
+                  ),
+              ],
             ),
           ),
+        ),
       ],
     );
     if (selected == null || !context.mounted) return;

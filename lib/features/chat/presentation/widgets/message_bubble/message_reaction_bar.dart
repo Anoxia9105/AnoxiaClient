@@ -15,16 +15,22 @@ import 'package:anoxia/framework/provider/chat/message/room_message_service.dart
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
-/// 表情回应固定候选集（v1 上线集，服务端仅按 key 幂等存储，无白名单）
+/// 表情回应固定候选集（弹窗横向换行展示，服务端仅按 key 幂等存储，无白名单）
+///
+/// 含 ok（👌）、收到（✅）、合拍（🤝）等聊天常用答复表情
 const List<String> reactionEmojiPalette = [
   '👍',
   '❤️',
   '😂',
   '😮',
   '😢',
+  '🙏',
   '🔥',
   '🎉',
-  '🙏',
+  '👏',
+  '🤝',
+  '👌',
+  '✅',
 ];
 
 /// 该消息是否可回应（气泡聚合条与菜单入口共用条件）
