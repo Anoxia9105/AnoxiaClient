@@ -6,16 +6,18 @@ import 'package:anoxia/framework/domain/room_call_status.dart';
 /// 定义通话相关的远程数据操作契约。
 /// 数据层通过实现此接口提供具体实现，UI 层 Provider 仅依赖此接口。
 abstract interface class CallRepository {
-  /// 获取通话记录（跨房间会话级聚合）
+  /// 获取通话记录（会话级聚合）
   ///
   /// [pageNum] 从 1 开始；[pageSize] 每页条数（服务端 1-100）；[orderBy]
   /// 按开始时间 `asc`/`desc`，默认 desc（新→旧）。
+  /// [roomId] 指定房间过滤（通话记录并入会话详情后按房间展示）；null/空不过滤。
   ///
   /// 请求失败或响应结构非法时抛出异常。
   Future<CallHistoryPageData> fetchCallHistory({
     required int pageNum,
     required int pageSize,
     required String orderBy,
+    String? roomId,
   });
   /// 获取房间通话状态
   ///

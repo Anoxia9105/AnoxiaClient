@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/framework/provider/core/room_repository_provider.dart';
-import 'package:anoxia/framework/provider/router/router.dart';
+import 'package:anoxia/features/chat/presentation/pages/call_history_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/media_timeline_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/group_avatar_picker.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
@@ -129,17 +130,30 @@ class RoomDetailSettingsBody extends ConsumerWidget {
             ),
           ),
 
-        // 媒体与链接（P0-4）：图片/视频/文件/链接一站回看，单聊群聊共用
+        // 会话内容回看：媒体与链接 + 通话记录（均 presentAdaptivePage：
+        // 移动端整页路由，桌面端模态弹窗；数据分别来自本地缓存/服务端按房间聚合）
         RoomSectionCaption('chat_media_timeline_title'.tr()),
         RoomCard(
-          children: [
+          children: _withDividers(context, [
             RoomSettingTile(
               icon: HugeIcons.strokeRoundedImage01,
               tint: SettingIconTint.blue,
               title: Text('chat_media_timeline_title'.tr()),
-              onTap: () => MediaTimelineRoute(roomId: roomId).push(context),
+              onTap: () => presentAdaptivePage(
+                context,
+                builder: (_) => MediaTimelinePage(roomId: roomId),
+              ),
             ),
-          ],
+            RoomSettingTile(
+              icon: HugeIcons.strokeRoundedCall,
+              tint: SettingIconTint.green,
+              title: Text('call.history'.tr()),
+              onTap: () => presentAdaptivePage(
+                context,
+                builder: (_) => CallHistoryPage(roomId: roomId),
+              ),
+            ),
+          ]),
         ),
 
         // 快捷工具：已存在二级页的前置入口

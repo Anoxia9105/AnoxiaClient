@@ -1,39 +1,39 @@
 import 'dart:async';
 
 import 'package:anoxia/common/utils/date_util.dart';
-import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/domain/call_log_entry.dart';
 import 'package:anoxia/framework/provider/chat/call/call_history_service.dart';
-import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
-import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-/// 通话记录页面
+/// 通话记录页面（按房间过滤）
 ///
-/// 主框架新增独立页签：跨房间按会话聚合的最近通话列表。
+/// 从会话详情进入（桌面端弹窗 / 移动端整页，由 presentAdaptivePage 决定），
+/// 仅展示当前房间的自身通话记录；不再作为主框架独立页签。
 /// - 条目：对端/群名 + 呼出/呼入 + 状态（完成显示时长）+ 服务器时间；
-/// - 点击条目跳转对应会话（设置 activeRoomId 后切到聊天页签）；
+/// - 点击条目关闭本页/弹窗，回到对应会话；
 /// - 下拉刷新 + 滚动到底自动加载下一页。
 class CallHistoryPage extends ConsumerWidget {
-  const CallHistoryPage({super.key});
+  final String roomId;
+
+  const CallHistoryPage({super.key, required this.roomId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(callHistoryListProvider);
+    final state = ref.watch(callHistoryListProvider(roomId));
     final colors = Theme.of(context).colorScheme;
-    final isMobile = DeviceUtil.isMobile(context);
 
     final Widget content;
     if (state.entries.isEmpty && state.initialLoading) {
       content = const Center(child: CircularProgressIndicator());
     } else if (state.entries.isEmpty && state.error != null) {
       content = _ErrorView(
-        onRetry: () =>
-            unawaited(ref.read(callHistoryListProvider.notifier).refresh()),
+        onRetry: () => unawaited(
+          ref.read(callHistoryListProvider(roomId).notifier).refresh(),
+        ),
       );
     } else if (state.entries.isEmpty) {
       content = _EmptyView(colors: colors);
@@ -43,12 +43,16 @@ class CallHistoryPage extends ConsumerWidget {
           final metrics = notification.metrics;
           if (notification.depth == 0 &&
               metrics.pixels >= metrics.maxScrollExtent - 240) {
-            unawaited(ref.read(callHistoryListProvider.notifier).loadMore());
+            unawaited(
+              ref.read(callHistoryListProvider(roomId).notifier).loadMore(),
+            );
           }
           return false;
         },
         child: ListView.separated(
           physics: const AlwaysScrollableScrollPhysics(),
+          // 列表上下内填充：条目不贴栏目与底部边缘
+          padding: const EdgeInsets.symmetric(vertical: 12),
           itemCount: state.entries.length + 1,
           separatorBuilder: (context, index) =>
               Divider(height: 1, thickness: 0.5, color: colors.outlineVariant),
@@ -62,72 +66,16 @@ class CallHistoryPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: colors.surface,
-      appBar: isMobile
-          ? AppBar(
-              centerTitle: true,
-              titleSpacing: 16,
-              title: Text('call.history'.tr()),
-              backgroundColor: colors.surface,
-              surfaceTintColor: Colors.transparent,
-            )
-          : null,
-      body: SafeArea(
-        top: !isMobile,
-        child: Column(
-          children: [
-            if (!isMobile)
-              _DesktopHeader(
-                state: state,
-                onRefresh: () =>
-                    ref.read(callHistoryListProvider.notifier).refresh(),
-              ),
-            const Divider(height: 1),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: ref.read(callHistoryListProvider.notifier).refresh,
-                child: content,
-              ),
-            ),
-          ],
-        ),
+      appBar: AppBar(
+        centerTitle: true,
+        titleSpacing: 16,
+        title: Text('call.history'.tr()),
+        backgroundColor: colors.surface,
+        surfaceTintColor: Colors.transparent,
       ),
-    );
-  }
-}
-
-/// 桌面端页头：标题 + 刷新按钮
-class _DesktopHeader extends StatelessWidget {
-  final CallHistoryState state;
-  final VoidCallback onRefresh;
-
-  const _DesktopHeader({required this.state, required this.onRefresh});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'call.history'.tr(),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: colors.onSurface,
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: 'call.history.refresh'.tr(),
-            onPressed: state.initialLoading ? null : onRefresh,
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedRefresh,
-              size: 20,
-            ),
-          ),
-        ],
+      body: RefreshIndicator(
+        onRefresh: ref.read(callHistoryListProvider(roomId).notifier).refresh,
+        child: content,
       ),
     );
   }
@@ -247,20 +195,20 @@ class _ListFooter extends StatelessWidget {
 }
 
 /// 单条通话记录
-class _CallEntryTile extends ConsumerWidget {
+class _CallEntryTile extends StatelessWidget {
   final CallLogEntry entry;
 
   const _CallEntryTile({required this.entry});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final title = entry.displayName.isEmpty
         ? 'call.history.unknown_peer'.tr()
         : entry.displayName;
 
     return InkWell(
-      onTap: () => _openRoom(ref),
+      onTap: () => _openRoom(context),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
@@ -357,12 +305,8 @@ class _CallEntryTile extends ConsumerWidget {
     );
   }
 
-  /// 跳转对应会话：设置活跃房间并切到聊天页签。
-  ///
-  /// 与全局搜索/群名片详情一致（[setActive] + 回聊天页签）；
-  /// 本页常驻 IndexedStack，无弹栈可清理。
-  void _openRoom(WidgetRef ref) {
-    ref.read(activeRoomIdProvider.notifier).setActive(entry.roomId);
-    ref.read(layoutControllerProvider.notifier).setIndex(0);
+  /// 返回对应会话：本页从会话详情打开（桌面弹窗 / 移动端整页），直接关闭即可。
+  void _openRoom(BuildContext context) {
+    Navigator.of(context).maybePop();
   }
 }

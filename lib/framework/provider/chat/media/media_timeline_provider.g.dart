@@ -56,7 +56,7 @@ final class MediaTimelineControllerProvider
 }
 
 String _$mediaTimelineControllerHash() =>
-    r'b36ab2e0c8db4e6e90392cdbc509aab58dc8f93e';
+    r'db59046a90e992028d3dfd341e9190b16c4d6090';
 
 /// 媒体时间线控制器（按房间 family；autoDispose）
 

@@ -118,6 +118,9 @@
 
 ### P0-4 聊天媒体时间线 ✅
 
+> **后续修正（UI 内填充/背景）**：媒体与链接页显式 `surface` 背景；媒体九宫格
+> `GridView` padding 改 `fromLTRB(4,12,4,16)`，文件/链接列表上下内填充 12px（含骨架段）。
+
 - 实现结论：入口落在 `RoomDetailSettingsBody` 通用 tile「媒体与链接」，手机 push 详情页 / 桌面右栏面板 / 群详情三端共用；数据 3 类查询进 `MessageDao.getMessagesForConversationByTypes`（`MessageType` IN 过滤 + `seq < beforeSeq` 分页，无 schema 变更）；URL 提取抽公共 util `common/utils/message_url_extractor.dart`，`link_preview_card.extractFirstUrl` 改薄代理原行为不变（中文标点不剥离是原口径，测试已固化）；UI 三 Tab（媒体九宫格按消息类型取附件、文件行系统打开、链接行浏览器打开）+ `ImageViewer` 复用 + autoDispose family provider（查询失败降级空段、缺 seq 无游标即收口）；测试净增 19（种子查询 / URL 提取 / 三 Tab 页面 / 路由 location）。
 - 入口（依 F4）：聊天 App 右侧菜单「媒体与链接」+ 群详情页入口；路由 go_router 新 `MediaTimelineRoute`（builder 生成器产物一并提交）。
 
@@ -132,8 +135,14 @@
 
 ### P0-3 AI 翻译 + 未读一键总结 ✅
 
+> **后续修正（翻译入口下线）**：独立「翻译」面板（消息长按/右键菜单「翻译」→
+> `AiTranslateSheet`）已删除，对应 `AiTranslateController` 家族、
+> `ai_prompt_builder.isTranslatableMessage/buildTranslatePrompt` 与专属 i18n key
+> 一并清理；消息翻译统一走「问 AI」气泡内的翻译提示词（`ai_ask_bubble._askTranslate`）。
+> 未读一键总结链路（`AiUnreadSummaryController`）保持不变。
+
 - 实现结论：门控全部用 `aiFeatureFlagsProvider.chatAvailable`（flags off 时菜单翻译项 / 问 AI / 未读引导条 / 弹层重试入口同口径隐藏）；数据链复用 `aiRepositoryProvider.askStream`（`/chat/ai/stream`，prompt 客户端组，目标语言 = 当前 UI locale）；翻译 Provider `chat/message/ai_message_tools_provider.dart` `AiTranslateController`（按消息 family `messageId|targetLang`，内存即缓存）、总结 `AiUnreadSummaryController`（按房间 family，本地 drift `seq > lastReadSeq` 文本 + 媒体统计，记录最早未读 ID）；未读取文本查询进 `MessageDao.getMessagesForConversationAfterSeq`（无 schema 变更）；prompt 组装/文本提取单独 `ai_prompt_builder.dart` 纯函数（richText 的 payload.content plainText 直取 + 历史 Delta JSON 展平兜底）；UI：长按菜单「翻译」+ `AiTranslateSheet`、未读 ≥ 20 顶部引导条 + `AiUnreadSummarySheet`（跳最早未读复用 `reply_jump_provider`）；SSE 状态推进 `foldAiToolEvent` 纯函数（done 兜底/空结果/迟到增量），断流无 done 也强制清 streaming；已挂 `session_reset_service` 清理清单。
-- 翻译：
+- 翻译（已下线，见上）：
   - 消息长按菜单加「翻译」（仅 text/代码消息）；面板内显示译文 + 目标语言 = 当前 UI locale。
   - Provider：`chat/message/ai_message_tools_provider.dart`（按 message family；内存缓存 key=`messageId+targetLang`）；SSE 复用 `framework/network/sse_client.dart` 与 `/chat/ai/stream`（请求体协议照抄 `ai_chat_controller.dart` 现有形态，prompt 客户端组）。
   - 会话切换/登出面销毁：挂进现有 `session_reset_service.dart` 清理清单。
@@ -188,10 +197,15 @@
 
 ### P1-2 通话记录页 ✅
 
-- 服务端：聚合查询封装（CALL_STARTED/ENDED 系统事件已有的数据），新 REST `GET /call/history?orderBy&pageSize`（PageHelper 分页，规约照 `BaseController` + `startPage()`）；未结束的通话给进行中标记。
+> **后续修正（入口并入会话详情）**：通话记录不再作为主框架独立页签（桌面侧栏
+> / 移动底栏的「通话」项已移除）。改为从会话详情进入：`RoomDetailSettingsBody`
+> 新增「通话记录」tile，经 `presentAdaptivePage` 桌面弹窗 / 移动整页打开
+> `CallHistoryPage(roomId)`，按当前房间过滤展示；点击条目 `maybePop` 关闭返回会话。
+
+- 服务端：聚合查询封装（CALL_STARTED/ENDED 系统事件已有的数据），新 REST `GET /call/history?orderBy&pageSize&roomId`（PageHelper 分页，规约照 `BaseController` + `startPage()`；`roomId` 可选，非空则 SQL `m.room_id = #{filterRoomId}` 过滤，与用户房间 `roomIds IN` 权限 join 并列）；未结束的通话给进行中标记。
 - 客户端：
-  - domain：`CallLogEntry`；repository（`domain/repositories/+ data/repositories/impl` + provider 桥接）。
-  - 路由 `CallHistoryRoute` + 页面；入口依 F4 结果挂主框架（桌面侧栏 / 移动底栏第 N 项），点条目可跳转对应会话。
+  - domain：`CallLogEntry`；repository（`domain/repositories/+ data/repositories/impl` + provider 桥接，`fetchCallHistory` 增可选 `roomId` 透传）。
+  - `CallHistoryList` 改按房间 family（autoDispose：弹窗/页面关闭即释放）；页面统一 AppBar + surface 背景 + 列表上下 12px 内填充；桌面弹窗 / 移动整页由 `presentAdaptivePage` 决定；点条目 `maybePop` 关闭返回会话。
   - i18n：`call.history`、`call.history.empty` 等。
 - 测试：repository 解析（空表/乱序/进行中）用例、页面渲染 + i18n 三语用例、入口跳转路由用例。
 

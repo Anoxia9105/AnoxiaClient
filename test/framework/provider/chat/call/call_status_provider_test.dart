@@ -32,6 +32,7 @@ class _PendingCallRepository implements CallRepository {
     required int pageNum,
     required int pageSize,
     required String orderBy,
+    String? roomId,
   }) =>
       throw UnimplementedError();
 }

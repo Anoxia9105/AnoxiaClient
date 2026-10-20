@@ -100,7 +100,7 @@ void main() {
 
       // 默认选中第一项（聊天）。
       final icons = tester.widgetList<HugeIcon>(find.byType(HugeIcon)).toList();
-      expect(icons.length, 5);
+      expect(icons.length, 4);
       expect(icons.first.strokeWidth, 2.4);
       expect(icons.first.color, primary);
       for (final icon in icons.skip(1)) {
@@ -119,7 +119,7 @@ void main() {
           .map((t) => t.style)
           .where((s) => s?.fontSize == 11)
           .toList();
-      expect(labelStyles.length, 5);
+      expect(labelStyles.length, 4);
       expect(labelStyles.first?.fontWeight, FontWeight.w700);
       expect(labelStyles.first?.color, primary);
       for (final style in labelStyles.skip(1)) {
@@ -137,7 +137,7 @@ void main() {
       });
 
       await _pumpBar(tester);
-      // 不依赖 .tr() 文案是否加载：5 个 InkWell 依次是 聊天/人员/通话/收藏/我的。
+      // 不依赖 .tr() 文案是否加载：4 个 InkWell 依次是 聊天/人员/收藏/我的。
       await tester.tap(find.byType(InkWell).last);
       await tester.pumpAndSettle();
 
@@ -176,7 +176,7 @@ void main() {
           .map((t) => t.style)
           .where((s) => s?.fontSize == 11)
           .toList();
-      expect(labelStyles.length, 5);
+      expect(labelStyles.length, 4);
       expect(labelStyles.first?.color, primary);
       expect(labelStyles.first?.fontWeight, FontWeight.w700);
     });

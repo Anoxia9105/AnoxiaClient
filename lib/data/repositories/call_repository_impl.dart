@@ -14,10 +14,17 @@ class CallRepositoryImpl implements CallRepository {
     required int pageNum,
     required int pageSize,
     required String orderBy,
+    String? roomId,
   }) async {
+    final queryParameters = <String, dynamic>{
+      'pageNum': pageNum,
+      'pageSize': pageSize,
+      'orderBy': orderBy,
+      if (roomId != null && roomId.isNotEmpty) 'roomId': roomId,
+    };
     final res = await DioClient().get(
       API.callHistory,
-      queryParameters: {'pageNum': pageNum, 'pageSize': pageSize, 'orderBy': orderBy},
+      queryParameters: queryParameters,
     );
     // 该端点返回裸 TableDataInfo（顶层 total/rows），不走 AjaxResult 包装
     final data = res.data;

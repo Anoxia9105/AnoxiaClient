@@ -11,11 +11,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// 可注入响应序列的假通话仓库。
 ///
-/// - [requests] 记录每次请求参数（页码/排序）
+/// - [requests] 记录每次请求参数（页码/排序/房间过滤）
 /// - [queue] 按序消费响应：[CallHistoryPageData] 成功、[Object] 为失败、
 ///   [Completer] 手动放行（用于竞态测试）
 class _StubCallRepository implements CallRepository {
-  final requests = <({int pageNum, int pageSize, String orderBy})>[];
+  final requests =
+      <({int pageNum, int pageSize, String orderBy, String? roomId})>[];
   final queue = <Object>[];
 
   void enqueueSuccessful(CallHistoryPageData page) => queue.add(page);
@@ -30,8 +31,16 @@ class _StubCallRepository implements CallRepository {
     required int pageNum,
     required int pageSize,
     required String orderBy,
+    String? roomId,
   }) {
-    requests.add((pageNum: pageNum, pageSize: pageSize, orderBy: orderBy));
+    requests.add(
+      (
+        pageNum: pageNum,
+        pageSize: pageSize,
+        orderBy: orderBy,
+        roomId: roomId,
+      ),
+    );
     final next = queue.isEmpty ? Object() : queue.removeAt(0);
     if (next is Completer<CallHistoryPageData>) return next.future;
     if (next is CallHistoryPageData) return Future.value(next);
@@ -75,18 +84,36 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  CallHistoryState currentState() => container.read(callHistoryListProvider);
+  /// autoDispose family：没有常驻 listener 时 read 后下一个事件循环就会被
+  /// 销毁，build 里延迟执行的 refresh 会因 Ref 失效抛错。显式挂一个
+  /// 空监听保活，模拟真实页面 watch 的生命周期。
+  void mount() {
+    final sub = container.listen<CallHistoryState>(
+      callHistoryListProvider('room-a'),
+      (_, _) {},
+    );
+    addTearDown(sub.close);
+  }
+
+  /// 挂载 provider（触发 build + 延迟首屏 refresh）并等事件队列清空。
+  Future<void> boot() async {
+    mount();
+    await pumpEventQueue();
+  }
+
+  CallHistoryState currentState() =>
+      container.read(callHistoryListProvider('room-a'));
 
   Future<void> settle() => pumpEventQueue();
 
-  void boot() => container.read(callHistoryListProvider.notifier);
+  CallHistoryList notifier() =>
+      container.read(callHistoryListProvider('room-a').notifier);
 
-  test('进页面触发首屏加载并填充条目与全量数', () async {
+  test('进页面触发首屏加载并填充条目与全量数（携带房间过滤）', () async {
     repository.enqueueSuccessful(
       CallHistoryPageData(entries: [entry('m1', roomId: 'a')], total: 5),
     );
-    boot();
-    await settle();
+    await boot();
 
     final s = currentState();
     expect(s.entries.map((e) => e.messageId), ['m1']);
@@ -94,14 +121,14 @@ void main() {
     expect(s.initialLoading, isFalse);
     expect(s.hasMore, isTrue);
     expect(s.error, isNull);
+    expect(repository.requests.single.roomId, 'room-a');
     expect(repository.requests.single.orderBy, 'desc');
     expect(repository.requests.single.pageNum, 1);
   });
 
   test('空会话列表没有错误也没有更多页', () async {
     repository.enqueueSuccessful(CallHistoryPageData.empty);
-    boot();
-    await settle();
+    await boot();
 
     final s = currentState();
     expect(s.entries, isEmpty);
@@ -112,8 +139,7 @@ void main() {
 
   test('首屏失败时错误落位到 state，不抛出', () async {
     repository.enqueueFailure(const FormatException('bad response'));
-    boot();
-    await settle();
+    await boot();
 
     final s = currentState();
     expect(s.entries, isEmpty);
@@ -121,35 +147,36 @@ void main() {
     expect(s.initialLoading, isFalse);
   });
 
-  test('loadMore 按页追加且按 messageId 去重', () async {
+  test('loadMore 按页追加且按 messageId 去重（房间过滤持续携带）', () async {
     repository.enqueueSuccessful(
       CallHistoryPageData(entries: [entry('m1'), entry('m2')], total: 3),
     );
-    boot();
-    await settle();
+    await boot();
 
     repository.enqueueSuccessful(
       CallHistoryPageData(entries: [entry('m2'), entry('m3')], total: 3),
     );
-    await container.read(callHistoryListProvider.notifier).loadMore();
+    await notifier().loadMore();
     await settle();
 
     final s = currentState();
     expect(s.entries.map((e) => e.messageId), ['m1', 'm2', 'm3']);
     expect(s.hasMore, isFalse);
     expect(s.loadingMore, isFalse);
-    expect(repository.requests.map((r) => r.pageNum), [1, 2]);
+    expect(
+      repository.requests.map((r) => (r.pageNum, r.roomId)),
+      [(1, 'room-a'), (2, 'room-a')],
+    );
   });
 
   test('追加页失败时保留既有条目且仍可重试', () async {
     repository.enqueueSuccessful(
       CallHistoryPageData(entries: [entry('m1')], total: 2),
     );
-    boot();
-    await settle();
+    await boot();
 
     repository.enqueueFailure(StateError('network down'));
-    await container.read(callHistoryListProvider.notifier).loadMore();
+    await notifier().loadMore();
     await settle();
 
     final s = currentState();
@@ -157,19 +184,27 @@ void main() {
     expect(s.loadingMore, isFalse);
     expect(s.hasMore, isTrue);
     expect(s.error, isNull);
+
+    // 手动重试：消费下一个成功响应正常追加
+    repository.enqueueSuccessful(
+      CallHistoryPageData(entries: [entry('m1'), entry('m2')], total: 2),
+    );
+    await notifier().loadMore();
+    await settle();
+    expect(currentState().entries.map((e) => e.messageId), ['m1', 'm2']);
+    expect(currentState().hasMore, isFalse);
   });
 
   test('切换排序方向会重置列表并按新方向重拉', () async {
     repository.enqueueSuccessful(
       CallHistoryPageData(entries: [entry('m1')], total: 1),
     );
-    boot();
-    await settle();
+    await boot();
 
     repository.enqueueSuccessful(
       CallHistoryPageData(entries: [entry('m9')], total: 1),
     );
-    await container.read(callHistoryListProvider.notifier).setOrderBy('asc');
+    await notifier().setOrderBy('asc');
     await settle();
 
     final s = currentState();
@@ -183,25 +218,23 @@ void main() {
     repository.enqueueSuccessful(
       CallHistoryPageData(entries: [entry('m1')], total: 2),
     );
-    boot();
-    await settle();
+    await boot();
 
     final pending = Completer<CallHistoryPageData>();
     repository.enqueuePending(pending);
-    final loadMoreFuture =
-        container.read(callHistoryListProvider.notifier).loadMore();
+    final loadMoreFuture = notifier().loadMore();
 
     repository.enqueueSuccessful(
       CallHistoryPageData(entries: [entry('m1')], total: 1),
     );
-    final refreshFuture =
-        container.read(callHistoryListProvider.notifier).refresh();
+    final refreshFuture = notifier().refresh();
 
     // 追加页完成后才被丢弃：refresh 的 generation 更新使其过期
     pending.complete(
       CallHistoryPageData(entries: [entry('m1')], total: 1),
     );
     await Future.wait([loadMoreFuture, refreshFuture]);
+    await settle();
 
     final s = currentState();
     expect(s.entries.map((e) => e.messageId), ['m1']);
@@ -210,11 +243,12 @@ void main() {
     expect(repository.requests.map((r) => r.pageNum), [1, 2, 1]);
   });
 
-  test('通话记录挂载在主框架侧栏第二项', () {
+  test('主框架侧栏不再包含通话记录页签（并入会话详情）', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     final items = container.read(layoutControllerProvider).items;
-    expect(items[2].name, 'sidebar_calls');
+    expect(items.map((i) => i.name), isNot(contains('sidebar_calls')));
+    expect(items.first.name, 'sidebar_chat');
     expect(items.last.name, 'sidebar_setting');
   });
 }

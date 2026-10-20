@@ -43,6 +43,8 @@ class MediaTimelinePage extends ConsumerWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
+        // 显式背景：桌面端以弹窗呈现时与主题 surface 一致，不透底
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           title: Text('chat_media_timeline_title'.tr()),
           bottom: TabBar(
@@ -83,7 +85,8 @@ class _MediaGridTab extends ConsumerWidget {
         final cells = _expandMediaAttachments(state.media.items);
         if (cells.isEmpty) return const _EmptyHint();
         return GridView.builder(
-          padding: const EdgeInsets.all(4),
+          // 上下内填充：九宫格不贴 TabBar 与底部边缘
+          padding: const EdgeInsets.fromLTRB(4, 12, 4, 16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             mainAxisSpacing: 4,
@@ -207,7 +210,7 @@ class _FilesTab extends ConsumerWidget {
       data: (state) {
         if (state.files.isEmpty) return const _EmptyHint();
         return ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           itemCount: state.files.items.length + (state.files.hasMore ? 1 : 0),
           separatorBuilder: (_, _) => const Divider(height: 1),
           itemBuilder: (context, index) {
@@ -288,7 +291,7 @@ class _LinksTab extends ConsumerWidget {
               : const _EmptyHint();
         }
         return ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           itemCount: state.links.items.length + (state.links.hasMore ? 1 : 0),
           separatorBuilder: (_, _) => const Divider(height: 1),
           itemBuilder: (context, index) {
@@ -410,7 +413,7 @@ class _MediaSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.surfaceContainerHighest;
     return GridView.builder(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.fromLTRB(4, 12, 4, 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         mainAxisSpacing: 4,
@@ -430,7 +433,7 @@ class _ListSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.surfaceContainerHighest;
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       itemCount: 10,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) => ListTile(

@@ -13,7 +13,7 @@ class CallHistoryState {
   /// 当前已聚合条目（顺序与 [CallHistoryState.orderBy] 一致）
   final List<CallLogEntry> entries;
 
-  /// 服务端全量会话数，用于 hasMore 判断
+  /// 服务端过滤后全量会话数，用于 hasMore 判断
   final int total;
 
   /// 排序方向（将作为下一次请求 query 传入）
@@ -59,13 +59,15 @@ class CallHistoryState {
   }
 }
 
-/// 通话记录页面状态管理
+/// 通话记录页面状态管理（按房间过滤）
 ///
-/// - build 即触发首屏加载（IndexedStack 常驻预构建，进首页拉一次）
-/// - [refresh] 重置回第一页并替换旧数据
-/// - [loadMore] 聚合条目按页映射 messageId 去重后追加
-/// - 排序切换经 [setOrderBy]，切换后由 [refresh] 完整重拉
-@Riverpod(keepAlive: true)
+/// - 通话记录并入会话详情后不再常驻主框架页签，
+///   provider 按房间 family（autoDispose：弹窗/页面关闭即释放）；
+/// - build 即触发首屏加载（服务端按 [roomId] 过滤后分页聚合）；
+/// - [refresh] 重置回第一页并替换旧数据；
+/// - [loadMore] 聚合条目按页映射 messageId 去重后追加；
+/// - 排序切换经 [setOrderBy]，切换后由 [refresh] 完整重拉。
+@riverpod
 class CallHistoryList extends _$CallHistoryList {
   /// 单页条数（与服务端 clamp 范围一致）
   static const int _pageSize = 20;
@@ -77,7 +79,7 @@ class CallHistoryList extends _$CallHistoryList {
   int _generation = 0;
 
   @override
-  CallHistoryState build() {
+  CallHistoryState build(String roomId) {
     // build 内不可同步读 state：refresh 交给事件循环延迟执行
     Future<void>(() => refresh());
     return const CallHistoryState(initialLoading: true);
@@ -94,6 +96,7 @@ class CallHistoryList extends _$CallHistoryList {
         pageNum: 1,
         pageSize: _pageSize,
         orderBy: orderBy,
+        roomId: roomId,
       );
       if (generation != _generation) return;
       _nextPage = 2;
@@ -127,6 +130,7 @@ class CallHistoryList extends _$CallHistoryList {
         pageNum: _nextPage < 1 ? 1 : _nextPage,
         pageSize: _pageSize,
         orderBy: current.orderBy,
+        roomId: roomId,
       );
       if (generation != _generation) return;
       _nextPage = _nextPage + 1;

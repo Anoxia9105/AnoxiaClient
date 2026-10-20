@@ -1,14 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/domain/repositories/call_repository.dart';
 import 'package:anoxia/features/chat/presentation/pages/call_history_page.dart';
 import 'package:anoxia/framework/domain/call_log_entry.dart';
 import 'package:anoxia/framework/domain/room_call_status.dart';
-import 'package:anoxia/framework/provider/chat/call/call_history_service.dart';
-import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
-import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,8 +43,10 @@ class _FixedCallRepository implements CallRepository {
     required int pageNum,
     required int pageSize,
     required String orderBy,
+    String? roomId,
   }) {
     historyCalls++;
+    expect(roomId, 'room-a');
     final data = page;
     if (data == null) {
       return Future.error(const FormatException('invalid response'));
@@ -89,7 +89,29 @@ CallLogEntry ongoingIncomingGroup() => const CallLogEntry(
       status: CallLogStatus.ongoing,
     );
 
-Future<ProviderContainer> _pumpPage(
+/// 宿主页：用「presentAdaptivePage 打开通话记录」的真实入口断言——
+/// 宽屏（≥700 逻辑宽）走桌面模态弹窗，窄屏走整页路由，
+/// 点击条目 pop 后应回到宿主页。
+class _HostScreen extends StatelessWidget {
+  const _HostScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: TextButton(
+          onPressed: () => presentAdaptivePage(
+            context,
+            builder: (_) => const CallHistoryPage(roomId: 'room-a'),
+          ),
+          child: const Text('打开通话记录'),
+        ),
+      ),
+    );
+  }
+}
+
+Future<ProviderContainer> _pumpHost(
   WidgetTester tester, {
   required Locale locale,
   required CallRepository repository,
@@ -117,28 +139,36 @@ Future<ProviderContainer> _pumpPage(
       useFallbackTranslations: true,
       // 必须把 EasyLocalization 的 delegates 交给内层 MaterialApp，
       // 否则 assemble 阶段不会调用 delegate.load()，`.tr()` 只会返回 key。
-      child: Builder(
-        builder: (context) => MaterialApp(
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          home: UncontrolledProviderScope(
-            container: container,
-            child: const CallHistoryPage(),
+      // ProviderScope 必须包在 MaterialApp 外层：presentAdaptivePage
+      // 把弹窗/整页路由推入根 Navigator（Overlay 在 MaterialApp 之下），
+      // 否则新路由里的 Consumer 读不到容器（No ProviderScope found）。
+      child: UncontrolledProviderScope(
+        container: container,
+        // 必须把 EasyLocalization 的 delegates 交给内层 MaterialApp，
+        // 否则 assemble 阶段不会调用 delegate.load()，`.tr()` 只会返回 key。
+        child: Builder(
+          builder: (context) => MaterialApp(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            home: const _HostScreen(),
           ),
         ),
       ),
     ),
   );
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 100));
-  await tester.pump(const Duration(milliseconds: 100));
+
+  // 经真实入口打开：宽屏为模态弹窗，窄屏为 Material 路由。
+  // 项目自定义了页面过渡（离场/入场时长大于常规值），统一 pumpAndSettle。
+  await tester.tap(find.text('打开通话记录'));
+  await tester.pumpAndSettle();
   return container;
 }
 
 void main() {
-  testWidgets('桌面布局渲染条目（zh）：标题/呼出/时长/进行中 + 跳转会话', (tester) async {
-    final container = await _pumpPage(
+  testWidgets('桌面弹窗渲染条目（zh）：标题/呼出/时长/进行中 + 条目可关闭', (tester) async {
+    await _pumpHost(
       tester,
       locale: const Locale('zh'),
       repository: _FixedCallRepository(
@@ -149,7 +179,7 @@ void main() {
       ),
     );
 
-    // 桌面页头标题 + 条目内容
+    expect(find.byType(CallHistoryPage), findsOneWidget);
     expect(find.text('通话记录'), findsNWidgets(1));
     expect(find.text('张三'), findsOneWidget);
     expect(find.text('项目群'), findsOneWidget);
@@ -159,15 +189,15 @@ void main() {
     expect(find.text('进行中'), findsOneWidget);
     expect(find.text('没有更多了'), findsOneWidget);
 
-    // 点击条目 → 设置活跃房间并切到聊天页签
+    // 点击条目 → 关闭弹窗回到宿主页。
+    // 项目自定义了页面过渡：离场动画超过常规 300ms，用 pumpAndSettle 等待。
     await tester.tap(find.text('张三'));
-    await tester.pump();
-    expect(container.read(activeRoomIdProvider), 'room-a');
-    expect(container.read(layoutControllerProvider).currentIndex, 0);
+    await tester.pumpAndSettle();
+    expect(find.byType(CallHistoryPage), findsNothing);
   });
 
   testWidgets('空列表展示空态文案（zh）', (tester) async {
-    await _pumpPage(
+    await _pumpHost(
       tester,
       locale: const Locale('zh'),
       repository: _FixedCallRepository(CallHistoryPageData.empty),
@@ -178,7 +208,7 @@ void main() {
 
   testWidgets('首屏失败展示重试入口（zh）', (tester) async {
     final repository = _FixedCallRepository(null);
-    await _pumpPage(
+    await _pumpHost(
       tester,
       locale: const Locale('zh'),
       repository: repository,
@@ -194,7 +224,7 @@ void main() {
   });
 
   testWidgets('en 文案渲染', (tester) async {
-    await _pumpPage(
+    await _pumpHost(
       tester,
       locale: const Locale('en'),
       repository: _FixedCallRepository(
@@ -212,7 +242,7 @@ void main() {
   });
 
   testWidgets('ja 文案渲染', (tester) async {
-    await _pumpPage(
+    await _pumpHost(
       tester,
       locale: const Locale('ja'),
       repository: _FixedCallRepository(
@@ -229,8 +259,8 @@ void main() {
     expect(find.text('通話中'), findsOneWidget);
   });
 
-  testWidgets('移动端宽度走 AppBar 浏览 Chrome', (tester) async {
-    final container = await _pumpPage(
+  testWidgets('移动端整页路由：AppBar 标题 + 条目 pop 回宿主页', (tester) async {
+    await _pumpHost(
       tester,
       locale: const Locale('zh'),
       repository: _FixedCallRepository(
@@ -239,12 +269,14 @@ void main() {
       physicalSize: const Size(400, 800),
     );
 
+    expect(find.byType(CallHistoryPage), findsOneWidget);
     expect(find.byType(AppBar), findsOneWidget);
     final appBar = tester.widget<AppBar>(find.byType(AppBar));
     expect(appBar.title, isA<Text>());
     expect((appBar.title! as Text).data, '通话记录');
-    // 桌面页头在这个宽度下不应出现
-    expect(find.text('通话记录'), findsNWidgets(1));
-    expect(container.read(callHistoryListProvider).initialLoading, isFalse);
+    // 非弹窗整页路由：条目点击关闭本页回到宿主页
+    await tester.tap(find.text('张三'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CallHistoryPage), findsNothing);
   });
 }
