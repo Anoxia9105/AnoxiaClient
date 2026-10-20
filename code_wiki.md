@@ -639,7 +639,9 @@ final response = await DioClient().uploadFile(
 | `encodeMessageFrame(...)` | 编码原始 V6 上行消息帧 |
 | `encodeReadCursorFrame(...)` | 编码已读游标命令 |
 | `encodeRecallFrame(...)` | 编码撤回命令 |
-| `decodeServerFrame(...)` | 解码 V6 下行帧并映射为领域消息 |
+| `encodeEditFrame(...)` | 编码编辑命令（仅 Text/RichText 负载，其它分支在本层拒绝） |
+| `encodeReactionFrame(...)` | 编码表情回应命令（字段 16；本人单消息单 emoji 幂等，不占 seq） |
+| `decodeServerFrame(...)` | 解码 V6 下行帧并映射为领域消息（含 `reaction` → `ReactionV6Event`） |
 
 **解码示例**:
 
@@ -765,6 +767,13 @@ logout()
 | 消息状态 | 跟踪消息投递状态（发送中、已发送、发送失败） |
 | 消息撤回 | 调用撤回接口并更新本地列表 |
 | 收藏功能 | 收藏指定消息 |
+| 表情回应 | `toggleReaction()`：本地乐观切换 → WS `reaction` 命令 → ACK 失败回滚；进房由 `maybePullReactions()` 按 REST `/chat/reactions` 消息窗口补拉一次 |
+
+**表情回应状态机**（`chat_reaction_service.dart`，`roomChatReactionsProvider`）：
+
+- 回应不占消息 seq、不进同步 backlog，也不落 drift 表：进房按当前消息窗口 REST 补拉，实时以房间广播 `ReactionEvent` 增删聚合（含回应者本人回声，多端同步）。
+- 本人回声按「已处于目标态则跳过」去重；`toggleLocal` 自逆，ACK 失败再切换一次即精确还原点击前聚合。
+- 每房间最多保留 500 条消息的聚合并按插入序淘汰最旧；补拉窗口以请求消息整体重设，离线期间他人撤空的组随之清除。
 
 **消息排序规则**:
 

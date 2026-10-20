@@ -105,6 +105,33 @@ class ImPacketV6 {
     return frame.writeToBuffer();
   }
 
+  /// 编码表情回应（字段号 16：reaction）
+  ///
+  /// 幂等模型：本人单消息单 emoji 唯一；isRemove=true 撤销现有回应。
+  /// 回应不占消息 seq、不进同步 backlog，服务端广播 ReactionEvent。
+  static Uint8List encodeReactionFrame(
+    String roomId,
+    String messageId,
+    String emoji, {
+    bool isRemove = false,
+    String? requestId,
+  }) {
+    if (emoji.isEmpty || emoji.length > 64) {
+      throw ArgumentError.value(emoji, 'emoji', 'emoji must be 1..64 chars');
+    }
+    final cmd = v6.MessageReactionCommand(
+      roomId: roomId,
+      messageId: messageId,
+      emoji: emoji,
+      isRemove: isRemove,
+    );
+    final frame = v6.ClientFrame(
+      requestId: requestId ?? 'reaction_${DateTime.now().microsecondsSinceEpoch}',
+      reaction: cmd,
+    );
+    return frame.writeToBuffer();
+  }
+
   /// 编码通话信令
   static Uint8List encodeCallSignalFrame({
     required String roomId,
@@ -164,6 +191,15 @@ class ImPacketV6 {
         if (op != null) {
           return DecodedV6.operation(
             op,
+            requestId: requestId,
+            traceId: traceId,
+          );
+        }
+      } else if (frame.hasReactionEvent()) {
+        final reaction = _fromV6Reaction(frame.reactionEvent);
+        if (reaction != null) {
+          return DecodedV6.reaction(
+            reaction,
             requestId: requestId,
             traceId: traceId,
           );
@@ -749,6 +785,22 @@ class ImPacketV6 {
       return null;
     }
   }
+
+  static ReactionV6Event? _fromV6Reaction(v6.ReactionEvent e) {
+    try {
+      return ReactionV6Event(
+        roomId: e.roomId,
+        messageId: e.messageId,
+        senderUserId: e.senderUserId.toInt(),
+        emoji: e.emoji,
+        isRemove: e.isRemove,
+        timestamp: e.hasServerTimestampMs() ? e.serverTimestampMs.toInt() : null,
+      );
+    } catch (err, st) {
+      debugLog('[ImPacketV6] _fromV6Reaction failed', err, st);
+      return null;
+    }
+  }
 }
 
 class DecodedV6 {
@@ -804,6 +856,11 @@ class DecodedV6 {
     String? requestId,
     String? traceId,
   }) => DecodedV6._('operation', o, requestId: requestId, traceId: traceId);
+  factory DecodedV6.reaction(
+    ReactionV6Event r, {
+    String? requestId,
+    String? traceId,
+  }) => DecodedV6._('reaction', r, requestId: requestId, traceId: traceId);
   factory DecodedV6.announcement(
     AnnouncementEvent event, {
     String? requestId,
@@ -853,4 +910,24 @@ class AckMetaV6 {
   final int? seq;
   final int? timestamp;
   const AckMetaV6({this.messageId, this.roomId, this.seq, this.timestamp});
+}
+
+/// 下行表情回应事件（ServerFrame body 19：reaction_event）
+///
+/// 不占消息 seq、不进同步 backlog；房间级广播（含回应者本人，多端同步）。
+class ReactionV6Event {
+  final String roomId;
+  final String messageId;
+  final int senderUserId;
+  final String emoji;
+  final bool isRemove;
+  final int? timestamp;
+  const ReactionV6Event({
+    required this.roomId,
+    required this.messageId,
+    required this.senderUserId,
+    required this.emoji,
+    required this.isRemove,
+    this.timestamp,
+  });
 }

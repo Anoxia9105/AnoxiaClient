@@ -111,6 +111,35 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
+  Future<List<({String messageId, String emoji, int count, bool mine})>>
+  fetchReactions(String roomId, List<String> messageIds) async {
+    // 服务端空窗口直接回空列表，无参请求仅在极端场景出现
+    if (roomId.isEmpty || messageIds.isEmpty) return [];
+    final res = await DioClient().get(
+      API.chatReactions,
+      queryParameters: {
+        'roomId': roomId,
+        'messageIds': messageIds.join(','),
+      },
+    );
+    final data = res.data['data'];
+    if (data is! List) return [];
+    final rows = <({String messageId, String emoji, int count, bool mine})>[];
+    for (final item in data) {
+      if (item is! Map) continue;
+      final messageId = item['messageId']?.toString() ?? '';
+      final emoji = item['emoji']?.toString() ?? '';
+      final count = int.tryParse(item['count']?.toString() ?? '') ?? 0;
+      if (messageId.isEmpty || emoji.isEmpty || count <= 0) continue;
+      // 后端 tinyint 经 MyBatis 转 Boolean；容错 0/1 数字
+      final mineRaw = item['mine'];
+      final mine = mineRaw == true || mineRaw.toString() == '1';
+      rows.add((messageId: messageId, emoji: emoji, count: count, mine: mine));
+    }
+    return rows;
+  }
+
+  @override
   Future<MessageSearchResult> searchMessages(
     String roomId,
     String keyword, {

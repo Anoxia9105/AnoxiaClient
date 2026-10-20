@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
+import 'package:anoxia/features/chat/presentation/widgets/message_bubble/message_reaction_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_menu/chat_message_context_menu.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_strategy.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
@@ -106,6 +107,8 @@ class UserMessageBubble extends StatelessWidget {
               ),
             ],
           ),
+          // 表情回应聚合条（P2-1）：仅已送达的非系统消息渲染，无回应时不占位
+          if (canReactToMessage(message)) MessageReactionBar(message: message),
         ],
       ),
     );

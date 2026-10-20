@@ -169,6 +169,9 @@ class API {
   static const String chatHistory = '/chat/history';
   static const String chatForward = '/chat/forward';
 
+  /// 表情回应补拉（按消息窗口聚合 count + mine）
+  static const String chatReactions = '/chat/reactions';
+
   /// REST fallback for sending a message when WebSocket integration is not used.
 
   /// 获取聊天室成员

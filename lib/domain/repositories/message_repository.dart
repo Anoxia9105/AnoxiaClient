@@ -31,6 +31,16 @@ abstract interface class MessageRepository {
     required int pageSize,
   });
 
+  /// 表情回应补拉（进房按消息窗口批量拉取聚合）
+  ///
+  /// [roomId] 房间 ID
+  /// [messageIds] 当前已加载的消息窗口（服务端去重截断 200 条）
+  ///
+  /// 返回按 (messageId, emoji) 聚合的行（count 总数 + mine 请求者视角）。
+  /// 非房间成员或入参为空时返回空列表。
+  Future<List<({String messageId, String emoji, int count, bool mine})>>
+  fetchReactions(String roomId, List<String> messageIds);
+
   /// 搜索消息
   ///
   /// [roomId] 房间 ID

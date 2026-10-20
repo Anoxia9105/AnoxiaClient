@@ -1130,6 +1130,7 @@
   "global_search_section_conversations": "会话",
   "global_search_section_contacts": "联系人",
   "chat_reply": "引用",
+  "chat_react": "回应",
   "chat_reply_cancel_tooltip": "取消引用",
   "chat_edit": "编辑",
   "chat_editing": "正在编辑",

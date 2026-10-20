@@ -197,20 +197,22 @@
 
 ---
 
-## 批次四：P2-1 消息表情回应（Reactions）
+## 批次四：P2-1 消息表情回应（Reactions）✅ 已完成
 
-- 协议：
+- 协议：✅
   - `ClientFrame.body` 追加 `MessageReactionCommand`（新字段号 16）：`room_id`、`message_id`、`emoji`、`is_remove`。
   - `ServerFrame.body` 追加 `ReactionEvent`（新字段号 19）：`room_id`、`message_id`、`sender_user_id`、`emoji`、`is_remove`、`server_timestamp_ms`。
-  - 版本三处 bump + 标准校验流程。
-- 服务端：
-  - 新表 `chat_message_reaction(message_id, emoji, user_id, created_at)` SQL 增量文件；逻辑：本人单消息单 emoji 只留一条（幂等）；广播 `ReactionEvent`（不占消息 seq——不进同步 backlog，重新进房时走 REST 拉）。
-  - REST：`GET /chat/reactions?roomId=...`（按房间批量取，供进房补拉）。
-- 客户端：
-  - `ws_controller` 新 `reactionEvent` 分发 → `chatMessagesProvider` 内聚合（每 message 维护 `Map<emoji, {count, mine}>`）；drift 新表或消息 propertiesJson 扩展（实现时按一致性测试最小改动选择，倾向独立表）。
-  - 进房补拉：`sync_repository` 房间进入流程附加重放 reactions。
-  - UI：长按菜单表情行（预置 6-8 个 emoji）；气泡下缘聚合条（我方已表态高亮）；再次点按同 emoji = 取消。
-- 测试：协议契约与 wire 用例、ws 分发聚合用例、幂等（重复点击不重复计数）、reconcile（REST 事件覆盖内存）用例。
+  - 版本三处 bump 6.3.0（AnoxiaProtocol pom/pubspec + AnoxiaServer 根 pom）+ `buf lint`/`buf breaking`/protoc 描述集/`mvn test`（ProtocolContractTest 25 用例）全过；AnoxiaProtocol 已提交 `bb79685`。
+- 服务端：✅（AnoxiaServer `d57485d0 消息表情回应`）
+  - 新表 `chat_message_reaction(message_id, room_id, emoji, user_id, created_at)`，唯一键 `(message_id, emoji, user_id)`；逻辑：本人单消息单 emoji 只留一条（INSERT IGNORE/DELETE 幂等）；**状态有变化才广播** `ReactionEvent`（走 `SystemEventType.MESSAGE_REACTION(28)` 房间事件 Pub/Sub，不占消息 seq、不进同步 backlog；重复添加/撤销静默成功不重复广播）；系统消息与已撤回消息拒绝回应（`countRecallOperation` 复用 op 表判定）。
+  - REST：`GET /chat/reactions?roomId=&messageIds=`（进房补拉，去重截断 200 条窗口，mine 请求者视角服务端计算）；SQL 增量 `2026-10-20-chat-message-reaction.sql`。
+  - 逐层测试：codec 反应命令/事件编解码 3 用例 + handler 成员/结果/异步 3 用例 + `ChatMessageReactionTest` 幂等/KPI/拦截 9 用例；全量 mvn test 262 全过；`docs/IM-Protocol-V6.md` 同步 6.3.0 段。
+- 客户端：✅
+  - codec：`ImPacketV6.encodeReactionFrame`（字段 16）+ `decodeServerFrame` 新 `reaction` 分支 → `ReactionV6Event`；wire fixture 用例锁定。
+  - 聚合：独立内存态 `roomChatReactionsProvider`（`chat_reaction_service.dart`，drift 不动表——回应属易失状态，进房即 REST 补拉重放，不污染消息表 schema）；WS `reaction` 分发 → `applyEvent`（本人回声按已处于目标态去重）。
+  - 进房补拉：`syncRoomMessages` 后触发 `maybePullReactions()`（每房间每次会话一次），REST `/chat/reactions`（`MessageRepository.fetchReactions`）按窗口整体重设（离线撤空组随之清除）；clearRoom/重新登录重置。
+  - UI：长按/右键菜单「回应」二级弹出固定 8 emoji 候选集（`reactionEmojiPalette`）；气泡下缘聚合条 `MessageReactionBar`（emoji+计数 chips，我方 `primaryContainer` 高亮；点击即切换/取消）；i18n 新增 `chat_react` 三语。
+- 测试：协议 wire 3 用例 + `chat_reaction_service_test` 状态机 14 用例（事件/回声/自逆回滚/REST 覆盖/容量淘汰/清房）；`flutter test` 全量 **614 passed + 2 skipped**（前基线 597），`flutter analyze` 维持 5 条 info 基线；`im_packet_v6_test.dart` 通过。
 
 ---
 

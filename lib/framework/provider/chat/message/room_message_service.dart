@@ -16,6 +16,7 @@ import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
+import 'package:anoxia/framework/provider/chat/message/chat_reaction_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/effect/chat_effect_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,6 +32,9 @@ part 'room_message_service.g.dart';
 
 const int _initialMessageWindowSize = 100;
 const int _maximumMessageWindowSize = 1000;
+
+/// 进房补拉单批最大消息数（与服务端 /chat/reactions 窗口上限一致）
+const int _reactionPullMaxMessages = 200;
 
 final chatMessageWindowLimitsProvider =
     NotifierProvider<ChatMessageWindowLimits, Map<String, int>>(
@@ -276,6 +280,9 @@ class ChatMessages extends _$ChatMessages {
   final Map<String, int> _lastLoadedHistoryBoundary = {};
   final Set<String> _syncedRoomIds = {};
   final Map<String, int> _syncedSeqByRoom = {};
+
+  /// 表情回应已补拉的会话集合（每次会话每房间一次）
+  final Set<String> _reactionPulledRoomIds = {};
   Future<void> _messageWriteQueue = Future<void>.value();
 
   Future<T> _enqueueMessageWrite<T>(Future<T> Function() operation) {
@@ -512,6 +519,7 @@ class ChatMessages extends _$ChatMessages {
       await syncRepo.syncMessages(roomId);
       _syncedRoomIds.add(roomId);
       _syncedSeqByRoom[roomId] = localMaxSeq;
+      unawaited(maybePullReactions(roomId));
       return;
     }
 
@@ -532,6 +540,7 @@ class ChatMessages extends _$ChatMessages {
       ref
           .read(chatHasMoreProvider.notifier)
           .setHasMore(roomId, refreshed.length >= _pageSize);
+      unawaited(maybePullReactions(roomId));
     } catch (e) {
       debugLog('同步房间 $roomId 失败: $e');
     }
@@ -616,6 +625,8 @@ class ChatMessages extends _$ChatMessages {
     _syncedRoomIds.remove(roomId);
     _syncedSeqByRoom.remove(roomId);
     _lastLoadedHistoryBoundary.remove(roomId);
+    _reactionPulledRoomIds.remove(roomId);
+    ref.read(roomChatReactionsProvider.notifier).clear(roomId);
     ref.read(chatMessageWindowLimitsProvider.notifier).reset(roomId);
     await ref
         .read(localDataSourceProvider)
@@ -630,6 +641,7 @@ class ChatMessages extends _$ChatMessages {
   void markAllNeedResync() {
     _syncedRoomIds.clear();
     _syncedSeqByRoom.clear();
+    _reactionPulledRoomIds.clear();
   }
 
   Future<void> removeMessage(String messageId, String roomId) async {
@@ -702,6 +714,75 @@ class ChatMessages extends _$ChatMessages {
     } catch (e) {
       debugLog('编辑消息请求失败: $e');
       return false;
+    }
+  }
+
+  /// 发送表情回应：本地乐观切换 → WS 命令 → ACK 失败回滚。
+  ///
+  /// 意图由点击前的 mine 反推（toggle 自逆）：点击前已回应 → 撤销，否则添加。
+  /// 成功后由房间广播 ReactionEvent 统一校正（本人回声按已处于目标态去重）；
+  /// 发送失败/超时把本地态再 toggle 一次精确还原，不进入离线重试队列。
+  Future<bool> toggleReaction(
+    String messageId,
+    String roomId,
+    String emoji,
+  ) async {
+    if (messageId.isEmpty || roomId.isEmpty || emoji.isEmpty) return false;
+    final reactions = ref.read(roomChatReactionsProvider.notifier);
+    final resultingMine = reactions.toggleLocal(roomId, messageId, emoji);
+    final isRemove = !resultingMine;
+
+    final requestId = 'reaction_${DateTime.now().microsecondsSinceEpoch}';
+    try {
+      final ack = await ref
+          .read(wsControllerProvider.notifier)
+          .sendCommand(
+            ImPacketV6.encodeReactionFrame(
+              roomId,
+              messageId,
+              emoji,
+              isRemove: isRemove,
+              requestId: requestId,
+            ),
+            requestId: requestId,
+          );
+      if (ack.isSuccess) return true;
+      // 幂等失败（消息撤回/非成员等）：回滚乐观切换
+      reactions.toggleLocal(roomId, messageId, emoji);
+      return false;
+    } catch (e) {
+      debugLog('表情回应请求失败: $e');
+      reactions.toggleLocal(roomId, messageId, emoji);
+      return false;
+    }
+  }
+
+  /// 进房补拉表情回应（syncRoomMessages 后触发，每房间每次会话一次）。
+  ///
+  /// 潜在空窗口会跳过（列表未就绪），下轮进入房间仍会补拉；
+  /// 服务端不可用静默失败，事件广播仍是主要同步来源。
+  Future<void> maybePullReactions(String roomId) async {
+    try {
+      if (roomId.isEmpty || _reactionPulledRoomIds.contains(roomId)) return;
+      final window = ref.read(roomMessagesProvider(roomId)).value ?? const [];
+      final ids = window
+          .map((item) => item.messageId)
+          .whereType<String>()
+          .where((id) => id.isNotEmpty)
+          .take(_reactionPullMaxMessages)
+          .toList();
+      if (ids.isEmpty) return;
+      _reactionPulledRoomIds.add(roomId);
+      final rows = await ref.read(messageRepositoryProvider).fetchReactions(
+            roomId,
+            ids,
+          );
+      ref
+          .read(roomChatReactionsProvider.notifier)
+          .replaceWindow(roomId, ids, rows);
+    } catch (e) {
+      debugLog('补拉表情回应失败: $e');
+      _reactionPulledRoomIds.remove(roomId);
     }
   }
 

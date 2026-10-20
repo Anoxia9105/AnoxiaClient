@@ -26,6 +26,8 @@ import 'ai_ask_bubble.dart';
 import 'ai_translate_sheet.dart';
 import '../forward/forward_message_dialog.dart';
 import '../message_bubble/message_resender.dart';
+import '../message_bubble/message_reaction_bar.dart'
+    show canReactToMessage, reactionEmojiPalette;
 import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
@@ -194,6 +196,17 @@ class _ChatMessageContextMenuState
       );
     }
 
+    // 表情回应（P2-1）：固定候选集二级弹出
+    if (canReactToMessage(widget.message)) {
+      items.add(
+        _buildItem(
+          'react',
+          HugeIcons.strokeRoundedSmile,
+          'chat_react'.tr(),
+        ),
+      );
+    }
+
     // 编辑（P1-1）：仅本人、Text/RichText（富文本不带 embed）、15 分钟窗口内
     if (canEditMessage(widget.message, currentUser?.userId)) {
       items.add(
@@ -311,10 +324,45 @@ class _ChatMessageContextMenuState
       case 'reply':
         _handleReply();
         break;
+      case 'react':
+        unawaited(_showReactionPalette(context));
+        break;
       case 'revoke':
         unawaited(_handleRevoke(context));
         break;
     }
+  }
+
+  /// 表情回应候选面板：固定候选集，任选其一触发乐观切换 + WS 命令
+  Future<void> _showReactionPalette(BuildContext context) async {
+    final roomId = widget.message.roomId!;
+    final messageId = widget.message.messageId!;
+    final selected = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+        (_lastMenuPosition ?? Offset.zero) & const Size(40, 40),
+        Offset.zero &
+            (Overlay.of(context).context.findRenderObject() as RenderBox).size,
+      ),
+      menuPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      constraints: const BoxConstraints(minWidth: 232, maxWidth: 288),
+      items: [
+        for (final item in reactionEmojiPalette)
+          PopupMenuItem<String>(
+            value: item,
+            height: 40,
+            child: Center(
+              child: Text(item, style: const TextStyle(fontSize: 22)),
+            ),
+          ),
+      ],
+    );
+    if (selected == null || !context.mounted) return;
+    unawaited(
+      ref
+          .read(chatMessagesProvider.notifier)
+          .toggleReaction(messageId, roomId, selected),
+    );
   }
 
   /// 问AI：以消息纯文本为上下文弹出 AI 气泡

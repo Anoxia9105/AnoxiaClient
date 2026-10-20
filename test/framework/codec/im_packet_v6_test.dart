@@ -238,4 +238,72 @@ void main() {
     expect(event.revision, 4);
     expect(event.action, AnnouncementAction.updated);
   });
+
+  test('reaction frame keeps field 16 command on the wire', () {
+    final bytes = ImPacketV6.encodeReactionFrame(
+      'room-1',
+      'msg-1',
+      '👍',
+      isRemove: true,
+      requestId: 'reaction-1',
+    );
+
+    final frame = v6.ClientFrame.fromBuffer(bytes);
+    expect(frame.hasReaction(), isTrue);
+    expect(frame.reaction.roomId, 'room-1');
+    expect(frame.reaction.messageId, 'msg-1');
+    expect(frame.reaction.emoji, '👍');
+    expect(frame.reaction.isRemove, isTrue);
+
+    // 固定 wire 回归（权威 im.proto 手工组装，杜绝字段号悄悄漂移）：
+    // request_id(1)="reaction-1"、reaction(16, tag 0x82 0x01)，内含
+    // room_id(1)/message_id(2)/emoji(3)="👍"(0xF0 0x9F 0x91 0x8D)/is_remove(4)=true
+    const fixture = <int>[
+      0x0a, 0x0a, 0x72, 0x65, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2d, 0x31, // request_id
+      0x82, 0x01, 0x17, // reaction (field 16)
+      0x0a, 0x06, 0x72, 0x6f, 0x6f, 0x6d, 0x2d, 0x31, // room_id
+      0x12, 0x05, 0x6d, 0x73, 0x67, 0x2d, 0x31, // message_id
+      0x1a, 0x04, 0xf0, 0x9f, 0x91, 0x8d, // emoji
+      0x20, 0x01, // is_remove = true
+    ];
+    expect(bytes, fixture);
+  });
+
+  test('reaction command rejects blank or oversized emoji', () {
+    expect(
+      () => ImPacketV6.encodeReactionFrame('room-1', 'msg-1', ''),
+      throwsArgumentError,
+    );
+    // 33 个 emoji = 66 个 UTF-16 码元，超过 64 上限
+    expect(
+      () => ImPacketV6.encodeReactionFrame('room-1', 'msg-1', '👍' * 33),
+      throwsArgumentError,
+    );
+  });
+
+  test('reaction event decodes from server frame body 19', () {
+    final frame = v6.ServerFrame(
+      reactionEvent: v6.ReactionEvent(
+        roomId: 'room-1',
+        messageId: 'msg-1',
+        senderUserId: fixnum.Int64(7),
+        emoji: '❤️',
+        isRemove: false,
+        serverTimestampMs: fixnum.Int64(300),
+      ),
+    );
+
+    final decoded = ImPacketV6.decodeServerFrame(
+      Uint8List.fromList(frame.writeToBuffer()),
+    );
+
+    expect(decoded?.type, 'reaction');
+    final reaction = decoded!.data as ReactionV6Event;
+    expect(reaction.roomId, 'room-1');
+    expect(reaction.messageId, 'msg-1');
+    expect(reaction.senderUserId, 7);
+    expect(reaction.emoji, '❤️');
+    expect(reaction.isRemove, isFalse);
+    expect(reaction.timestamp, 300);
+  });
 }

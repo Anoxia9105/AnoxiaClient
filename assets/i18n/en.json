@@ -1130,6 +1130,7 @@
   "global_search_section_conversations": "Conversations",
   "global_search_section_contacts": "Contacts",
   "chat_reply": "Reply",
+  "chat_react": "React",
   "chat_reply_cancel_tooltip": "Cancel reply",
   "chat_edit": "Edit",
   "chat_editing": "Editing",

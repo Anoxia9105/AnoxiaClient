@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
+import 'package:anoxia/framework/provider/chat/message/chat_reaction_service.dart';
 import 'dart:io' as io;
 import 'package:anoxia/framework/provider/ws/ws_reconnect_backoff.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
@@ -513,6 +514,18 @@ class WsController extends _$WsController {
             }
           }
           debugLog('[WsController] V6 operation: $op');
+          break;
+        case 'reaction':
+          final reaction = decoded.data as ReactionV6Event;
+          final currentUser = ref.read(authControllerProvider).value;
+          ref.read(roomChatReactionsProvider.notifier).applyEvent(
+                roomId: reaction.roomId,
+                messageId: reaction.messageId,
+                emoji: reaction.emoji,
+                isRemove: reaction.isRemove,
+                senderUserId: reaction.senderUserId,
+                currentUserId: currentUser?.userId,
+              );
           break;
       }
     } catch (e, st) {
