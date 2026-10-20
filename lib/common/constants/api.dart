@@ -161,6 +161,9 @@ class API {
   /// 禁言/解除禁言群聊
   static const String chatRoomMute = '/chat/room/muteRoom';
 
+  /// 成员级会话设置（免打扰/置顶）
+  static const String chatRoomSettings = '/chat/room/settings';
+
   // ======================== 消息接口 ========================
   /// 获取聊天历史记录
   static const String chatHistory = '/chat/history';

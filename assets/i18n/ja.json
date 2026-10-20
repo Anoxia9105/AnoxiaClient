@@ -334,6 +334,7 @@
   "chat_do_not_disturb": "通知しない",
   "chat_enable_notifications": "通知を再開",
   "chat_do_not_disturb_hint": "オンにすると新着メッセージ通知を表示しません",
+  "chat_room_settings_sync_failed": "設定の同期に失敗しました",
   "chat_mark_as_read": "既読にする",
   "chat_leave_group": "グループを離れる",
   "chat_delete_conversation": "会話を削除",

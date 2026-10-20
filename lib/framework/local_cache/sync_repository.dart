@@ -16,13 +16,20 @@ class SyncRepository implements ChatRepository {
     required LocalDataSource local,
     required RemoteDataSource remote,
     Connectivity? connectivity,
+    Future<void> Function(List<ChatRoomVO> rooms)? onConversationsFetched,
   }) : _local = local,
        _remote = remote,
-       _connectivity = connectivity ?? Connectivity();
+       _connectivity = connectivity ?? Connectivity(),
+       _onConversationsFetched = onConversationsFetched;
 
   final LocalDataSource _local;
   final RemoteDataSource _remote;
   final Connectivity _connectivity;
+
+  /// 会话列表拉取成功后的旁路钩子（如成员级设置 reconcile）。
+  ///
+  /// 抛错只记日志，绝不影响会话同步本身。
+  final Future<void> Function(List<ChatRoomVO> rooms)? _onConversationsFetched;
 
   /// 正在进行的 syncConversations Future（去重用）
   Future<void>? _syncConversationsInflight;
@@ -96,6 +103,7 @@ class SyncRepository implements ChatRepository {
       if (remoteRooms == null) {
         throw StateError('Invalid conversation response');
       }
+      await _notifyConversationsFetched(remoteRooms);
       await _mergeConversations(remoteRooms);
       await _local.updateSyncState(
         scope: 'conversations',
@@ -283,6 +291,19 @@ class SyncRepository implements ChatRepository {
         .whereType<String>()
         .toList();
     await _local.deleteConversationsNotIn(remoteIds);
+  }
+
+  /// 成员级设置 reconcile 等旁路钩子：失败不影响会话同步主流程。
+  Future<void> _notifyConversationsFetched(List<ChatRoomVO> rooms) async {
+    final hook = _onConversationsFetched;
+    if (hook == null) return;
+    try {
+      await hook(rooms);
+    } catch (e, st) {
+      // 旧部署下 reconcile 本身不会抛错；异常只可能是钩子实现问题，
+      // 记录日志并跳过，保证会话列表/消息照常同步。
+      debugLog('onConversationsFetched failed', e, st);
+    }
   }
 
   Future<bool> _hasNetwork() async {

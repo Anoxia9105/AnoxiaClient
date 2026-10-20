@@ -13,6 +13,8 @@ import 'remote_data_source.dart';
 import 'sync_repository.dart';
 import 'session_epoch.dart';
 import '../provider/auth/token_provider.dart';
+import '../provider/chat/room/do_not_disturb_rooms_provider.dart';
+import '../provider/chat/room/pinned_rooms_provider.dart';
 
 /// 应用数据库 Provider
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
@@ -38,10 +40,17 @@ final remoteDataSourceProvider = Provider<RemoteDataSource>((ref) {
 /// 同步仓库 Provider
 ///
 /// 组合本地和远程数据源，并在网络恢复时自动触发同步操作。
+/// 会话列表拉取成功后，用服务端返回的成员级设置（免打扰/置顶）校准本地缓存。
 final syncRepositoryProvider = Provider<SyncRepository>((ref) {
   final repository = SyncRepository(
     local: ref.watch(localDataSourceProvider),
     remote: ref.watch(remoteDataSourceProvider),
+    onConversationsFetched: (rooms) async {
+      ref.read(pinnedRoomsProvider.notifier).reconcileFromServer(rooms);
+      ref
+          .read(doNotDisturbRoomsProvider.notifier)
+          .reconcileFromServer(rooms);
+    },
   );
 
   var wasOffline = false;

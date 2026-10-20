@@ -48,4 +48,14 @@ abstract interface class RoomRepository {
   ///
   /// 返回是否操作成功。
   Future<bool> updateGroupAnnouncement(String roomId, String roomAnnouncement);
+
+  /// 更新成员级会话设置：置顶
+  ///
+  /// 服务端仅更新此字段；房间未找到或非成员时返回 false。
+  Future<bool> setRoomPinned(String roomId, bool isPinned);
+
+  /// 更新成员级会话设置：免打扰
+  ///
+  /// 服务端仅更新此字段；房间未找到或非成员时返回 false。
+  Future<bool> setRoomDoNotDisturb(String roomId, bool isMuted);
 }

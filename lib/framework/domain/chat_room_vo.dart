@@ -49,6 +49,16 @@ class ChatRoomVO {
   /// 是否展开搜索栏
   final bool? isOpenSearch;
 
+  /// 成员级免打扰（来自服务端成员设置）
+  ///
+  /// null 表示服务端未提供该字段（旧部署/未查询），客户端应回落本地缓存行为。
+  final bool? isMuted;
+
+  /// 成员级置顶（来自服务端成员设置）
+  ///
+  /// null 表示服务端未提供该字段（旧部署/未查询），客户端应回落本地缓存行为。
+  final bool? isPinned;
+
   /// 是否为官方虚拟房间（纯前端展示，不支持聊天/通话/成员管理）
   bool get isOfficial => roomType == RoomType.official.index;
 
@@ -66,6 +76,8 @@ class ChatRoomVO {
     this.unreadCount,
     this.lastMessage,
     this.isOpenSearch,
+    this.isMuted,
+    this.isPinned,
   });
 
   /// 创建当前实例的变体副本
@@ -83,6 +95,8 @@ class ChatRoomVO {
     int? unreadCount,
     ChatMessage? lastMessage,
     bool? isOpenSearch,
+    bool? isMuted,
+    bool? isPinned,
   }) {
     return ChatRoomVO(
       roomId: roomId ?? this.roomId,
@@ -98,6 +112,8 @@ class ChatRoomVO {
       unreadCount: unreadCount ?? this.unreadCount,
       lastMessage: lastMessage ?? this.lastMessage,
       isOpenSearch: isOpenSearch ?? this.isOpenSearch,
+      isMuted: isMuted ?? this.isMuted,
+      isPinned: isPinned ?? this.isPinned,
     );
   }
 
@@ -134,6 +150,28 @@ class ChatRoomVO {
       lastMessage: json['lastMessage'] != null
           ? ChatMessage.fromJson(json['lastMessage'])
           : null,
+      isMuted: _parseFlag(json['isMuted']),
+      isPinned: _parseFlag(json['isPinned']),
     );
+  }
+
+  /// 解析成员级开关字段（isMuted/isPinned）。
+  ///
+  /// 服务端序列化为 bool；为兼容兼容网关/中间层会转数字或字符串的情况，
+  /// 同时接受 1/0 与 'true'/'false'。缺省/无法识别返回 null（回落本地）。
+  static bool? _parseFlag(Object? value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      switch (value.trim().toLowerCase()) {
+        case 'true':
+        case '1':
+          return true;
+        case 'false':
+        case '0':
+          return false;
+      }
+    }
+    return null;
   }
 }

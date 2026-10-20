@@ -176,7 +176,7 @@
   - 协议：`ProtocolContractTest`（服务端）加 Edit 分支；客户端 `im_packet_v6_test.dart` 增 encode/decode 用例 + 固定 wire bytes 追加。
   - 客户端：ws 分发 2=EDITED 更新内存/drift 用例；UI「已编辑」角标、超窗不可编辑用例。
 
-### P1-3 会话设置云同步（免打扰/置顶）
+### P1-3 会话设置云同步（免打扰/置顶） ✅
 
 - 服务端：
   - SQL 增量文件（根目录惯例命名）：`2026-10-xx-chat-room-member-settings.sql`：`chat_room_member` 加 `is_muted`、`is_pinned` 列。

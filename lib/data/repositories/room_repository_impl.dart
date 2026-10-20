@@ -118,4 +118,25 @@ class RoomRepositoryImpl implements RoomRepository {
       return false;
     }
   }
+
+  /// 成员级会话设置统一入口：仅 POST 传入的键，服务端 COALESCE 其余字段。
+  ///
+  /// 与既有方法不同，这里不吞异常：调用方需要区分「旧部署无此接口」
+  /// （DioException 404/405/501，静默保留本地值）与「服务端业务失败」。
+  Future<bool> _updateRoomMemberSettings(Map<String, Object?> body) async {
+    final res = await DioClient().post(API.chatRoomSettings, data: body);
+    return res.data is Map && res.data['code'] == 200;
+  }
+
+  @override
+  Future<bool> setRoomPinned(String roomId, bool isPinned) async {
+    if (roomId.isEmpty) return false;
+    return _updateRoomMemberSettings({'roomId': roomId, 'isPinned': isPinned});
+  }
+
+  @override
+  Future<bool> setRoomDoNotDisturb(String roomId, bool isMuted) async {
+    if (roomId.isEmpty) return false;
+    return _updateRoomMemberSettings({'roomId': roomId, 'isMuted': isMuted});
+  }
 }
