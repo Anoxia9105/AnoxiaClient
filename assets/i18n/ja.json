@@ -588,6 +588,7 @@
   "chat_unknown_user": "不明なユーザー",
   "chat_read": "既読",
   "chat_delivered": "配信済み",
+  "chat_reaction_more_emoji": "その他の絵文字",
   "chat_media_timeline_title": "メディアとリンク",
   "chat_media_timeline_media": "メディア",
   "chat_media_timeline_files": "ファイル",

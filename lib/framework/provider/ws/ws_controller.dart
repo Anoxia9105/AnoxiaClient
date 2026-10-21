@@ -496,8 +496,9 @@ class WsController extends _$WsController {
           } else if (opType == 2) {
             // 消息编辑：metadata 携带最终 payload 快照，统一走应用编辑入口
             final metadata = op['metadata'];
-            final payloadJson =
-                metadata is Map ? metadata['edited_payload_json'] : null;
+            final payloadJson = metadata is Map
+                ? metadata['edited_payload_json']
+                : null;
             if (messageId.isNotEmpty &&
                 roomId.isNotEmpty &&
                 payloadJson is String &&
@@ -518,18 +519,49 @@ class WsController extends _$WsController {
         case 'reaction':
           final reaction = decoded.data as ReactionV6Event;
           final currentUser = ref.read(authControllerProvider).value;
-          ref.read(roomChatReactionsProvider.notifier).applyEvent(
+          ref
+              .read(roomChatReactionsProvider.notifier)
+              .applyEvent(
                 roomId: reaction.roomId,
                 messageId: reaction.messageId,
                 emoji: reaction.emoji,
                 isRemove: reaction.isRemove,
                 senderUserId: reaction.senderUserId,
                 currentUserId: currentUser?.userId,
+                senderName: reaction.senderUserId == currentUser?.userId
+                    ? currentUser?.nickName
+                    : null,
               );
+          if (!reaction.isRemove) {
+            // 仅查询本地用户缓存；悬停与回应广播均不增加 HTTP 请求。
+            unawaited(_resolveReactionUserName(reaction));
+          }
           break;
       }
     } catch (e, st) {
       debugLog('WS V6 分发异常', e, st);
+    }
+  }
+
+  Future<void> _resolveReactionUserName(ReactionV6Event reaction) async {
+    try {
+      final users = await ref
+          .read(localDataSourceProvider)
+          .db
+          .userDao
+          .getUsersByIds([reaction.senderUserId]);
+      if (!ref.mounted || users.isEmpty) return;
+      ref
+          .read(roomChatReactionsProvider.notifier)
+          .updateUserName(
+            reaction.roomId,
+            reaction.messageId,
+            reaction.emoji,
+            reaction.senderUserId,
+            users.first.nickName,
+          );
+    } catch (_) {
+      // 本地没有用户资料时显示用户 ID，不做额外远程查询。
     }
   }
 

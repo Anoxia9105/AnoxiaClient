@@ -18,20 +18,7 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 /// 表情回应固定候选集（弹窗横向换行展示，服务端仅按 key 幂等存储，无白名单）
 ///
 /// 含 ok（👌）、收到（✅）、合拍（🤝）等聊天常用答复表情
-const List<String> reactionEmojiPalette = [
-  '👍',
-  '❤️',
-  '😂',
-  '😮',
-  '😢',
-  '🙏',
-  '🔥',
-  '🎉',
-  '👏',
-  '🤝',
-  '👌',
-  '✅',
-];
+const List<String> reactionEmojiPalette = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
 /// 该消息是否可回应（气泡聚合条与菜单入口共用条件）
 bool canReactToMessage(ChatMessage message) {
@@ -48,10 +35,7 @@ bool canReactToMessage(ChatMessage message) {
 class MessageReactionBar extends ConsumerWidget {
   final ChatMessage message;
 
-  const MessageReactionBar({
-    super.key,
-    required this.message,
-  });
+  const MessageReactionBar({super.key, required this.message});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -79,19 +63,18 @@ class MessageReactionBar extends ConsumerWidget {
         runSpacing: 4,
         children: [
           for (final aggregate in aggregates)
-            _ReactionChip(
-              aggregate: aggregate,
-              highlight: aggregate.mine,
-              onTap: () {
-                ref
-                    .read(chatMessagesProvider.notifier)
-                    .toggleReaction(
-                      messageId,
-                      roomId,
-                      aggregate.emoji,
-                    );
-              },
-              colorScheme: colorScheme,
+            Tooltip(
+              message: aggregate.users.values.join('、'),
+              child: _ReactionChip(
+                aggregate: aggregate,
+                highlight: aggregate.mine,
+                onTap: () {
+                  ref
+                      .read(chatMessagesProvider.notifier)
+                      .toggleReaction(messageId, roomId, aggregate.emoji);
+                },
+                colorScheme: colorScheme,
+              ),
             ),
         ],
       ),
@@ -139,9 +122,9 @@ class _ReactionChip extends StatelessWidget {
               Text(
                 '${aggregate.count}',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: foreground,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: foreground,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),

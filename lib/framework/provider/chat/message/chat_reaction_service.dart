@@ -6,25 +6,32 @@
 // - 本地点击先乐观切换，ACK 失败再回滚；服务端事件与本地回声按
 //   「本人已处于目标态则忽略」去重，避免重复计数。
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 
 /// 单消息单 emoji 的聚合（count 总数 + mine 我是否已回应）
 class RoomReactionAggregate {
   final String emoji;
   final int count;
   final bool mine;
+  final Map<int, String> users;
 
   const RoomReactionAggregate({
     required this.emoji,
     required this.count,
     required this.mine,
+    this.users = const {},
   });
 
-  RoomReactionAggregate copyWith({int? count, bool? mine}) =>
-      RoomReactionAggregate(
-        emoji: emoji,
-        count: count ?? this.count,
-        mine: mine ?? this.mine,
-      );
+  RoomReactionAggregate copyWith({
+    int? count,
+    bool? mine,
+    Map<int, String>? users,
+  }) => RoomReactionAggregate(
+    emoji: emoji,
+    count: count ?? this.count,
+    mine: mine ?? this.mine,
+    users: users ?? this.users,
+  );
 }
 
 /// 一个房间全部消息的回应聚合：messageId → emoji → aggregate
@@ -57,16 +64,13 @@ class RoomChatReactions extends Notifier<Map<String, RoomReactionBoard>> {
     required bool isRemove,
     required int senderUserId,
     required int? currentUserId,
+    String? senderName,
   }) {
-    if (roomId.isEmpty ||
-        messageId.isEmpty ||
-        emoji.isEmpty) {
+    if (roomId.isEmpty || messageId.isEmpty || emoji.isEmpty) {
       return;
     }
     final current = state[roomId] ?? const RoomReactionBoard({});
-    final groups = {
-      ...?current.byMessage[messageId],
-    };
+    final groups = {...?current.byMessage[messageId]};
     final agg = groups[emoji];
 
     if (isRemove) {
@@ -80,6 +84,7 @@ class RoomChatReactions extends Notifier<Map<String, RoomReactionBoard>> {
         groups[emoji] = agg.copyWith(
           count: nextCount,
           mine: fromMe ? false : agg.mine,
+          users: {...agg.users}..remove(senderUserId),
         );
       }
     } else {
@@ -88,6 +93,7 @@ class RoomChatReactions extends Notifier<Map<String, RoomReactionBoard>> {
           emoji: emoji,
           count: 1,
           mine: senderUserId == currentUserId,
+          users: {senderUserId: senderName ?? '$senderUserId'},
         );
       } else {
         final fromMe = senderUserId == currentUserId;
@@ -95,6 +101,11 @@ class RoomChatReactions extends Notifier<Map<String, RoomReactionBoard>> {
         groups[emoji] = agg.copyWith(
           count: agg.count + 1,
           mine: agg.mine || fromMe,
+          users: {
+            ...agg.users,
+            senderUserId:
+                senderName ?? agg.users[senderUserId] ?? '$senderUserId',
+          },
         );
       }
     }
@@ -107,14 +118,9 @@ class RoomChatReactions extends Notifier<Map<String, RoomReactionBoard>> {
   void replaceWindow(
     String roomId,
     List<String> messageIds,
-    List<({
-      String messageId,
-      String emoji,
-      int count,
-      bool mine,
-    })>
-    rows,
-  ) {
+    List<({String messageId, String emoji, int count, bool mine})> rows, {
+    Map<String, Map<String, Map<int, String>>> usersByMessage = const {},
+  }) {
     if (roomId.isEmpty || messageIds.isEmpty) return;
     final window = messageIds.toSet();
     final grouped = <String, Map<String, RoomReactionAggregate>>{};
@@ -130,6 +136,9 @@ class RoomChatReactions extends Notifier<Map<String, RoomReactionBoard>> {
         emoji: row.emoji,
         count: row.count,
         mine: row.mine,
+        users: Map.unmodifiable(
+          usersByMessage[row.messageId]?[row.emoji] ?? const <int, String>{},
+        ),
       );
     }
     final current = state[roomId] ?? const RoomReactionBoard({});
@@ -153,7 +162,13 @@ class RoomChatReactions extends Notifier<Map<String, RoomReactionBoard>> {
 
   /// 本地点击乐观切换：mine=true → 撤销；mine=false → 添加。
   /// 返回切换后的 mine 态；发送失败时再次调用即可精确还原本次前的聚合。
-  bool toggleLocal(String roomId, String messageId, String emoji) {
+  bool toggleLocal(
+    String roomId,
+    String messageId,
+    String emoji, {
+    int? currentUserId,
+    String? currentUserName,
+  }) {
     if (roomId.isEmpty || messageId.isEmpty || emoji.isEmpty) return false;
     final current = state[roomId] ?? const RoomReactionBoard({});
     final groups = {...?current.byMessage[messageId]};
@@ -165,19 +180,56 @@ class RoomChatReactions extends Notifier<Map<String, RoomReactionBoard>> {
         emoji: emoji,
         count: 1,
         mine: true,
+        users: {
+          if (currentUserId case final int id) id: currentUserName ?? '$id',
+        },
       );
     } else if (resultingMine) {
-      groups[emoji] = agg.copyWith(count: agg.count + 1, mine: true);
+      groups[emoji] = agg.copyWith(
+        count: agg.count + 1,
+        mine: true,
+        users: {
+          ...agg.users,
+          if (currentUserId case final int id) id: currentUserName ?? '$id',
+        },
+      );
     } else {
       final nextCount = agg.count - 1;
       if (nextCount <= 0) {
         groups.remove(emoji);
       } else {
-        groups[emoji] = agg.copyWith(count: nextCount, mine: false);
+        groups[emoji] = agg.copyWith(
+          count: nextCount,
+          mine: false,
+          users: {...agg.users}..remove(currentUserId),
+        );
       }
     }
     state = {...state, roomId: _mergeRoom(current, messageId, groups)};
     return resultingMine;
+  }
+
+  /// 会话删除/登出时清理，防止 keepAlive 状态越积越多
+  void updateUserName(
+    String roomId,
+    String messageId,
+    String emoji,
+    int userId,
+    String name,
+  ) {
+    final current = state[roomId];
+    final agg = current?.byMessage[messageId]?[emoji];
+    if (current == null ||
+        agg == null ||
+        !agg.users.containsKey(userId) ||
+        name.isEmpty) {
+      return;
+    }
+    final groups = {
+      ...current.byMessage[messageId]!,
+      emoji: agg.copyWith(users: {...agg.users, userId: name}),
+    };
+    state = {...state, roomId: _mergeRoom(current, messageId, groups)};
   }
 
   /// 会话删除/登出时清理，防止 keepAlive 状态越积越多
@@ -214,11 +266,11 @@ class RoomChatReactions extends Notifier<Map<String, RoomReactionBoard>> {
       final other = b[entry.key];
       if (other == null ||
           other.count != entry.value.count ||
-          other.mine != entry.value.mine) {
+          other.mine != entry.value.mine ||
+          !mapEquals(other.users, entry.value.users)) {
         return false;
       }
     }
     return true;
   }
 }
-

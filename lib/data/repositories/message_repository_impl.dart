@@ -111,20 +111,36 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<List<({String messageId, String emoji, int count, bool mine})>>
+  Future<
+    List<
+      ({
+        String messageId,
+        String emoji,
+        int count,
+        bool mine,
+        Map<int, String> users,
+      })
+    >
+  >
   fetchReactions(String roomId, List<String> messageIds) async {
     // 服务端空窗口直接回空列表，无参请求仅在极端场景出现
     if (roomId.isEmpty || messageIds.isEmpty) return [];
     final res = await DioClient().get(
       API.chatReactions,
-      queryParameters: {
-        'roomId': roomId,
-        'messageIds': messageIds.join(','),
-      },
+      queryParameters: {'roomId': roomId, 'messageIds': messageIds.join(',')},
     );
     final data = res.data['data'];
     if (data is! List) return [];
-    final rows = <({String messageId, String emoji, int count, bool mine})>[];
+    final rows =
+        <
+          ({
+            String messageId,
+            String emoji,
+            int count,
+            bool mine,
+            Map<int, String> users,
+          })
+        >[];
     for (final item in data) {
       if (item is! Map) continue;
       final messageId = item['messageId']?.toString() ?? '';
@@ -134,7 +150,26 @@ class MessageRepositoryImpl implements MessageRepository {
       // 后端 tinyint 经 MyBatis 转 Boolean；容错 0/1 数字
       final mineRaw = item['mine'];
       final mine = mineRaw == true || mineRaw.toString() == '1';
-      rows.add((messageId: messageId, emoji: emoji, count: count, mine: mine));
+      final users = <int, String>{};
+      try {
+        final raw = item['usersJson'];
+        final decoded = raw is String ? jsonDecode(raw) : raw;
+        if (decoded is Map) {
+          for (final entry in decoded.entries) {
+            final id = int.tryParse(entry.key.toString());
+            if (id != null) users[id] = entry.value.toString();
+          }
+        }
+      } on FormatException {
+        // 兼容旧服务端或损坏的昵称字段，保留回应计数。
+      }
+      rows.add((
+        messageId: messageId,
+        emoji: emoji,
+        count: count,
+        mine: mine,
+        users: users,
+      ));
     }
     return rows;
   }

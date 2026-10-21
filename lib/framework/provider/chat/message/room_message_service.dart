@@ -729,7 +729,15 @@ class ChatMessages extends _$ChatMessages {
   ) async {
     if (messageId.isEmpty || roomId.isEmpty || emoji.isEmpty) return false;
     final reactions = ref.read(roomChatReactionsProvider.notifier);
-    final resultingMine = reactions.toggleLocal(roomId, messageId, emoji);
+    final user = ref.read(authControllerProvider).value;
+    bool toggle() => reactions.toggleLocal(
+      roomId,
+      messageId,
+      emoji,
+      currentUserId: user?.userId,
+      currentUserName: user?.nickName,
+    );
+    final resultingMine = toggle();
     final isRemove = !resultingMine;
 
     final requestId = 'reaction_${DateTime.now().microsecondsSinceEpoch}';
@@ -748,11 +756,11 @@ class ChatMessages extends _$ChatMessages {
           );
       if (ack.isSuccess) return true;
       // 幂等失败（消息撤回/非成员等）：回滚乐观切换
-      reactions.toggleLocal(roomId, messageId, emoji);
+      toggle();
       return false;
     } catch (e) {
       debugLog('表情回应请求失败: $e');
-      reactions.toggleLocal(roomId, messageId, emoji);
+      toggle();
       return false;
     }
   }
@@ -773,13 +781,32 @@ class ChatMessages extends _$ChatMessages {
           .toList();
       if (ids.isEmpty) return;
       _reactionPulledRoomIds.add(roomId);
-      final rows = await ref.read(messageRepositoryProvider).fetchReactions(
-            roomId,
-            ids,
-          );
+      final rows = await ref
+          .read(messageRepositoryProvider)
+          .fetchReactions(roomId, ids);
       ref
           .read(roomChatReactionsProvider.notifier)
-          .replaceWindow(roomId, ids, rows);
+          .replaceWindow(
+            roomId,
+            ids,
+            rows
+                .map(
+                  (r) => (
+                    messageId: r.messageId,
+                    emoji: r.emoji,
+                    count: r.count,
+                    mine: r.mine,
+                  ),
+                )
+                .toList(),
+            usersByMessage: {
+              for (final id in ids)
+                id: {
+                  for (final r in rows.where((r) => r.messageId == id))
+                    r.emoji: r.users,
+                },
+            },
+          );
     } catch (e) {
       debugLog('补拉表情回应失败: $e');
       _reactionPulledRoomIds.remove(roomId);

@@ -1,8 +1,20 @@
 // 消息 URL 提取（P0-4 链接时间线口径）测试。
 import 'package:anoxia/common/utils/message_url_extractor.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
 
 void main() {
+  test('富文本正文和 link 属性均可提取并去重', () {
+    final message = ChatMessage(payload: const MessagePayload(
+      quillDelta: '[{"insert":"https://example.com"},{"insert":"文档","attributes":{"link":"https://docs.google.com/a"}},{"insert":"\\n"}]',
+    ));
+    expect(extractChatMessageUrls(message), ['https://example.com', 'https://docs.google.com/a']);
+  });
+  test('损坏 Delta 保留正文链接', () {
+    expect(extractChatMessageUrls(ChatMessage(content: 'https://example.com',
+      payload: const MessagePayload(quillDelta: '{'))), ['https://example.com']);
+  });
   group('extractFirstMessageUrl', () {
     test('无 URL 返回 null', () {
       expect(extractFirstMessageUrl('今天天气不错'), isNull);

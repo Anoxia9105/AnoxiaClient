@@ -119,7 +119,7 @@ class QuillStyleConfig {
       ),
       // 链接样式
       link: baseTextStyle.copyWith(
-        color: colorScheme.primary,
+        color: baseTextStyle.color,
         decoration: TextDecoration.underline,
       ),
       // 代码块样式

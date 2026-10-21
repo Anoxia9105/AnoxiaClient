@@ -86,7 +86,7 @@ class MediaTimelineController extends _$MediaTimelineController {
   static final List<int> fileTypeCodes = [MessageType.file.code];
 
   /// 链接类：只扫纯文本（richText 是 Quill Delta JSON，不做 URL 提取）
-  static final List<int> linkTypeCodes = [MessageType.text.code];
+  static final List<int> linkTypeCodes = [MessageType.text.code, MessageType.richText.code];
 
   final Set<String> _loadingSections = {};
 
@@ -119,7 +119,7 @@ class MediaTimelineController extends _$MediaTimelineController {
 
     var linkPage = results[2];
     while (linkPage.length >= pageSize &&
-        !linkPage.any((m) => extractMessageUrls(m.content).isNotEmpty)) {
+        !linkPage.any((m) => extractChatMessageUrls(m).isNotEmpty)) {
       final seqs = linkPage
           .map((m) => m.seq)
           .whereType<int>()
@@ -195,7 +195,7 @@ class MediaTimelineController extends _$MediaTimelineController {
         final matches = <ChatMessage>[];
         while (true) {
           matches.addAll(
-            source.where((m) => extractMessageUrls(m.content).isNotEmpty),
+            source.where((m) => extractChatMessageUrls(m).isNotEmpty),
           );
           final seqs = source
               .map((m) => m.seq)
@@ -277,7 +277,7 @@ class MediaTimelineController extends _$MediaTimelineController {
     required bool isLinkSection,
   }) {
     final items = isLinkSection
-        ? page.where((m) => extractMessageUrls(m.content).isNotEmpty).toList()
+        ? page.where((m) => extractChatMessageUrls(m).isNotEmpty).toList()
         : page;
     // 过滤后为空不代表源结束：满页仍显示「加载更多」
     final seqs = page.map((m) => m.seq).whereType<int>().where((s) => s > 0);

@@ -38,7 +38,17 @@ abstract interface class MessageRepository {
   ///
   /// 返回按 (messageId, emoji) 聚合的行（count 总数 + mine 请求者视角）。
   /// 非房间成员或入参为空时返回空列表。
-  Future<List<({String messageId, String emoji, int count, bool mine})>>
+  Future<
+    List<
+      ({
+        String messageId,
+        String emoji,
+        int count,
+        bool mine,
+        Map<int, String> users,
+      })
+    >
+  >
   fetchReactions(String roomId, List<String> messageIds);
 
   /// 搜索消息

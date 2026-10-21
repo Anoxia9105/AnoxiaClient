@@ -11,6 +11,34 @@
 // 头条链接仍走 [extractFirstMessageUrl]（等价原函数）。
 library;
 
+import 'dart:convert';
+import 'package:anoxia/framework/domain/chat_message.dart';
+
+/// 同时提取纯文本和富文本 Delta（含 link 属性）中的链接。
+List<String> extractChatMessageUrls(ChatMessage message) {
+  final source = StringBuffer(message.content);
+  final delta = message.payload?.quillDelta;
+  if (delta != null && delta.isNotEmpty) {
+    try {
+      final decoded = jsonDecode(delta);
+      final ops = decoded is Map ? decoded['ops'] : decoded;
+      if (ops is List) {
+        for (final op in ops) {
+          if (op is! Map) continue;
+          if (op['insert'] is String) source.write(' ${op['insert']}');
+          final attributes = op['attributes'];
+          if (attributes is Map && attributes['link'] is String) {
+            source.write(' ${attributes['link']}');
+          }
+        }
+      }
+    } on FormatException {
+      // 损坏的富文本不影响普通正文链接提取。
+    }
+  }
+  return extractMessageUrls(source.toString());
+}
+
 /// 提取文本中的第一个有效 URL（与 link_preview_card 原口径一致）。
 String? extractFirstMessageUrl(String text) {
   final urls = extractMessageUrls(text);

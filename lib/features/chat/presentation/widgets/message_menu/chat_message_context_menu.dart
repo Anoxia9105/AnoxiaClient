@@ -23,6 +23,7 @@ import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.da
 import 'ai_ask_bubble.dart';
 import '../forward/forward_message_dialog.dart';
 import '../message_bubble/message_resender.dart';
+import '../chatinput/chat_emoji_widget.dart';
 import '../message_bubble/message_reaction_bar.dart'
     show canReactToMessage, reactionEmojiPalette;
 import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
@@ -183,22 +184,14 @@ class _ChatMessageContextMenuState
     // 表情回应（P2-1）：固定候选集二级弹出
     if (canReactToMessage(widget.message)) {
       items.add(
-        _buildItem(
-          'react',
-          HugeIcons.strokeRoundedSmile,
-          'chat_react'.tr(),
-        ),
+        _buildItem('react', HugeIcons.strokeRoundedSmile, 'chat_react'.tr()),
       );
     }
 
     // 编辑（P1-1）：仅本人、Text/RichText（富文本不带 embed）、15 分钟窗口内
     if (canEditMessage(widget.message, currentUser?.userId)) {
       items.add(
-        _buildItem(
-          'edit',
-          HugeIcons.strokeRoundedEdit01,
-          'chat_edit'.tr(),
-        ),
+        _buildItem('edit', HugeIcons.strokeRoundedEdit01, 'chat_edit'.tr()),
       );
     }
 
@@ -314,6 +307,8 @@ class _ChatMessageContextMenuState
   Future<void> _showReactionPalette(BuildContext context) async {
     final roomId = widget.message.roomId!;
     final messageId = widget.message.messageId!;
+    final overlaySize =
+        (Overlay.of(context).context.findRenderObject() as RenderBox).size;
     final selected = await showMenu<String>(
       context: context,
       position: RelativeRect.fromRect(
@@ -322,7 +317,7 @@ class _ChatMessageContextMenuState
             (Overlay.of(context).context.findRenderObject() as RenderBox).size,
       ),
       menuPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      constraints: const BoxConstraints(minWidth: 276, maxWidth: 288),
+      constraints: const BoxConstraints(minWidth: 300, maxWidth: 320),
       items: [
         // 横向换行的一整块候选面板：12 个常用表情（ok/收到/合拍在列）
         // 自适应排布，点击任一格 pop 菜单并回传 emoji，
@@ -345,6 +340,11 @@ class _ChatMessageContextMenuState
                       child: Text(item, style: const TextStyle(fontSize: 22)),
                     ),
                   ),
+                IconButton(
+                  tooltip: 'chat_reaction_more_emoji'.tr(),
+                  icon: const Icon(Icons.add_reaction_outlined),
+                  onPressed: () => Navigator.of(context).pop('__more__'),
+                ),
               ],
             ),
           ),
@@ -352,10 +352,38 @@ class _ChatMessageContextMenuState
       ],
     );
     if (selected == null || !context.mounted) return;
+    final emoji = selected == '__more__'
+        ? await showMenu<String>(
+            context: context,
+            position: RelativeRect.fromRect(
+              (_lastMenuPosition ?? Offset.zero) & const Size(40, 40),
+              Offset.zero & overlaySize,
+            ),
+            constraints: const BoxConstraints.tightFor(width: 340),
+            items: [
+              PopupMenuItem<String>(
+                enabled: false,
+                padding: EdgeInsets.zero,
+                child: SizedBox(
+                  height: 360,
+                  width: 340,
+                  child: ChatEmojiWidget(
+                    emojiOnly: true,
+                    panelHeight: 360,
+                    onStickerSelected: (_) {},
+                    onEmojiSelected: (value) =>
+                        Navigator.of(context).pop(value),
+                  ),
+                ),
+              ),
+            ],
+          )
+        : selected;
+    if (emoji == null || !context.mounted) return;
     unawaited(
       ref
           .read(chatMessagesProvider.notifier)
-          .toggleReaction(messageId, roomId, selected),
+          .toggleReaction(messageId, roomId, emoji),
     );
   }
 

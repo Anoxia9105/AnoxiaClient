@@ -363,7 +363,8 @@ class _LinkRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final time = _formatTime(message);
-    final url = extractFirstMessageUrl(message.content) ?? message.content;
+    final urls = extractChatMessageUrls(message);
+    final url = urls.isEmpty ? message.content : urls.first;
     final scheme = Theme.of(context).colorScheme;
     return _TimelineCard(
       child: ListTile(

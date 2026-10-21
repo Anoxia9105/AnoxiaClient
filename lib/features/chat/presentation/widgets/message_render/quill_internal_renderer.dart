@@ -679,7 +679,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     final style = baseStyle.copyWith(
       color:
           foreground ??
-          (link?.isNotEmpty == true ? Theme.of(context).colorScheme.primary : baseStyle.color),
+          baseStyle.color,
       backgroundColor:
           background ??
           (isInlineCode

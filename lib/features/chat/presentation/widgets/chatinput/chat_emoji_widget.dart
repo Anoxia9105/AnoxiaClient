@@ -35,6 +35,8 @@ class ChatEmojiWidget extends ConsumerStatefulWidget {
   /// 默认 true（选中即收起）；
   /// 桌面端气泡与手机端均传 false 保持打开，可连续选择（微信式），点击外部关闭。
   final bool closeOnSelect;
+  final bool emojiOnly;
+  final double? panelHeight;
 
   const ChatEmojiWidget({
     super.key,
@@ -43,6 +45,8 @@ class ChatEmojiWidget extends ConsumerStatefulWidget {
     required this.onStickerSelected,
     this.showSearch = true,
     this.closeOnSelect = true,
+    this.emojiOnly = false,
+    this.panelHeight,
   });
 
   @override
@@ -67,7 +71,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
       },
       config: Config(
         locale: context.locale,
-        height: 500.h,
+        height: widget.panelHeight ?? 500.h,
         checkPlatformCompatibility: true,
         emojiViewConfig: const EmojiViewConfig(
           columns: 8,
@@ -88,19 +92,21 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
         ),
         categoryViewConfig: CategoryViewConfig(
           backgroundColor: Colors.transparent,
-          customCategoryView: (config, state, tabController, pageController) {
-            return EmojiCategoryTabBar(
-              tabController: tabController,
-              pageController: pageController,
-              categories: state.categoryEmoji,
-              onStickerTap: () {
-                ref.invalidate(stickerPacksProvider);
-                setState(() {
-                  _showStickers = true;
-                });
-              },
-            );
-          },
+          customCategoryView: widget.emojiOnly
+              ? null
+              : (config, state, tabController, pageController) {
+                  return EmojiCategoryTabBar(
+                    tabController: tabController,
+                    pageController: pageController,
+                    categories: state.categoryEmoji,
+                    onStickerTap: () {
+                      ref.invalidate(stickerPacksProvider);
+                      setState(() {
+                        _showStickers = true;
+                      });
+                    },
+                  );
+                },
         ),
         bottomActionBarConfig: BottomActionBarConfig(
           enabled: widget.showSearch,
@@ -133,13 +139,17 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
                         children: [
                           HugeIcon(
                             icon: HugeIcons.strokeRoundedSearch02,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 6),
                           Text(
                             'toolbar_search_emoji'.tr(),
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                               fontSize: 14,
                             ),
                           ),
@@ -301,7 +311,9 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
       return Center(
         child: Text(
           'emoji_sticker_empty'.tr(),
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -315,7 +327,9 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
       return Center(
         child: Text(
           'emoji_sticker_empty'.tr(),
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -387,7 +401,9 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
         children: [
           Text(
             'emoji_sticker_load_failed'.tr(),
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(

@@ -588,6 +588,7 @@
   "chat_unknown_user": "Unknown user",
   "chat_read": "Read",
   "chat_delivered": "Delivered",
+  "chat_reaction_more_emoji": "More emoji",
   "chat_media_timeline_title": "Media & Links",
   "chat_media_timeline_media": "Media",
   "chat_media_timeline_files": "Files",
