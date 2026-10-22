@@ -8,8 +8,7 @@
 // - 文件：附件原始名/大小/时间，点击用系统方式打开（浏览器/外部程序）；
 // - 链接：文本消息中提取的 URL（`message_url_extractor` 公共口径），
 //   点击系统浏览器打开；
-// - 三段空态/骨架/错误独立呈现；加载更多按钮随 hasMore 显隐
-//   （链接节过滤后为空但源满页时仍保留加载入口）。
+// - 加载更多仅在探测到下一条有效内容时出现，位于滚动内容底部。
 import 'package:anoxia/common/utils/file_util.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/framework/theme/spacing_token.dart';
@@ -24,6 +23,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 /// 媒体时间线行的展示时间文案（timestamp 缺失时回退占位）
 String _formatTime(ChatMessage message) {
@@ -46,15 +46,61 @@ class MediaTimelinePage extends ConsumerWidget {
       length: 3,
       child: Scaffold(
         // 显式背景：桌面端以弹窗呈现时与主题 surface 一致，不透底
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         appBar: AppBar(
+          leading: IconButton(
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            onPressed: () => Navigator.of(context).maybePop(),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
+          ),
           title: Text('chat_media_timeline_title'.tr()),
-          bottom: TabBar(
-            tabs: [
-              Tab(text: 'chat_media_timeline_media'.tr()),
-              Tab(text: 'chat_media_timeline_files'.tr()),
-              Tab(text: 'chat_media_timeline_links'.tr()),
-            ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(64),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                SpacingToken.lg,
+                SpacingToken.xs,
+                SpacingToken.lg,
+                SpacingToken.md,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(SpacingToken.xs),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
+                ),
+                child: TabBar(
+                  dividerHeight: 0,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(RadiusToken.md),
+                  ),
+                  labelColor: Theme.of(context).colorScheme.primary,
+                  unselectedLabelColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
+                  labelPadding: EdgeInsets.zero,
+                  tabs: [
+                    _timelineTab(
+                      context,
+                      HugeIcons.strokeRoundedImage01,
+                      'chat_media_timeline_media',
+                    ),
+                    _timelineTab(
+                      context,
+                      HugeIcons.strokeRoundedFile02,
+                      'chat_media_timeline_files',
+                    ),
+                    _timelineTab(
+                      context,
+                      HugeIcons.strokeRoundedLink01,
+                      'chat_media_timeline_links',
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
         body: TabBarView(
@@ -68,6 +114,28 @@ class MediaTimelinePage extends ConsumerWidget {
     );
   }
 }
+
+Widget _timelineTab(
+  BuildContext context,
+  List<List<dynamic>> icon,
+  String label,
+) => Tab(
+  height: 40,
+  child: Builder(
+    builder: (context) => Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        HugeIcon(
+          icon: icon,
+          size: 18,
+          color: DefaultTextStyle.of(context).style.color,
+        ),
+        const SizedBox(width: SpacingToken.sm),
+        Text(label.tr()),
+      ],
+    ),
+  ),
+);
 
 /// 媒体九宫格（image/video 附件展开）
 class _MediaGridTab extends ConsumerWidget {
@@ -86,30 +154,38 @@ class _MediaGridTab extends ConsumerWidget {
       data: (state) {
         final cells = _expandMediaAttachments(state.media.items);
         if (cells.isEmpty) return const _EmptyHint();
-        return GridView.builder(
-          // 上下内填充：九宫格不贴 TabBar 与底部边缘
-          padding: const EdgeInsets.all(SpacingToken.md),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            mainAxisSpacing: SpacingToken.sm,
-            crossAxisSpacing: SpacingToken.sm,
-          ),
-          itemCount: cells.length + (state.media.hasMore ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index >= cells.length) {
-              return _LoadMoreTile(
-                onTap: () => ref
-                    .read(mediaTimelineControllerProvider(roomId).notifier)
-                    .loadMore(section: 'media'),
-              );
-            }
-            final (message, attachment) = cells[index];
-            return _MediaCell(
-              message: message,
-              attachment: attachment,
-              roomId: roomId,
-            );
-          },
+        return CustomScrollView(
+          key: PageStorageKey('media_$roomId'),
+          slivers: [
+            SliverPadding(
+              // 上下内填充：九宫格不贴 TabBar 与底部边缘
+              padding: const EdgeInsets.all(SpacingToken.md),
+              sliver: SliverGrid.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: SpacingToken.sm,
+                  crossAxisSpacing: SpacingToken.sm,
+                ),
+                itemCount: cells.length,
+                itemBuilder: (context, index) {
+                  final (message, attachment) = cells[index];
+                  return _MediaCell(
+                    message: message,
+                    attachment: attachment,
+                    roomId: roomId,
+                  );
+                },
+              ),
+            ),
+            if (state.media.hasMore)
+              SliverToBoxAdapter(
+                child: _LoadMoreTile(
+                  onTap: () => ref
+                      .read(mediaTimelineControllerProvider(roomId).notifier)
+                      .loadMore(section: 'media'),
+                ),
+              ),
+          ],
         );
       },
     );
@@ -176,8 +252,8 @@ class _MediaCell extends StatelessWidget {
             ),
             if (attachment.isVideo)
               const Center(
-                child: Icon(
-                  Icons.play_circle_fill,
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedPlay,
                   size: 40,
                   color: Colors.white70,
                 ),
@@ -219,8 +295,11 @@ class _FilesTab extends ConsumerWidget {
         retry: () => ref.invalidate(mediaTimelineControllerProvider(roomId)),
       ),
       data: (state) {
-        if (state.files.isEmpty) return const _EmptyHint();
+        if (state.files.isEmpty) {
+          return const _EmptyHint(icon: HugeIcons.strokeRoundedFile02);
+        }
         return ListView.separated(
+          key: PageStorageKey('files_$roomId'),
           padding: const EdgeInsets.all(SpacingToken.md),
           itemCount: state.files.items.length + (state.files.hasMore ? 1 : 0),
           separatorBuilder: (_, _) => const SizedBox(height: SpacingToken.sm),
@@ -254,19 +333,6 @@ class _FileRow extends StatelessWidget {
     final time = _formatTime(message);
 
     final extension = name.split('.').last.toLowerCase();
-    final (icon, color) = switch (extension) {
-      'pdf' => (Icons.picture_as_pdf_outlined, Colors.red),
-      'doc' || 'docx' => (Icons.description_outlined, Colors.blue),
-      'xls' || 'xlsx' || 'csv' => (Icons.table_chart_outlined, Colors.green),
-      'zip' || 'rar' || '7z' => (Icons.folder_zip_outlined, Colors.orange),
-      'png' ||
-      'jpg' ||
-      'jpeg' ||
-      'gif' => (Icons.image_outlined, Colors.deepPurple),
-      'mp4' || 'mov' || 'webm' => (Icons.movie_outlined, Colors.cyan),
-      'mp3' || 'wav' || 'flac' => (Icons.audio_file_outlined, Colors.pink),
-      _ => (Icons.insert_drive_file_outlined, Colors.blueGrey),
-    };
     return _TimelineCard(
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
@@ -277,10 +343,12 @@ class _FileRow extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(RadiusToken.md),
           ),
-          child: Icon(icon, color: color),
+          child: Center(
+            child: FileUtil.buildFileIcon(extension, fileName: name),
+          ),
         ),
         title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(
@@ -320,22 +388,10 @@ class _LinksTab extends ConsumerWidget {
       ),
       data: (state) {
         if (state.links.isEmpty) {
-          // 过滤后为空但源里还有未翻完的文本页 → 保留「加载更多」入口
-          return state.links.hasMore
-              ? ListView(
-                  children: [
-                    _LoadMoreTile(
-                      onTap: () => ref
-                          .read(
-                            mediaTimelineControllerProvider(roomId).notifier,
-                          )
-                          .loadMore(section: 'links'),
-                    ),
-                  ],
-                )
-              : const _EmptyHint();
+          return const _EmptyHint(icon: HugeIcons.strokeRoundedLink01);
         }
         return ListView.separated(
+          key: PageStorageKey('links_$roomId'),
           padding: const EdgeInsets.all(SpacingToken.md),
           itemCount: state.links.items.length + (state.links.hasMore ? 1 : 0),
           separatorBuilder: (_, _) => const SizedBox(height: SpacingToken.sm),
@@ -372,7 +428,23 @@ class _LinkRow extends StatelessWidget {
           horizontal: SpacingToken.md,
           vertical: SpacingToken.sm,
         ),
-        leading: const Icon(Icons.link),
+        leading: Container(
+          padding: const EdgeInsets.all(SpacingToken.md),
+          decoration: BoxDecoration(
+            color: scheme.primaryContainer,
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
+          ),
+          child: HugeIcon(
+            icon: HugeIcons.strokeRoundedLink01,
+            size: 22,
+            color: scheme.onPrimaryContainer,
+          ),
+        ),
+        trailing: HugeIcon(
+          icon: HugeIcons.strokeRoundedArrowRight01,
+          size: 16,
+          color: scheme.onSurfaceVariant,
+        ),
         title: Text(
           Uri.tryParse(url)?.host ?? url,
           maxLines: 1,
@@ -409,36 +481,73 @@ class _TimelineCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       color: scheme.surface,
-      elevation: 1,
+      elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(RadiusToken.md),
-        side: BorderSide(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: child,
     );
   }
 }
 
-class _LoadMoreTile extends StatelessWidget {
-  final VoidCallback onTap;
+class _LoadMoreTile extends StatefulWidget {
+  final Future<void> Function() onTap;
 
   const _LoadMoreTile({required this.onTap});
 
   @override
+  State<_LoadMoreTile> createState() => _LoadMoreTileState();
+}
+
+class _LoadMoreTileState extends State<_LoadMoreTile> {
+  bool _loading = false;
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: OutlinedButton(
-        onPressed: onTap,
-        child: Text('chat_media_timeline_load_more'.tr()),
+      child: Center(
+        child: FilledButton.tonalIcon(
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(
+              horizontal: SpacingToken.xl,
+              vertical: SpacingToken.md,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(RadiusToken.pill),
+            ),
+          ),
+          onPressed: _loading
+              ? null
+              : () async {
+                  setState(() => _loading = true);
+                  try {
+                    await widget.onTap();
+                  } finally {
+                    if (mounted) setState(() => _loading = false);
+                  }
+                },
+          icon: _loading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowDown01,
+                  size: 18,
+                ),
+          label: Text('chat_media_timeline_load_more'.tr()),
+        ),
       ),
     );
   }
 }
 
 class _EmptyHint extends StatelessWidget {
-  const _EmptyHint();
+  const _EmptyHint({this.icon = HugeIcons.strokeRoundedImage01});
+  final List<List<dynamic>> icon;
 
   @override
   Widget build(BuildContext context) {
@@ -446,8 +555,8 @@ class _EmptyHint extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.photo_library_outlined,
+          HugeIcon(
+            icon: icon,
             size: 48,
             color: Theme.of(context).colorScheme.outline,
           ),
@@ -475,8 +584,8 @@ class _ErrorRetry extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.error_outline,
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedAlertCircle,
             size: 48,
             color: Theme.of(context).colorScheme.outline,
           ),
@@ -499,15 +608,19 @@ class _MediaSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.surfaceContainerHighest;
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(4, 12, 4, 16),
+      padding: const EdgeInsets.all(SpacingToken.md),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        mainAxisSpacing: 4,
-        crossAxisSpacing: 4,
+        mainAxisSpacing: SpacingToken.sm,
+        crossAxisSpacing: SpacingToken.sm,
       ),
       itemCount: 18,
-      itemBuilder: (context, index) =>
-          ColoredBox(color: color, child: const SizedBox.expand()),
+      itemBuilder: (context, index) => DecoratedBox(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
+        ),
+      ),
     );
   }
 }
@@ -519,19 +632,21 @@ class _ListSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.surfaceContainerHighest;
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.all(SpacingToken.md),
       itemCount: 10,
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (context, index) => ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color,
-          child: const Icon(
-            Icons.insert_drive_file_outlined,
-            color: Colors.white38,
+      separatorBuilder: (_, _) => const SizedBox(height: SpacingToken.sm),
+      itemBuilder: (context, index) => _TimelineCard(
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: color,
+            child: const HugeIcon(
+              icon: HugeIcons.strokeRoundedFile02,
+              color: Colors.white38,
+            ),
           ),
+          title: ColoredBox(color: color, child: const SizedBox(height: 14)),
+          subtitle: ColoredBox(color: color, child: const SizedBox(height: 10)),
         ),
-        title: ColoredBox(color: color, child: const SizedBox(height: 14)),
-        subtitle: ColoredBox(color: color, child: const SizedBox(height: 10)),
       ),
     );
   }

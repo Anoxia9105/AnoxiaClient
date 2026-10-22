@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:anoxia/common/utils/date_util.dart';
-import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
+import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:anoxia/framework/domain/call_log_entry.dart';
 import 'package:anoxia/framework/provider/chat/call/call_history_service.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -52,30 +53,152 @@ class CallHistoryPage extends ConsumerWidget {
         child: ListView.separated(
           physics: const AlwaysScrollableScrollPhysics(),
           // 列表上下内填充：条目不贴栏目与底部边缘
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          itemCount: state.entries.length + 1,
+          padding: const EdgeInsets.all(SpacingToken.lg),
+          itemCount: state.entries.length + 2,
           separatorBuilder: (context, index) =>
-              Divider(height: 1, thickness: 0.5, color: colors.outlineVariant),
+              const SizedBox(height: SpacingToken.md),
           itemBuilder: (context, index) {
-            if (index == state.entries.length) return _ListFooter(state: state);
-            return _CallEntryTile(entry: state.entries[index]);
+            if (index == 0) return _HistoryHeader(total: state.total);
+            if (index == state.entries.length + 1) {
+              return _ListFooter(
+                state: state,
+                onLoadMore: () => ref
+                    .read(callHistoryListProvider(roomId).notifier)
+                    .loadMore(),
+              );
+            }
+            final entry = state.entries[index - 1];
+            final date = DateTime.fromMillisecondsSinceEpoch(entry.startAt);
+            final previousDate = index > 1
+                ? DateTime.fromMillisecondsSinceEpoch(
+                    state.entries[index - 2].startAt,
+                  )
+                : null;
+            final newDay =
+                previousDate == null ||
+                !DateUtils.isSameDay(date, previousDate);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (newDay)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      top: SpacingToken.sm,
+                      bottom: SpacingToken.md,
+                      left: SpacingToken.xs,
+                    ),
+                    child: Text(
+                      _dayLabel(date, context),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                _CallEntryTile(entry: entry),
+              ],
+            );
           },
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: colors.surface,
+      backgroundColor: colors.surfaceContainerLow,
       appBar: AppBar(
         centerTitle: true,
         titleSpacing: 16,
         title: Text('call.history'.tr()),
         backgroundColor: colors.surface,
         surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'call.history.refresh'.tr(),
+            onPressed: state.initialLoading || state.loadingMore
+                ? null
+                : () => ref
+                      .read(callHistoryListProvider(roomId).notifier)
+                      .refresh(),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
+          ),
+          const SizedBox(width: SpacingToken.sm),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: ref.read(callHistoryListProvider(roomId).notifier).refresh,
         child: content,
+      ),
+    );
+  }
+}
+
+String _dayLabel(DateTime date, BuildContext context) {
+  final today = DateUtils.dateOnly(DateTime.now());
+  if (DateUtils.isSameDay(date, today)) return 'call.history.today'.tr();
+  if (DateUtils.isSameDay(
+    date,
+    DateTime(today.year, today.month, today.day - 1),
+  )) {
+    return 'call.history.yesterday'.tr();
+  }
+  return DateFormat.yMMMd(context.locale.toString()).format(date);
+}
+
+class _HistoryHeader extends StatelessWidget {
+  const _HistoryHeader({required this.total});
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(SpacingToken.lg),
+      decoration: BoxDecoration(
+        color: colors.primaryContainer.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
+      ),
+      child: Row(
+        children: [
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedCall,
+            size: 28,
+            color: colors.primary,
+          ),
+          const SizedBox(width: SpacingToken.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'call.history.scope'.tr(),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: SpacingToken.xs),
+                Text(
+                  'call.history.total'.tr(args: ['$total']),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Tooltip(
+            message: 'call.history.return'.tr(),
+            child: IconButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowRight01,
+                size: 20,
+                color: colors.primary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -159,8 +282,9 @@ class _ErrorView extends StatelessWidget {
 /// 列表尾部：加载下一页指示 / 没有更多
 class _ListFooter extends StatelessWidget {
   final CallHistoryState state;
+  final Future<void> Function() onLoadMore;
 
-  const _ListFooter({required this.state});
+  const _ListFooter({required this.state, required this.onLoadMore});
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +314,16 @@ class _ListFooter extends StatelessWidget {
         ),
       );
     }
-    return const SizedBox(height: 12);
+    return Center(
+      child: TextButton.icon(
+        onPressed: onLoadMore,
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedArrowDown01,
+          size: 18,
+        ),
+        label: Text('chat_media_timeline_load_more'.tr()),
+      ),
+    );
   }
 }
 
@@ -207,102 +340,150 @@ class _CallEntryTile extends StatelessWidget {
         ? 'call.history.unknown_peer'.tr()
         : entry.displayName;
 
-    return InkWell(
-      onTap: () => _openRoom(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            AvatarWidget(url: entry.peerAvatar, name: title, size: 42),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: colors.onSurface,
+    final statusColor = switch (entry.status) {
+      CallLogStatus.completed =>
+        Theme.of(context).extension<AppColors>()?.success ?? colors.primary,
+      CallLogStatus.rejected => colors.error,
+      CallLogStatus.ongoing => colors.primary,
+      CallLogStatus.canceled => colors.onSurfaceVariant,
+    };
+    final status = switch (entry.status) {
+      CallLogStatus.completed => 'call.history.completed',
+      CallLogStatus.rejected => 'call.history.rejected',
+      CallLogStatus.ongoing => 'call.history.ongoing',
+      CallLogStatus.canceled => 'call.history.canceled',
+    };
+    final date = DateTime.fromMillisecondsSinceEpoch(entry.startAt);
+    return Tooltip(
+      message: 'call.history.return'.tr(),
+      child: Material(
+        color: colors.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
+          side: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        child: InkWell(
+          onTap: () => _openRoom(context),
+          child: Padding(
+            padding: const EdgeInsets.all(SpacingToken.lg),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(RadiusToken.lg),
+                  ),
+                  child: Center(
+                    child: HugeIcon(
+                      icon: entry.outgoing
+                          ? HugeIcons.strokeRoundedArrowUpRight01
+                          : HugeIcons.strokeRoundedArrowDownLeft01,
+                      size: 24,
+                      color: statusColor,
                     ),
                   ),
-                  const SizedBox(height: 3),
-                  _subtitle(colors),
-                ],
-              ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        (entry.outgoing
+                                ? 'call.history.outgoing'
+                                : 'call.history.incoming')
+                            .tr(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: SpacingToken.xs),
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: SpacingToken.sm),
+                      Row(
+                        children: [
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedTime01,
+                            size: 14,
+                            color: colors.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: SpacingToken.xs),
+                          Flexible(
+                            child: Text(
+                              DateFormat.Hm(
+                                context.locale.toString(),
+                              ).format(date),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: colors.onSurfaceVariant),
+                            ),
+                          ),
+                          if (entry.status == CallLogStatus.completed) ...[
+                            const SizedBox(width: SpacingToken.md),
+                            Flexible(
+                              child: Text(
+                                _duration,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(color: colors.onSurface),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SpacingToken.sm,
+                    vertical: SpacingToken.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(RadiusToken.sm),
+                  ),
+                  child: Text(
+                    status.tr(),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              DateUtil.formatTime(entry.startAt),
-              style: TextStyle(
-                fontSize: 12,
-                color: colors.onSurfaceVariant.withValues(alpha: 0.75),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  /// 副标题行：呼出/呼入 + 状态（进行中/已拒绝/已取消/时长）
-  Widget _subtitle(ColorScheme colors) {
-    final directionKey = entry.outgoing
-        ? 'call.history.outgoing'
-        : 'call.history.incoming';
-    final directionIcon = entry.outgoing
-        ? Icons.call_made
-        : Icons.call_received;
-
-    final (String statusText, Color statusColor) = switch (entry.status) {
-      CallLogStatus.ongoing => (
-        'call.history.ongoing'.tr(),
-        colors.primary,
-      ),
-      CallLogStatus.rejected => (
-        'call.history.rejected'.tr(),
-        colors.error,
-      ),
-      CallLogStatus.canceled => (
-        'call.history.canceled'.tr(),
-        colors.onSurfaceVariant,
-      ),
-      CallLogStatus.completed => (
-        entry.durationText ?? '',
-        colors.onSurfaceVariant,
-      ),
-    };
-
-    return Row(
-      children: [
-        Icon(directionIcon, size: 13, color: colors.onSurfaceVariant),
-        const SizedBox(width: 3),
-        Text(
-          directionKey.tr(),
-          style: TextStyle(
-            fontSize: 12,
-            color: colors.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '·',
-          style: TextStyle(fontSize: 12, color: colors.outlineVariant),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            statusText,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 12, color: statusColor),
-          ),
-        ),
-      ],
-    );
+  String get _duration {
+    if (entry.durationText?.isNotEmpty == true) return entry.durationText!;
+    final seconds = entry.durationSec;
+    if (seconds == null || seconds < 0) return '—';
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds ~/ 60) % 60;
+    final rest = (seconds % 60).toString().padLeft(2, '0');
+    return hours > 0
+        ? '$hours:${minutes.toString().padLeft(2, '0')}:$rest'
+        : '$minutes:$rest';
   }
 
   /// 返回对应会话：本页从会话详情打开（桌面弹窗 / 移动端整页），直接关闭即可。

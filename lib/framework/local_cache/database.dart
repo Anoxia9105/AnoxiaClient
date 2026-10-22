@@ -406,9 +406,9 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
                     : tbl.seq.isSmallerThanValue(beforeSeq)),
           )
           ..orderBy([
+            (tbl) => OrderingTerm(expression: tbl.seq, mode: OrderingMode.desc),
             (tbl) =>
                 OrderingTerm(expression: tbl.sentAt, mode: OrderingMode.desc),
-            (tbl) => OrderingTerm(expression: tbl.seq, mode: OrderingMode.desc),
           ])
           ..limit(limit))
         .get();
@@ -424,19 +424,21 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     required List<int> typeCodes,
     int limit = 200,
   }) async {
-    final rows = await (select(messages)
-          ..where(
-            (tbl) =>
-                tbl.conversationId.equals(conversationId) &
-                tbl.isDeleted.equals(false) &
-                tbl.messageType.isIn(typeCodes) &
-                tbl.seq.isBiggerThanValue(afterSeq),
-          )
-          ..orderBy([
-            (tbl) => OrderingTerm(expression: tbl.seq, mode: OrderingMode.desc),
-          ])
-          ..limit(limit))
-        .get();
+    final rows =
+        await (select(messages)
+              ..where(
+                (tbl) =>
+                    tbl.conversationId.equals(conversationId) &
+                    tbl.isDeleted.equals(false) &
+                    tbl.messageType.isIn(typeCodes) &
+                    tbl.seq.isBiggerThanValue(afterSeq),
+              )
+              ..orderBy([
+                (tbl) =>
+                    OrderingTerm(expression: tbl.seq, mode: OrderingMode.desc),
+              ])
+              ..limit(limit))
+            .get();
     return rows.reversed.toList();
   }
 

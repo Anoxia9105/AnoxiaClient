@@ -8,16 +8,13 @@ part of 'media_timeline_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// 媒体时间线控制器（按房间 family；autoDispose）
 
 @ProviderFor(MediaTimelineController)
 final mediaTimelineControllerProvider = MediaTimelineControllerFamily._();
 
-/// 媒体时间线控制器（按房间 family；autoDispose）
 final class MediaTimelineControllerProvider
     extends
         $AsyncNotifierProvider<MediaTimelineController, MediaTimelineState> {
-  /// 媒体时间线控制器（按房间 family；autoDispose）
   MediaTimelineControllerProvider._({
     required MediaTimelineControllerFamily super.from,
     required String super.argument,
@@ -56,9 +53,7 @@ final class MediaTimelineControllerProvider
 }
 
 String _$mediaTimelineControllerHash() =>
-    r'db59046a90e992028d3dfd341e9190b16c4d6090';
-
-/// 媒体时间线控制器（按房间 family；autoDispose）
+    r'1a1301289d133bb2ae344a08fa84f4ff271f8583';
 
 final class MediaTimelineControllerFamily extends $Family
     with
@@ -78,16 +73,12 @@ final class MediaTimelineControllerFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// 媒体时间线控制器（按房间 family；autoDispose）
-
   MediaTimelineControllerProvider call(String roomId) =>
       MediaTimelineControllerProvider._(argument: roomId, from: this);
 
   @override
   String toString() => r'mediaTimelineControllerProvider';
 }
-
-/// 媒体时间线控制器（按房间 family；autoDispose）
 
 abstract class _$MediaTimelineController
     extends $AsyncNotifier<MediaTimelineState> {

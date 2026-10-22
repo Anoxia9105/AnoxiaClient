@@ -67,27 +67,27 @@ class _FixedCallRepository implements CallRepository {
 }
 
 CallLogEntry completedOutgoing() => const CallLogEntry(
-      messageId: 'm1',
-      roomId: 'room-a',
-      roomType: 0,
-      peerName: '张三',
-      outgoing: true,
-      startAt: 1600000000000,
-      endAt: 1600000000080,
-      durationSec: 80,
-      durationText: '01:20',
-      status: CallLogStatus.completed,
-    );
+  messageId: 'm1',
+  roomId: 'room-a',
+  roomType: 0,
+  peerName: '张三',
+  outgoing: true,
+  startAt: 1600000000000,
+  endAt: 1600000000080,
+  durationSec: 80,
+  durationText: '01:20',
+  status: CallLogStatus.completed,
+);
 
 CallLogEntry ongoingIncomingGroup() => const CallLogEntry(
-      messageId: 'm2',
-      roomId: 'room-g',
-      roomType: 1,
-      roomName: '项目群',
-      outgoing: false,
-      startAt: 1600000000000,
-      status: CallLogStatus.ongoing,
-    );
+  messageId: 'm2',
+  roomId: 'room-g',
+  roomType: 1,
+  roomName: '项目群',
+  outgoing: false,
+  startAt: 1600000000000,
+  status: CallLogStatus.ongoing,
+);
 
 /// 宿主页：用「presentAdaptivePage 打开通话记录」的真实入口断言——
 /// 宽屏（≥700 逻辑宽）走桌面模态弹窗，窄屏走整页路由，
@@ -167,6 +167,57 @@ Future<ProviderContainer> _pumpHost(
 }
 
 void main() {
+  testWidgets('同一天通话只显示一个日期标题，概览展示服务端总数', (tester) async {
+    final now = DateTime.now();
+    final noon = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      12,
+    ).millisecondsSinceEpoch;
+    await _pumpHost(
+      tester,
+      locale: const Locale('zh'),
+      repository: _FixedCallRepository(
+        CallHistoryPageData(
+          entries: [
+            for (var i = 0; i < 2; i++)
+              CallLogEntry(
+                messageId: 'today-$i',
+                roomId: 'room-a',
+                roomType: 0,
+                outgoing: i == 0,
+                startAt: noon - i * 1000,
+                status: CallLogStatus.completed,
+                durationSec: 80,
+              ),
+          ],
+          total: 2,
+        ),
+      ),
+    );
+    expect(find.text('今天'), findsOneWidget);
+    expect(find.text('共 2 条记录 · 最近通话在前'), findsOneWidget);
+    expect(find.text('已接通'), findsNWidgets(2));
+    expect(find.text('1:20'), findsNWidgets(2));
+  });
+  for (final locale in [
+    const Locale('zh'),
+    const Locale('en'),
+    const Locale('ja'),
+  ]) {
+    testWidgets('320px 窄屏状态卡片无溢出：$locale', (tester) async {
+      await _pumpHost(
+        tester,
+        locale: locale,
+        repository: _FixedCallRepository(
+          CallHistoryPageData(entries: [ongoingIncomingGroup()], total: 1),
+        ),
+        physicalSize: const Size(320, 640),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets('桌面弹窗渲染条目（zh）：标题/呼出/时长/进行中 + 条目可关闭', (tester) async {
     await _pumpHost(
       tester,
@@ -208,11 +259,7 @@ void main() {
 
   testWidgets('首屏失败展示重试入口（zh）', (tester) async {
     final repository = _FixedCallRepository(null);
-    await _pumpHost(
-      tester,
-      locale: const Locale('zh'),
-      repository: repository,
-    );
+    await _pumpHost(tester, locale: const Locale('zh'), repository: repository);
 
     expect(find.text('通话记录加载失败'), findsOneWidget);
     expect(find.text('重试'), findsOneWidget);

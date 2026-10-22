@@ -60,8 +60,11 @@ ChatMessage fileMessage(String id, int seq) => ChatMessage(
   messageType: MessageType.file,
   content: 'doc.pdf',
   payload: MessagePayload(
-    file: Attachment(url: 'https://cdn.example.com/$id.pdf', name: 'doc.pdf',
-        size: 2048),
+    file: Attachment(
+      url: 'https://cdn.example.com/$id.pdf',
+      name: 'doc.pdf',
+      size: 2048,
+    ),
   ),
   deliveryStatus: DeliveryStatus.sent,
 );
@@ -90,9 +93,7 @@ Future<void> _pumpTimeline(
   }
 
   final container = ProviderContainer(
-    overrides: [
-      localDataSourceProvider.overrideWith((ref) => source),
-    ],
+    overrides: [localDataSourceProvider.overrideWith((ref) => source)],
   );
   addTearDown(container.dispose);
 
@@ -123,6 +124,58 @@ Future<void> _pumpTimeline(
 }
 
 void main() {
+  testWidgets('文件分页按钮位于列表底部，加载最后一页后消失', (tester) async {
+    await _pumpTimeline(
+      tester,
+      seed: [for (var i = 1; i <= 61; i++) fileMessage('file-$i', i)],
+    );
+    await tester.tap(find.text('文件'));
+    await tester.pumpAndSettle();
+    expect(find.text('加载更多'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.text('加载更多'),
+      500,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(find.text('加载更多'));
+    await tester.pumpAndSettle();
+    expect(find.text('加载更多'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('320px 窄屏胶囊页签无溢出且可以切换', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _pumpTimeline(tester);
+    await tester.tap(find.text('链接'));
+    await tester.pumpAndSettle();
+    expect(find.text('暂无内容'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('链接源消息满页但只有一条链接时不显示加载更多', (tester) async {
+    await _pumpTimeline(
+      tester,
+      seed: [
+        for (var i = 1; i <= 61; i++)
+          linkMessage(
+            'link-$i',
+            i,
+            i == 61 ? 'https://example.com/last' : '普通文本',
+          ),
+      ],
+    );
+    await tester.tap(find.text('链接'));
+    await tester.pumpAndSettle();
+    expect(find.text('https://example.com/last'), findsOneWidget);
+    expect(find.text('加载更多'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   test('路由 location 含 roomId 查询参数', () {
     const route = MediaTimelineRoute(roomId: 'r1');
     expect(route.location, '/media-timeline?room-id=r1');
@@ -141,7 +194,7 @@ void main() {
       seed: [imageMessage('i1', 1), imageMessage('i2', 2)],
     );
     // 两个 image 消息 → 格子网格（CachedNetworkImageView 网络图占位）
-    expect(find.byType(GridView), findsOneWidget);
+    expect(find.byType(SliverGrid), findsOneWidget);
     expect(find.text('暂无内容'), findsNothing);
     expect(
       find.byIcon(Icons.play_circle_fill),
@@ -151,10 +204,7 @@ void main() {
   });
 
   testWidgets('切到文件 Tab：显示文件名 + 大小', (tester) async {
-    await _pumpTimeline(
-      tester,
-      seed: [fileMessage('f1', 10)],
-    );
+    await _pumpTimeline(tester, seed: [fileMessage('f1', 10)]);
     await tester.tap(find.text('文件'));
     await tester.pumpAndSettle();
 
@@ -181,10 +231,7 @@ void main() {
   });
 
   testWidgets('链接 Tab 空态：普通文本不产生链接', (tester) async {
-    await _pumpTimeline(
-      tester,
-      seed: [linkMessage('plain', 1, '早上好')],
-    );
+    await _pumpTimeline(tester, seed: [linkMessage('plain', 1, '早上好')]);
     await tester.tap(find.text('链接'));
     await tester.pumpAndSettle();
     expect(find.text('暂无内容'), findsOneWidget);
