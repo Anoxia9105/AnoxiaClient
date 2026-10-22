@@ -264,7 +264,7 @@ class _MediaCell extends StatelessWidget {
     );
   }
 
-  /// 复用聊天内图片查看器（与大图查看/已读回执同一套 hero 口径）
+  /// 复用聊天内图片查看器与大图查看的 hero 口径。
   void _openViewer(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(

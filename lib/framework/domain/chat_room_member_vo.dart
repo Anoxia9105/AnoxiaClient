@@ -37,12 +37,6 @@ class ChatRoomMemberVO {
   /// 在线状态：true=在线，false=离线
   final bool? onlineStatus;
 
-  /// 在本房间的已读水位（服务端 chat_room_member.read_seq）
-  ///
-  /// 单聊已读回执（P0-2）用「对端成员行」的该字段做展示判定；
-  /// null 表示接口未返回（老协议/未知），展示层自动降级为「已送达」。
-  final int? lastReadSeq;
-
   ChatRoomMemberVO({
     this.roomId,
     this.userId,
@@ -55,7 +49,6 @@ class ChatRoomMemberVO {
     this.status,
     this.loginDate,
     this.onlineStatus,
-    this.lastReadSeq,
   });
 
   /// 从 JSON 数据构造 [ChatRoomMemberVO] 实例
@@ -79,10 +72,6 @@ class ChatRoomMemberVO {
       status: json['status']?.toString(),
       loginDate: _parseDate(json['loginDate']),
       onlineStatus: json['onlineStatus'] ?? false,
-      // 服务端映射为 crm.read_seq AS lastReadSeq，兼容整型与字符串数字
-      lastReadSeq: json['lastReadSeq'] is int
-          ? json['lastReadSeq']
-          : int.tryParse(json['lastReadSeq']?.toString() ?? ''),
     );
   }
 
@@ -120,7 +109,6 @@ class ChatRoomMemberVO {
     bool? onlineStatus,
     String? nickName,
     String? avatar,
-    int? lastReadSeq,
   }) {
     return ChatRoomMemberVO(
       roomId: roomId,
@@ -134,7 +122,6 @@ class ChatRoomMemberVO {
       status: status,
       loginDate: loginDate,
       onlineStatus: onlineStatus ?? this.onlineStatus,
-      lastReadSeq: lastReadSeq ?? this.lastReadSeq,
     );
   }
 }

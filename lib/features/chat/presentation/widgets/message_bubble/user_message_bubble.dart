@@ -107,7 +107,7 @@ class UserMessageBubble extends StatelessWidget {
               ),
             ],
           ),
-          // 表情回应聚合条（P2-1）：仅已送达的非系统消息渲染，无回应时不占位
+          // 表情回应聚合条：仅发送成功的非系统消息渲染，无回应时不占位
           if (canReactToMessage(message)) MessageReactionBar(message: message),
         ],
       ),

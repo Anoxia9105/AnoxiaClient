@@ -592,8 +592,6 @@
   "file_open_failed": "打开文件失败: {}",
   "chat_me": "我",
   "chat_unknown_user": "未知用户",
-  "chat_read": "已读",
-  "chat_delivered": "已送达",
   "chat_reaction_more_emoji": "更多表情",
   "chat_media_timeline_title": "媒体与链接",
   "chat_media_timeline_media": "媒体",
