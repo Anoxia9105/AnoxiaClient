@@ -1,8 +1,7 @@
-﻿import 'package:anoxia/common/utils/quill_embed_util.dart';
+import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/common/utils/shortcut_hint.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:anoxia/common/widgets/bubble_dialog.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_bubble.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_ai_assist_popup.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_color_style_button.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/dialogs/code_input_dialog.dart';
@@ -20,7 +19,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../../../../common/widgets/toast.dart';
 import 'colors_box.dart';
@@ -36,11 +34,11 @@ import 'colors_box.dart';
 ///
 /// [controller] Quill 编辑器控制器
 /// [roomId] 当前聊天房间 ID（用于发送贴图等消息）
-  /// [onSend] 发送按钮点击回调
-  /// [onCodeSubmit] 代码提交回调
-  /// [onImagePressed] 图片按钮点击回调
-  /// [onFilePressed] 文件按钮点击回调
-  class ChatQuillToolbar extends ConsumerWidget {
+/// [onSend] 发送按钮点击回调
+/// [onCodeSubmit] 代码提交回调
+/// [onImagePressed] 图片按钮点击回调
+/// [onFilePressed] 文件按钮点击回调
+class ChatQuillToolbar extends ConsumerWidget {
   final QuillController controller;
   final FocusNode focusNode;
   final String roomId;
@@ -152,7 +150,10 @@ import 'colors_box.dart';
                     _buildActionButton(
                       HugeIcons.strokeRoundedQuoteDown,
                       Attribute.blockQuote,
-                      withShortcut('toolbar_quote'.tr(), shortcut('B', shift: true)),
+                      withShortcut(
+                        'toolbar_quote'.tr(),
+                        shortcut('B', shift: true),
+                      ),
                       iconColor,
                     ),
                     Builder(
@@ -278,7 +279,10 @@ import 'colors_box.dart';
                           onLocationSubmit(location);
                         }
                       },
-                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedLocation01, size: 16),
+                      icon: const HugeIcon(
+                        icon: HugeIcons.strokeRoundedLocation01,
+                        size: 16,
+                      ),
                     ),
                     // _buildActionButton(
                     //   HugeIcons.strokeRoundedLeftToRightListBullet,
@@ -307,12 +311,20 @@ import 'colors_box.dart';
                 builder: (context) {
                   return Consumer(
                     builder: (context, ref, _) {
-                      final noteEnabled = ref.watch(aiFeatureFlagsProvider).value?.noteAvailable ?? true;
+                      final noteEnabled =
+                          ref
+                              .watch(aiFeatureFlagsProvider)
+                              .value
+                              ?.noteAvailable ??
+                          true;
                       if (!noteEnabled) return const SizedBox.shrink();
                       return ListenableBuilder(
                         listenable: controller,
                         builder: (context, _) {
-                          final hasContent = controller.document.toPlainText().trim().isNotEmpty;
+                          final hasContent = controller.document
+                              .toPlainText()
+                              .trim()
+                              .isNotEmpty;
                           return _buildCustomBtn(
                             context,
                             HugeIcons.strokeRoundedSparkles,
@@ -342,50 +354,25 @@ import 'colors_box.dart';
                       close = Toast.showWidget(
                         context,
                         direction: PreferDirection.topLeft,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: BubbleWidget(
-                            arrowDirection: AxisDirection.down,
-                            arrowOffset: 115.w,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.surface,
-                            border: BorderSide(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.outlineVariant,
-                              width: 0.5,
-                            ),
-                            contentBuilder: (context) => Container(
-                              constraints: BoxConstraints(
-                                maxWidth: 120.w,
-                                maxHeight: 500.h,
-                              ),
-                              padding: const EdgeInsets.all(8),
-                              child: ChatEmojiWidget(
-                                closeSelected: () {
-                                  close?.call();
-                                },
-                                // 桌面端选中后保持气泡打开，可连续选择（点击外部关闭）
-                                closeOnSelect: false,
-                                onEmojiSelected: (emoji) {
-                                  QuillEmbedUtil.insertTextAtCursor(
-                                    text: emoji,
-                                    controller: controller,
-                                  );
-                                },
-                                onStickerSelected: (sticker) {
-                                  ref
-                                      .read(
-                                        chatInputControllerProvider(
-                                          roomId,
-                                        ).notifier,
-                                      )
-                                      .sendStickerMessage(sticker);
-                                },
-                              ),
-                            ),
-                          ),
+                        child: ChatEmojiBubble(
+                          closeSelected: () {
+                            close?.call();
+                          },
+                          // 桌面端选中后保持气泡打开，可连续选择（点击外部关闭）
+                          closeOnSelect: false,
+                          onEmojiSelected: (emoji) {
+                            QuillEmbedUtil.insertTextAtCursor(
+                              text: emoji,
+                              controller: controller,
+                            );
+                          },
+                          onStickerSelected: (sticker) {
+                            ref
+                                .read(
+                                  chatInputControllerProvider(roomId).notifier,
+                                )
+                                .sendStickerMessage(sticker);
+                          },
                         ),
                       );
                     },
@@ -419,7 +406,9 @@ import 'colors_box.dart';
                 icon: HugeIcon(
                   icon: HugeIcons.strokeRoundedSent,
                   size: 20,
-                  color: isUploading ? colorScheme.onSurfaceVariant : colorScheme.primary,
+                  color: isUploading
+                      ? colorScheme.onSurfaceVariant
+                      : colorScheme.primary,
                   strokeWidth: 2.5,
                 ),
               ),
@@ -464,7 +453,9 @@ import 'colors_box.dart';
       icon: HugeIcon(
         icon: icon,
         size: 18,
-        color: enabled ? color : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+        color: enabled
+            ? color
+            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
         strokeWidth: 2,
       ),
     );

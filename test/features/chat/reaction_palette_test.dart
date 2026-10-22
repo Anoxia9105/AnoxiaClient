@@ -1,4 +1,5 @@
 import 'package:anoxia/features/chat/presentation/widgets/message_bubble/message_reaction_bar.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_bubble.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -14,6 +15,22 @@ class _ReactionRepository implements MessageRepository {
 }
 
 void main() {
+  test('共享 Emoji 气泡支持输入框连续选择与回应单次选择', () {
+    final input = ChatEmojiBubble(
+      onEmojiSelected: (_) {},
+      onStickerSelected: (_) {},
+    );
+    final reaction = ChatEmojiBubble(
+      onEmojiSelected: (_) {},
+      onStickerSelected: (_) {},
+      emojiOnly: true,
+      closeOnSelect: true,
+    );
+    expect(input.closeOnSelect, isFalse);
+    expect(input.emojiOnly, isFalse);
+    expect(reaction.closeOnSelect, isTrue);
+    expect(reaction.emojiOnly, isTrue);
+  });
   test('回应事件增删本地用户缓存，乐观切换及回滚同步昵称', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
