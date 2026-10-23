@@ -68,7 +68,7 @@ abstract interface class NoteRepository {
   /// 版本历史列表（版本号倒序）
   Future<List<NoteDocVersion>> getVersions(int noteId);
 
-  /// 还原到指定版本（服务端会先快照当前状态，还原可逆）
+  /// 还原到指定版本（替换当前内容，不新增版本记录）
   Future<bool> restoreVersion(int noteId, int version);
 
   /// 标签列表（含关联笔记数）

@@ -21,7 +21,7 @@ Future<void> showNoteVersionsDialog(BuildContext context, int noteId) {
 /// 版本历史对话框
 ///
 /// 展示笔记历史版本（版本号倒序），支持还原到任意版本；
-/// 还原前服务端会先快照当前状态，因此还原可逆。
+/// 还原直接替换当前内容，不额外创建版本记录。
 class NoteVersionsDialog extends ConsumerStatefulWidget {
   final int noteId;
 

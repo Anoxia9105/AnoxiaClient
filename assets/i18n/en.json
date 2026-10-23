@@ -1339,7 +1339,7 @@
   "note_versions": "Version history",
   "note_versions_empty": "No versions yet",
   "note_version_restore": "Restore",
-  "note_version_restore_confirm": "Restore to version #{} ({})? The current saved content will be backed up as a new version so you can undo the restore.",
+  "note_version_restore_confirm": "Restore to version #{} ({})? The current content will be replaced without creating a new version.",
   "note_version_restored": "Restored to this version",
   "note_version_restore_failed": "Failed to restore",
   "note_markdown_export": "Export Markdown",

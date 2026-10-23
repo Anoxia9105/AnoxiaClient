@@ -1339,7 +1339,7 @@
   "note_versions": "版本历史",
   "note_versions_empty": "暂无历史版本",
   "note_version_restore": "还原版本",
-  "note_version_restore_confirm": "确定还原到 #{}（{}）吗？当前已保存内容会先备份为新版本，以便撤销还原。",
+  "note_version_restore_confirm": "确定还原到 #{}（{}）吗？当前内容将被替换，不会新增版本记录。",
   "note_version_restored": "已还原到该版本",
   "note_version_restore_failed": "还原失败",
   "note_markdown_export": "导出 Markdown",

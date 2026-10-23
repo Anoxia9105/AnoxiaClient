@@ -1339,7 +1339,7 @@
   "note_versions": "バージョン履歴",
   "note_versions_empty": "履歴はまだありません",
   "note_version_restore": "復元",
-  "note_version_restore_confirm": "バージョン #{}（{}）に復元しますか？復元を取り消せるよう、現在の保存済み内容を新バージョンとしてバックアップします。",
+  "note_version_restore_confirm": "バージョン #{}（{}）に復元しますか？現在の内容が置き換えられ、新しいバージョンは作成されません。",
   "note_version_restored": "このバージョンに復元しました",
   "note_version_restore_failed": "復元に失敗しました",
   "note_markdown_export": "Markdown をエクスポート",
