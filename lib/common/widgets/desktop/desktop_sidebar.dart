@@ -34,108 +34,73 @@ class DesktopSidebar extends ConsumerWidget {
     final layout = ref.watch(layoutControllerProvider);
     final user = ref.watch(authControllerProvider);
     final status = ref.watch(wsControllerProvider.select((s) => s.status));
-    final colorScheme = Theme.of(context).colorScheme;
     final isCard = layoutStyle == DesktopLayoutStyle.card;
-    final reduceMotion =
-        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
     return SizedBox(
-      width: isCard ? 82 : 70,
+      width: 70,
       child: Padding(
         padding: isCard
-            ? EdgeInsets.fromLTRB(8, DeviceUtil.isWeb ? 12 : 8, 4, 16)
+            ? EdgeInsets.only(top: DeviceUtil.isWeb ? 22 : 18, bottom: 16)
             : EdgeInsets.only(top: DeviceUtil.isWeb ? 12 : 0),
-        child: AnimatedContainer(
-          duration: reduceMotion
-              ? Duration.zero
-              : const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: isCard
-                ? colorScheme.surface.withValues(alpha: 0.84)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(isCard ? RadiusToken.xl : 0),
-            border: isCard
-                ? Border.all(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.34),
-                  )
-                : null,
-            boxShadow: isCard
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: Theme.of(context).brightness == Brightness.dark
-                            ? 0.22
-                            : 0.08,
-                      ),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Column(
-            children: [
-              if (isCard) const SizedBox(height: 10),
-              InkWell(
-                mouseCursor: SystemMouseCursors.click,
-                child: AvatarWidget(
-                  url: user.value?.avatar,
-                  name: user.value?.nickName,
-                  size: 35,
-                  status: status == WsStatus.connected
-                      ? AvatarStatus.online
-                      : AvatarStatus.offline,
-                ),
-                onTap: () =>
-                    ref.read(layoutControllerProvider.notifier).setToUser(),
+        // 菜单与主框架背景平铺，仅内容区域保留卡片层级。
+        child: Column(
+          children: [
+            InkWell(
+              mouseCursor: SystemMouseCursors.click,
+              child: AvatarWidget(
+                url: user.value?.avatar,
+                name: user.value?.nickName,
+                size: 35,
+                status: status == WsStatus.connected
+                    ? AvatarStatus.online
+                    : AvatarStatus.offline,
               ),
-              const SizedBox(height: 8),
-              // 导航栏
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  children: List.generate(layout.items.length, (index) {
-                    final item = layout.items[index];
-                    return SidebarButton(
-                      padding: const EdgeInsets.all(10),
-                      layoutStyle: layoutStyle,
-                      index: index,
-                      name: item.name == 'sidebar_favorites'
-                          ? 'sidebar_favorites_short'.tr()
-                          : item.name.tr(),
-                      icon: item.icon,
-                    );
-                  }),
-                ),
+              onTap: () =>
+                  ref.read(layoutControllerProvider.notifier).setToUser(),
+            ),
+            const SizedBox(height: 8),
+            // 导航栏
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: List.generate(layout.items.length, (index) {
+                  final item = layout.items[index];
+                  return SidebarButton(
+                    padding: const EdgeInsets.all(10),
+                    layoutStyle: layoutStyle,
+                    index: index,
+                    name: item.name == 'sidebar_favorites'
+                        ? 'sidebar_favorites_short'.tr()
+                        : item.name.tr(),
+                    icon: item.icon,
+                  );
+                }),
               ),
+            ),
 
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: IconButton(
-                    tooltip: 'sidebar_logout'.tr(),
-                    onPressed: () async {
-                      // 弹出确认对话框
-                      final shouldLogout = await showLogoutConfirmDialog(
-                        context,
-                      );
-                      // 如果用户点击了“确定”且对话框未关闭，执行登出
-                      if (shouldLogout) {
-                        ref.read(authControllerProvider.notifier).logout();
-                      }
-                    },
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedLogout01,
-                      color: Colors.red,
-                    ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: IconButton(
+                  tooltip: 'sidebar_logout'.tr(),
+                  onPressed: () async {
+                    // 弹出确认对话框
+                    final shouldLogout = await showLogoutConfirmDialog(context);
+                    // 如果用户点击了“确定”且对话框未关闭，执行登出
+                    if (shouldLogout) {
+                      ref.read(authControllerProvider.notifier).logout();
+                    }
+                  },
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedLogout01,
+                    color: Colors.red,
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-            ],
-          ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );

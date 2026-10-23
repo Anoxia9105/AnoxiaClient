@@ -104,27 +104,32 @@ Document markdownToDocument(String markdown) {
       (m) => '<p align="center">${m.group(1)}</p>',
     );
     final html = md
-        .markdownToHtml(preprocessed)
+        .markdownToHtml(preprocessed, inlineSyntaxes: [_NoteLineBreakSyntax()])
+        // 上游转换器解析 HTML 前会删换行并 trim 每行；实体编码可保留
+        // 代码块的换行和缩进，且不会改动标签之间的排版空白。
+        .replaceAllMapped(
+          RegExp(r'<pre\b[^>]*>.*?</pre>', dotAll: true),
+          (m) => m[0]!.replaceAll('\n', '&#10;'),
+        )
         .replaceAllMapped(_hrTagPattern, (_) => _hrSentinel);
     final delta = HtmlToDelta(
-      isBlockValidator: (name) =>
-          const {
-            'p',
-            'h1',
-            'h2',
-            'h3',
-            'h4',
-            'h5',
-            'h6',
-            'ul',
-            'ol',
-            'li',
-            'blockquote',
-            'pre',
-            'div',
-            'hr',
-            'table',
-          }.contains(name),
+      isBlockValidator: (name) => const {
+        'p',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'ul',
+        'ol',
+        'li',
+        'blockquote',
+        'pre',
+        'div',
+        'hr',
+        'table',
+      }.contains(name),
     ).convert(html);
     return Document.fromDelta(
       _ensureDocumentDelta(_restoreHorizontalRules(delta)),
@@ -136,7 +141,9 @@ Document markdownToDocument(String markdown) {
       var fallback = normalized;
       if (!fallback.endsWith('\n')) fallback = '$fallback\n';
       if (fallback.trim().isEmpty) return Document();
-      return Document.fromDelta(_ensureDocumentDelta(Delta()..insert(fallback)));
+      return Document.fromDelta(
+        _ensureDocumentDelta(Delta()..insert(fallback)),
+      );
     } catch (_) {
       return Document();
     }
@@ -158,6 +165,17 @@ Delta _ensureDocumentDelta(Delta delta) {
   }
   delta.insert('\n');
   return delta;
+}
+
+/// 将段落内软换行保留为编辑器换行；块级代码不经过行内解析。
+class _NoteLineBreakSyntax extends md.InlineSyntax {
+  _NoteLineBreakSyntax() : super(r'\n');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(md.Element.empty('br'));
+    return true;
+  }
 }
 
 final RegExp _hrTagPattern = RegExp(r'<hr\s*/?>', caseSensitive: false);
