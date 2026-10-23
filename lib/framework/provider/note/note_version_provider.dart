@@ -29,15 +29,11 @@ class NoteVersionService extends _$NoteVersionService {
   /// 还原到指定版本，刷新树并在必要时重载当前会话
   Future<bool> restore(int noteId, int version) async {
     final ok = await ref
-        .read(noteRepositoryProvider)
+        .read(noteSessionServiceProvider.notifier)
         .restoreVersion(noteId, version);
     if (!ok) return false;
     if (!ref.mounted) return true;
     await ref.read(noteTreeServiceProvider.notifier).refresh(quiet: true);
-    final session = ref.read(noteSessionServiceProvider);
-    if (session?.noteId == noteId) {
-      await ref.read(noteTreeServiceProvider.notifier).openNote(noteId);
-    }
     await load(noteId);
     return true;
   }

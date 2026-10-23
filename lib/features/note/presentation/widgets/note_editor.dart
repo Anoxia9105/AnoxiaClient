@@ -38,7 +38,7 @@ part 'note_editor_slash.dart';
 /// 记事本编辑器
 ///
 /// 负责标题 + 富文本正文的编辑，1.5s 防抖自动保存到会话，状态条展示
-/// 保存状态与字数统计。会话切换时通过 ValueKey(noteId) 重建内部编辑器。
+/// 保存状态与字数统计。切换或还原时按笔记 ID 和加载代次重建编辑器。
 ///
 /// 支持斜杠命令：在行首（或空白后）输入 `/` 会弹出命令选择菜单，
 /// 可直接执行加粗、标题、列表、引用、链接、图片等操作。
@@ -51,7 +51,10 @@ class NoteEditor extends ConsumerWidget {
     if (session == null) {
       return const NoteEditorEmpty();
     }
-    return NoteEditorBody(key: ValueKey(session.noteId), session: session);
+    return NoteEditorBody(
+      key: ValueKey((session.noteId, session.generation)),
+      session: session,
+    );
   }
 }
 
@@ -76,6 +79,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
   @override
   bool _disposed = false;
   int _wordCount = 0;
+  String? _lastDocumentDelta;
   Uint8List? _lastHandledImageBytes;
   DateTime? _lastImagePasteTime;
   double _lastBottomViewInset = 0;
@@ -244,6 +248,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
       ),
     );
     _quillController = controller;
+    _lastDocumentDelta = jsonEncode(controller.document.toDelta().toJson());
     _quillController!.addListener(_onQuillChanged);
     _wordCount = session.plainText.length;
   }
@@ -272,8 +277,19 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
   void _onQuillChanged() {
     final controller = _quillController;
     if (controller == null || _disposed) return;
+    final currentSession = ref.read(noteSessionServiceProvider);
+    if (currentSession?.noteId != widget.session.noteId ||
+        currentSession?.generation != widget.session.generation) {
+      return;
+    }
 
     final delta = jsonEncode(controller.document.toDelta().toJson());
+    // 光标、选区、焦点变化也会通知 controller；不得因此保存或新增版本。
+    if (delta == _lastDocumentDelta) {
+      _updateSlashMenu(controller);
+      return;
+    }
+    _lastDocumentDelta = delta;
     // toPlainText 会把嵌入（分割线/图片）输出为 U+FFFC 对象占位符，
     // 直接入库会让左侧列表预览显示成乱码方块（看起来像"obj"），这里剔除
     final plain = controller.document.toPlainText().replaceAll(

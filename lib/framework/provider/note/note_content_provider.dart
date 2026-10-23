@@ -30,6 +30,9 @@ class NoteEditSession {
   final NoteSaveState saveState;
   final DateTime? lastSavedAt;
 
+  /// 全文重新加载的代次；同一笔记还原后也必须重建编辑器。
+  final int generation;
+
   const NoteEditSession({
     required this.noteId,
     required this.folderId,
@@ -39,6 +42,7 @@ class NoteEditSession {
     required this.dirty,
     required this.saveState,
     required this.lastSavedAt,
+    this.generation = 0,
   });
 
   NoteEditSession copyWith({
@@ -60,6 +64,7 @@ class NoteEditSession {
       dirty: dirty ?? this.dirty,
       saveState: saveState ?? this.saveState,
       lastSavedAt: lastSavedAt != null ? lastSavedAt() : this.lastSavedAt,
+      generation: generation,
     );
   }
 }
@@ -72,6 +77,8 @@ class NoteEditSession {
 class NoteSessionService extends _$NoteSessionService {
   /// 进行中的保存 Future，防止并发提交
   Future<bool>? _saveInflight;
+  int _generation = 0;
+  int? _restoringNoteId;
 
   @override
   NoteEditSession? build() => null;
@@ -87,6 +94,7 @@ class NoteSessionService extends _$NoteSessionService {
       dirty: false,
       saveState: NoteSaveState.idle,
       lastSavedAt: doc.updatedAt,
+      generation: ++_generation,
     );
   }
 
@@ -98,7 +106,11 @@ class NoteSessionService extends _$NoteSessionService {
   /// 更新标题
   void updateTitle(String title) {
     final current = state;
-    if (current == null || current.title == title) return;
+    if (current == null ||
+        current.noteId == _restoringNoteId ||
+        current.title == title) {
+      return;
+    }
     state = current.copyWith(
       title: title,
       dirty: true,
@@ -109,7 +121,11 @@ class NoteSessionService extends _$NoteSessionService {
   /// 更新正文（Delta JSON + 纯文本）
   void updateContent({required String content, required String plainText}) {
     final current = state;
-    if (current == null || (current.content == content && current.plainText == plainText)) return;
+    if (current == null ||
+        current.noteId == _restoringNoteId ||
+        (current.content == content && current.plainText == plainText)) {
+      return;
+    }
     state = current.copyWith(
       content: content,
       plainText: plainText,
@@ -124,6 +140,7 @@ class NoteSessionService extends _$NoteSessionService {
   Future<bool> save() async {
     final current = state;
     if (current == null) return false;
+    if (current.noteId == _restoringNoteId) return false;
     if (!current.dirty) return true;
 
     state = current.copyWith(saveState: NoteSaveState.saving);
@@ -142,14 +159,48 @@ class NoteSessionService extends _$NoteSessionService {
       plainText: current.plainText,
     );
 
+    if (!ref.mounted) return ok;
     final latest = state;
-    if (latest == null) return ok;
+    if (latest == null ||
+        latest.noteId != current.noteId ||
+        latest.generation != current.generation) {
+      return ok;
+    }
+
+    final unchanged =
+        latest.title == current.title &&
+        latest.content == current.content &&
+        latest.plainText == current.plainText;
 
     state = latest.copyWith(
-      dirty: !ok,
+      dirty: !ok || !unchanged,
       saveState: ok ? NoteSaveState.saved : NoteSaveState.failed,
       lastSavedAt: () => ok ? DateTime.now() : latest.lastSavedAt,
     );
     return ok;
+  }
+
+  /// 还原与自动保存互斥，先等已发出的保存结束，再替换会话全文。
+  /// 未提交的旧编辑器回调在此期间不能再次写入历史版本。
+  Future<bool> restoreVersion(int noteId, int version) async {
+    if (_restoringNoteId != null) return false;
+    _restoringNoteId = noteId;
+    final generation = state?.generation;
+    try {
+      final saving = _saveInflight;
+      if (saving != null && !await saving) return false;
+      if (!ref.mounted) return false;
+      final repo = ref.read(noteRepositoryProvider);
+      if (!await repo.restoreVersion(noteId, version)) return false;
+      final doc = await repo.getNote(noteId);
+      if (ref.mounted &&
+          state?.noteId == noteId &&
+          state?.generation == generation) {
+        open(doc);
+      }
+      return true;
+    } finally {
+      _restoringNoteId = null;
+    }
   }
 }

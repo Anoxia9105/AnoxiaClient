@@ -83,14 +83,24 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      await ref
+      final ok = await ref
           .read(noteVersionServiceProvider.notifier)
           .restore(widget.noteId, version.version);
       if (!mounted) return;
+      if (!ok) {
+        Toast.showToast(
+          'note_version_restore_failed'.tr(),
+          type: ToastType.error,
+        );
+        return;
+      }
       Toast.showToast('note_version_restored'.tr(), type: ToastType.success);
     } catch (e) {
       if (!mounted) return;
-      Toast.showToast('note_version_restore_failed'.tr(), type: ToastType.error);
+      Toast.showToast(
+        'note_version_restore_failed'.tr(),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -169,7 +179,10 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                     itemBuilder: (context, index) {
                       final version = items[index];
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 6,
+                        ),
                         child: Row(
                           children: [
                             Container(
@@ -177,15 +190,20 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                               height: 34,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer.withValues(alpha: .5),
-                                borderRadius: BorderRadius.circular(RadiusToken.md),
+                                color: colorScheme.primaryContainer.withValues(
+                                  alpha: .5,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  RadiusToken.md,
+                                ),
                               ),
                               child: Text(
                                 '#${version.version}',
-                                style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: colorScheme.primary,
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall!
+                                    .copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: colorScheme.primary,
+                                    ),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -197,18 +215,22 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                                     _titleOf(version),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium!
+                                        .copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     _previewOf(version),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall!
+                                        .copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -216,9 +238,10 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                             const SizedBox(width: 8),
                             Text(
                               _formatTime(version.createdAt),
-                              style: Theme.of(context).textTheme.labelSmall!.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
+                              style: Theme.of(context).textTheme.labelSmall!
+                                  .copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                             ),
                             TextButton(
                               onPressed: () => _restore(version),

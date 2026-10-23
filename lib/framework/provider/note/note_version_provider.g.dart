@@ -46,7 +46,7 @@ final class NoteVersionServiceProvider
 }
 
 String _$noteVersionServiceHash() =>
-    r'1da5e16ac72406e79a29b68eb4190f1bb9bb617b';
+    r'faa9fca2fac4a4c90ef6652cbd9de986491d34a8';
 
 /// 记事本版本历史服务
 ///
