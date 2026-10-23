@@ -61,8 +61,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
         // 内容宽不足 1120（平板竖屏/横屏窄栏、桌面窄窗口）：快捷面板默认收起，
         // FAB 按需以 Sheet 弹出。用 !isMobile 而非 isTablet，避免 1032 这类
         // 刚过旧平板阈值的宽度被判为桌面后面板既不常驻、又无 FAB 入口。
-        final showQuickSheet =
-            !isMobile && !showQuickPanel && _quickSheetOpen;
+        final showQuickSheet = !isMobile && !showQuickPanel && _quickSheetOpen;
         final colors = Theme.of(context).colorScheme;
         return Scaffold(
           backgroundColor: colors.surface,
@@ -118,9 +117,8 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                           Positioned.fill(
                             child: GestureDetector(
                               behavior: HitTestBehavior.opaque,
-                              onTap: () => setState(
-                                () => _quickSheetOpen = false,
-                              ),
+                              onTap: () =>
+                                  setState(() => _quickSheetOpen = false),
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: GestureDetector(
@@ -134,14 +132,14 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                                       12,
                                     ),
                                     decoration: BoxDecoration(
-                                      color:
-                                          colors.surfaceContainerLowest,
+                                      color: colors.surfaceContainerLowest,
                                       borderRadius: BorderRadius.circular(
                                         RadiusToken.xl,
                                       ),
                                       border: Border.all(
-                                        color: colors.outlineVariant
-                                            .withValues(alpha: 0.18),
+                                        color: colors.outlineVariant.withValues(
+                                          alpha: 0.18,
+                                        ),
                                       ),
                                       boxShadow: [
                                         BoxShadow(
@@ -182,8 +180,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
           floatingActionButton: !isMobile && !showQuickPanel && !showQuickSheet
               ? FloatingActionButton.small(
                   tooltip: 'schedule_upcoming'.tr(),
-                  onPressed: () =>
-                      setState(() => _quickSheetOpen = true),
+                  onPressed: () => setState(() => _quickSheetOpen = true),
                   child: const Icon(Icons.upcoming_outlined),
                 )
               : null,
@@ -448,6 +445,11 @@ class _ScheduleToolbar extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerRight,
                 child: SegmentedButton<ScheduleViewMode>(
+                  style: SegmentedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(RadiusToken.md),
+                    ),
+                  ),
                   segments: ScheduleViewMode.values
                       .map(
                         (item) => ButtonSegment(
