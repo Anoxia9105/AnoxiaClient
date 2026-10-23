@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/schedule_event.dart';
 import 'package:anoxia/features/schedule/presentation/widgets/schedule_event_options.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -10,6 +11,22 @@ Future<void> showScheduleEventDialog(
   required Future<void> Function(ScheduleEventDraft draft) onSave,
   Future<void> Function()? onDelete,
 }) {
+  if (DeviceUtil.useSingleColumnPush(context)) {
+    return Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => InheritedTheme.captureAll(
+          context,
+          _ScheduleEventDialog(
+            event: event,
+            initialStart: initialStart,
+            onSave: onSave,
+            onDelete: onDelete,
+            fullPage: true,
+          ),
+        ),
+      ),
+    );
+  }
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -27,12 +44,14 @@ class _ScheduleEventDialog extends StatefulWidget {
   final DateTime? initialStart;
   final Future<void> Function(ScheduleEventDraft draft) onSave;
   final Future<void> Function()? onDelete;
+  final bool fullPage;
 
   const _ScheduleEventDialog({
     required this.event,
     required this.initialStart,
     required this.onSave,
     required this.onDelete,
+    this.fullPage = false,
   });
 
   @override
@@ -99,6 +118,33 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.surface.withValues(alpha: 1);
+    // 弹窗与独立页面不继承主框架的透明叠色；输入框只继承边框样式。
+    return Theme(
+      data: theme.copyWith(
+        colorScheme: theme.colorScheme.copyWith(
+          surface: surface,
+          surfaceContainerLow: surface,
+          surfaceContainerLowest: surface,
+        ),
+        scaffoldBackgroundColor: surface,
+        inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+          filled: false,
+        ),
+        appBarTheme: theme.appBarTheme.copyWith(
+          backgroundColor: surface,
+          foregroundColor: theme.colorScheme.onSurface,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
+      ),
+      child: Builder(builder: _buildContent),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final screen = MediaQuery.sizeOf(context);
     final isCompact = screen.width < 720;
@@ -109,8 +155,7 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
         ? (screen.height - 64).clamp(0.0, 820.0)
         : (screen.height - 48).clamp(0.0, 720.0);
     final inputTheme = Theme.of(context).inputDecorationTheme.copyWith(
-      filled: true,
-      fillColor: colors.surfaceContainerLowest,
+      filled: false,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: colors.outlineVariant),
@@ -124,181 +169,189 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
         borderSide: BorderSide(color: colors.primary, width: 1.6),
       ),
     );
-    return Dialog(
-      alignment: isCompact ? Alignment.bottomCenter : Alignment.center,
-      insetPadding: isCompact
-          ? const EdgeInsets.only(top: 64)
-          : const EdgeInsets.all(24),
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: isCompact
-            ? const BorderRadius.vertical(top: Radius.circular(24))
-            : BorderRadius.circular(20),
+    final content = SizedBox(
+      key: ValueKey(
+        widget.fullPage ? 'schedule-event-page' : 'schedule-event-dialog',
       ),
-      child: SizedBox(
-        key: const ValueKey('schedule-event-dialog'),
-        width: width,
-        height: height,
-        child: Column(
-          children: [
-            _buildHeader(context, isCompact),
-            Expanded(
-              child: Theme(
-                data: Theme.of(
-                  context,
-                ).copyWith(inputDecorationTheme: inputTheme),
-                child: Form(
-                  key: _formKey,
-                  child: isCompact
-                      ? SingleChildScrollView(
-                          key: const ValueKey('schedule-dialog-mobile-content'),
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _buildPrimaryColumn(context),
-                              const SizedBox(height: 24),
-                              Divider(color: colors.outlineVariant),
-                              const SizedBox(height: 20),
-                              _buildSettingsColumn(context),
-                            ],
-                          ),
-                        )
-                      : Row(
+      width: widget.fullPage ? double.infinity : width,
+      height: widget.fullPage ? null : height,
+      child: Column(
+        children: [
+          if (!widget.fullPage) _buildHeader(context, isCompact),
+          Expanded(
+            child: Theme(
+              data: Theme.of(
+                context,
+              ).copyWith(inputDecorationTheme: inputTheme),
+              child: Form(
+                key: _formKey,
+                child: isCompact
+                    ? SingleChildScrollView(
+                        key: const ValueKey('schedule-dialog-mobile-content'),
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(
-                              child: SingleChildScrollView(
-                                key: const ValueKey(
-                                  'schedule-dialog-primary-column',
-                                ),
-                                padding: const EdgeInsets.fromLTRB(
-                                  28,
-                                  24,
-                                  28,
-                                  32,
-                                ),
-                                child: _buildPrimaryColumn(context),
-                              ),
-                            ),
-                            VerticalDivider(
-                              width: 1,
-                              thickness: 1,
-                              color: colors.outlineVariant,
-                            ),
-                            SizedBox(
-                              key: const ValueKey(
-                                'schedule-dialog-settings-column',
-                              ),
-                              width: 344,
-                              child: SingleChildScrollView(
-                                padding: const EdgeInsets.fromLTRB(
-                                  24,
-                                  24,
-                                  24,
-                                  32,
-                                ),
-                                child: _buildSettingsColumn(context),
-                              ),
-                            ),
+                            _buildPrimaryColumn(context),
+                            const SizedBox(height: 24),
+                            Divider(color: colors.outlineVariant),
+                            const SizedBox(height: 20),
+                            _buildSettingsColumn(context),
                           ],
                         ),
-                ),
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: SingleChildScrollView(
+                              key: const ValueKey(
+                                'schedule-dialog-primary-column',
+                              ),
+                              padding: const EdgeInsets.fromLTRB(
+                                28,
+                                24,
+                                28,
+                                32,
+                              ),
+                              child: _buildPrimaryColumn(context),
+                            ),
+                          ),
+                          VerticalDivider(
+                            width: 1,
+                            thickness: 1,
+                            color: colors.outlineVariant,
+                          ),
+                          SizedBox(
+                            key: const ValueKey(
+                              'schedule-dialog-settings-column',
+                            ),
+                            width: 344,
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.fromLTRB(
+                                24,
+                                24,
+                                24,
+                                32,
+                              ),
+                              child: _buildSettingsColumn(context),
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ),
-            Container(
-              key: const ValueKey('schedule-dialog-footer'),
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
-              decoration: BoxDecoration(
-                color: colors.surfaceContainerLow,
-                border: Border(top: BorderSide(color: colors.outlineVariant)),
-              ),
-              child: Row(
-                children: isCompact
-                    ? [
-                        if (widget.onDelete != null) ...[
-                          IconButton(
-                            tooltip: 'schedule_delete'.tr(),
-                            onPressed: _saving ? null : _delete,
-                            icon: Icon(
-                              Icons.delete_outline_rounded,
-                              color: colors.error,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                        Expanded(
-                          child: TextButton(
-                            onPressed: _saving
-                                ? null
-                                : () => Navigator.of(context).pop(),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text('schedule_cancel'.tr()),
-                            ),
+          ),
+          Container(
+            key: const ValueKey('schedule-dialog-footer'),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerLow,
+              border: Border(top: BorderSide(color: colors.outlineVariant)),
+            ),
+            child: Row(
+              children: isCompact
+                  ? [
+                      if (widget.onDelete != null) ...[
+                        IconButton(
+                          tooltip: 'schedule_delete'.tr(),
+                          onPressed: _saving ? null : _delete,
+                          icon: Icon(
+                            Icons.delete_outline_rounded,
+                            color: colors.error,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 2,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(44),
-                            ),
-                            onPressed: _saving ? null : _save,
-                            child: _saving
-                                ? const SizedBox.square(
-                                    dimension: 17,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text('schedule_save'.tr()),
-                                  ),
-                          ),
-                        ),
-                      ]
-                    : [
-                        if (widget.onDelete != null)
-                          TextButton.icon(
-                            onPressed: _saving ? null : _delete,
-                            icon: Icon(
-                              Icons.delete_outline_rounded,
-                              color: colors.error,
-                            ),
-                            label: Text(
-                              'schedule_delete'.tr(),
-                              style: TextStyle(color: colors.error),
-                            ),
-                          ),
-                        const Spacer(),
-                        TextButton(
+                        const SizedBox(width: 4),
+                      ],
+                      Expanded(
+                        child: TextButton(
                           onPressed: _saving
                               ? null
                               : () => Navigator.of(context).pop(),
-                          child: Text('schedule_cancel'.tr()),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('schedule_cancel'.tr()),
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        FilledButton.icon(
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(44),
+                          ),
                           onPressed: _saving ? null : _save,
-                          icon: _saving
+                          child: _saving
                               ? const SizedBox.square(
                                   dimension: 17,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Icon(Icons.check_rounded),
-                          label: Text('schedule_save'.tr()),
+                              : FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text('schedule_save'.tr()),
+                                ),
                         ),
-                      ],
-              ),
+                      ),
+                    ]
+                  : [
+                      if (widget.onDelete != null)
+                        TextButton.icon(
+                          onPressed: _saving ? null : _delete,
+                          icon: Icon(
+                            Icons.delete_outline_rounded,
+                            color: colors.error,
+                          ),
+                          label: Text(
+                            'schedule_delete'.tr(),
+                            style: TextStyle(color: colors.error),
+                          ),
+                        ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: _saving
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                        child: Text('schedule_cancel'.tr()),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton.icon(
+                        onPressed: _saving ? null : _save,
+                        icon: _saving
+                            ? const SizedBox.square(
+                                dimension: 17,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.check_rounded),
+                        label: Text('schedule_save'.tr()),
+                      ),
+                    ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+    if (widget.fullPage) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.event == null ? 'schedule_new'.tr() : 'schedule_edit'.tr(),
+          ),
+        ),
+        body: SafeArea(top: false, child: content),
+      );
+    }
+    return Dialog(
+      backgroundColor: colors.surface,
+      surfaceTintColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(24),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: content,
     );
   }
 

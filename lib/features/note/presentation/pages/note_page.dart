@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/note_doc.dart';
 import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
@@ -108,7 +109,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     );
   }
 
-  /// 桌面端主从布局：树面板与编辑器共用主框架卡片。
+  /// 桌面端主从布局：树面板与独立的完整编辑区卡片。
   Widget _buildDesktop(BuildContext context) {
     final supportsDesktopLayout = DeviceUtil.supportsDesktopLayoutPreference(
       context,
@@ -127,7 +128,32 @@ class _NotesPageState extends ConsumerState<NotesPage> {
         ? const NoteEditorSkeleton()
         : const NoteEditor();
 
-    final editor = Expanded(child: editorChild);
+    final editor = Expanded(
+      child: Padding(
+        padding: isFlat
+            ? EdgeInsets.zero
+            : const EdgeInsets.fromLTRB(8, 12, 12, 12),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: isFlat
+                ? Colors.transparent
+                : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(isFlat ? 0 : RadiusToken.xl),
+            border: isFlat
+                ? null
+                : Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.28),
+                  ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(isFlat ? 0 : RadiusToken.xl),
+            child: editorChild,
+          ),
+        ),
+      ),
+    );
 
     return Row(
       children: [

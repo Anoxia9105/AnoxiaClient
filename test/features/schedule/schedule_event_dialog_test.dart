@@ -65,6 +65,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(MenuAnchor), findsNWidgets(2));
+    final dialog = tester.widget<Dialog>(find.byType(Dialog));
+    expect(dialog.backgroundColor!.a, 1);
+    final titleField = tester.element(find.byType(TextFormField).first);
+    expect(Theme.of(titleField).inputDecorationTheme.filled, isFalse);
     final allDaySwitch = find.byKey(const ValueKey('schedule-all-day'));
     await tester.ensureVisible(allDaySwitch);
     await tester.tap(allDaySwitch);
@@ -80,7 +84,7 @@ void main() {
     );
   });
 
-  testWidgets('uses a bottom drawer layout on compact screens', (tester) async {
+  testWidgets('手机端使用主题色独立页面且可返回', (tester) async {
     SharedPreferences.setMockInitialValues(const {});
     await EasyLocalization.ensureInitialized();
     await initializeDateFormatting('zh');
@@ -111,10 +115,16 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    expect(
-      tester.getSize(find.byKey(const ValueKey('schedule-event-dialog'))),
-      const Size(320, 416),
+    expect(find.byKey(const ValueKey('schedule-event-dialog')), findsNothing);
+    expect(find.byKey(const ValueKey('schedule-event-page')), findsOneWidget);
+    expect(find.byType(Dialog), findsNothing);
+    final pageContext = tester.element(
+      find.byKey(const ValueKey('schedule-event-page')),
     );
+    final theme = Theme.of(pageContext);
+    expect(theme.scaffoldBackgroundColor.a, 1);
+    expect(theme.appBarTheme.backgroundColor, theme.colorScheme.surface);
+    expect(theme.inputDecorationTheme.filled, isFalse);
     expect(
       find.byKey(const ValueKey('schedule-dialog-mobile-content')),
       findsOneWidget,
@@ -123,6 +133,9 @@ void main() {
       find.byKey(const ValueKey('schedule-dialog-footer')),
       findsOneWidget,
     );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('schedule-event-page')), findsNothing);
   });
 
   testWidgets('saves the selected color and reminder', (tester) async {
