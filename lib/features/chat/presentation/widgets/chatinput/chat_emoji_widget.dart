@@ -92,21 +92,21 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
         ),
         categoryViewConfig: CategoryViewConfig(
           backgroundColor: Colors.transparent,
-          customCategoryView: widget.emojiOnly
-              ? null
-              : (config, state, tabController, pageController) {
-                  return EmojiCategoryTabBar(
-                    tabController: tabController,
-                    pageController: pageController,
-                    categories: state.categoryEmoji,
-                    onStickerTap: () {
+          customCategoryView: (config, state, tabController, pageController) {
+            return EmojiCategoryTabBar(
+              tabController: tabController,
+              pageController: pageController,
+              categories: state.categoryEmoji,
+              onStickerTap: widget.emojiOnly
+                  ? null
+                  : () {
                       ref.invalidate(stickerPacksProvider);
                       setState(() {
                         _showStickers = true;
                       });
                     },
-                  );
-                },
+            );
+          },
         ),
         bottomActionBarConfig: BottomActionBarConfig(
           enabled: widget.showSearch,
@@ -163,7 +163,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
         searchViewConfig: SearchViewConfig(
           customSearchView: (config, state, showEmojiView) {
             return SizedBox(
-              height: 300.h,
+              height: widget.panelHeight ?? 300.h,
               child: MyCustomSearchView(config, state, showEmojiView),
             );
           },

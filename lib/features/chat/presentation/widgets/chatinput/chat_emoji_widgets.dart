@@ -14,13 +14,13 @@ class EmojiCategoryTabBar extends StatefulWidget {
     required this.tabController,
     required this.pageController,
     required this.categories,
-    required this.onStickerTap,
+    this.onStickerTap,
   });
 
   final TabController tabController;
   final PageController pageController;
   final List<CategoryEmoji> categories;
-  final VoidCallback onStickerTap;
+  final VoidCallback? onStickerTap;
 
   @override
   State<EmojiCategoryTabBar> createState() => _EmojiCategoryTabBarState();
@@ -87,7 +87,8 @@ class _EmojiCategoryTabBarState extends State<EmojiCategoryTabBar> {
           children: [
             for (final (index, categoryEmoji) in widget.categories.indexed)
               _buildTab(context, index, categoryEmoji.category, iconSize),
-            _buildStickerButton(context, iconSize),
+            if (widget.onStickerTap != null)
+              _buildStickerButton(context, iconSize),
           ],
         ),
       ),
@@ -222,7 +223,9 @@ class MyCustomSearchViewState extends SearchViewState<MyCustomSearchView> {
                   ? Center(
                       child: Text(
                         'emoji_not_found'.tr(),
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -258,7 +261,8 @@ class StickerGridSkeleton extends StatelessWidget {
         crossAxisSpacing: 8,
       ),
       itemCount: 28,
-      itemBuilder: (_, i) => const SkeletonBox(width: 64, height: 64, radius: 10),
+      itemBuilder: (_, i) =>
+          const SkeletonBox(width: 64, height: 64, radius: 10),
     );
   }
 }
