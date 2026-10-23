@@ -42,6 +42,9 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     if (showSkeleton) return const ChatInputSkeleton();
 
+    // 封禁时隐藏整个底部栏，避免空容器的边框和阴影残留。
+    if (roomStatus == 2) return const SizedBox.shrink();
+
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
