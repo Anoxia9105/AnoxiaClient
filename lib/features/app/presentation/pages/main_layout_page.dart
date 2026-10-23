@@ -250,8 +250,13 @@ class _DesktopContentSurface extends StatelessWidget {
                     ),
                     scaffoldBackgroundColor: cs.surface,
                     appBarTheme: theme.appBarTheme.copyWith(
-                      backgroundColor: cs.surface,
+                      // 由所在分栏的底色透出，不能再叠加一层 surface：
+                      // 自定义透明主题下重复叠色会造成标题栏与内容区色差。
+                      backgroundColor: Colors.transparent,
                       surfaceTintColor: Colors.transparent,
+                      elevation: 0,
+                      scrolledUnderElevation: 0,
+                      shadowColor: Colors.transparent,
                     ),
                   ),
             child: child,
