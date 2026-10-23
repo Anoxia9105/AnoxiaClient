@@ -29,10 +29,12 @@ class SettingsSplitView extends StatefulWidget {
     super.key,
     required this.destinations,
     this.compactBreakpoint = 700,
+    this.joinedPanels = false,
   }) : assert(destinations.length > 0);
 
   final List<SettingsDestination> destinations;
   final double compactBreakpoint;
+  final bool joinedPanels;
 
   @override
   State<SettingsSplitView> createState() => _SettingsSplitViewState();
@@ -74,10 +76,14 @@ class _SettingsSplitViewState extends State<SettingsSplitView> {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
+                padding: widget.joinedPanels
+                    ? EdgeInsets.zero
+                    : const EdgeInsets.fromLTRB(8, 10, 12, 12),
                 child: RepaintBoundary(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(RadiusToken.xl),
+                    borderRadius: BorderRadius.circular(
+                      widget.joinedPanels ? 0 : RadiusToken.xl,
+                    ),
                     child: IndexedStack(
                       index: _selectedIndex,
                       children: [
@@ -88,6 +94,7 @@ class _SettingsSplitViewState extends State<SettingsSplitView> {
                               child: _SettingsDetailPanel(
                                 key: ValueKey(i),
                                 destination: widget.destinations[i],
+                                joined: widget.joinedPanels,
                               ),
                             ),
                           ),
@@ -172,7 +179,10 @@ class _SettingsNavigationList extends StatelessWidget {
                   const Positioned(
                     right: -4,
                     top: -4,
-                    child: VibratingBadge(isDot: true, borderColor: Colors.transparent),
+                    child: VibratingBadge(
+                      isDot: true,
+                      borderColor: Colors.transparent,
+                    ),
                   ),
               ],
             ),
@@ -204,10 +214,12 @@ class _SettingsDetailPanel extends StatelessWidget {
     super.key,
     required this.destination,
     this.compact = false,
+    this.joined = false,
   });
 
   final SettingsDestination destination;
   final bool compact;
+  final bool joined;
 
   @override
   Widget build(BuildContext context) {
@@ -216,11 +228,13 @@ class _SettingsDetailPanel extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: compact
+        color: compact || joined
             ? colorScheme.surface
             : colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(compact ? 0 : RadiusToken.xl),
-        border: compact
+        borderRadius: BorderRadius.circular(
+          compact || joined ? 0 : RadiusToken.xl,
+        ),
+        border: compact || joined
             ? null
             : Border.all(
                 color: colorScheme.outlineVariant.withValues(alpha: 0.18),

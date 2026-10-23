@@ -80,52 +80,52 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
 
     Widget buildMainContent() {
       final bodyRow = Row(
-          children: [
-            /// 桌面端和平板显示侧边栏，移动端不显示
-            if (!chatFocusActive &&
-                (DeviceUtil.isDesktop(context) || DeviceUtil.isTablet(context)))
-              DesktopSidebar(layoutStyle: desktopLayoutStyle),
-            Expanded(
-              child: Scaffold(
-                backgroundColor: Colors.transparent,
-                body: IndexedStack(
-                  index: safeIndex,
-                  children: [
-                    _DesktopContentSurface(
-                      layoutStyle: desktopLayoutStyle,
-                      focused: chatFocusActive,
-                      child: const ChatPage(),
-                    ),
-                    _DesktopContentSurface(
-                      layoutStyle: desktopLayoutStyle,
-                      child: const ContactPage(),
-                    ),
-                    _DesktopContentSurface(
-                      layoutStyle: desktopLayoutStyle,
-                      child: const FavoritesPage(),
-                    ),
-                    _DesktopContentSurface(
-                      layoutStyle: desktopLayoutStyle,
-                      child: const NotesPage(),
-                    ),
-                    _DesktopContentSurface(
-                      layoutStyle: desktopLayoutStyle,
-                      child: const SchedulePage(),
-                    ),
-                    _DesktopContentSurface(
-                      layoutStyle: desktopLayoutStyle,
-                      child: const MyPage(),
-                    ),
-                    _DesktopContentSurface(
-                      layoutStyle: desktopLayoutStyle,
-                      child: const SettingsPage(),
-                    ),
-                  ],
-                ),
+        children: [
+          /// 桌面端和平板显示侧边栏，移动端不显示
+          if (!chatFocusActive &&
+              (DeviceUtil.isDesktop(context) || DeviceUtil.isTablet(context)))
+            DesktopSidebar(layoutStyle: desktopLayoutStyle),
+          Expanded(
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: IndexedStack(
+                index: safeIndex,
+                children: [
+                  _DesktopContentSurface(
+                    layoutStyle: desktopLayoutStyle,
+                    focused: chatFocusActive,
+                    child: const ChatPage(),
+                  ),
+                  _DesktopContentSurface(
+                    layoutStyle: desktopLayoutStyle,
+                    child: const ContactPage(),
+                  ),
+                  _DesktopContentSurface(
+                    layoutStyle: desktopLayoutStyle,
+                    child: const FavoritesPage(),
+                  ),
+                  _DesktopContentSurface(
+                    layoutStyle: desktopLayoutStyle,
+                    child: const NotesPage(),
+                  ),
+                  _DesktopContentSurface(
+                    layoutStyle: desktopLayoutStyle,
+                    child: const SchedulePage(),
+                  ),
+                  _DesktopContentSurface(
+                    layoutStyle: desktopLayoutStyle,
+                    child: const MyPage(),
+                  ),
+                  _DesktopContentSurface(
+                    layoutStyle: desktopLayoutStyle,
+                    child: const SettingsPage(),
+                  ),
+                ],
               ),
             ),
-          ],
-        );
+          ),
+        ],
+      );
       // 平板横竖屏：系统栏（状态栏/手势条）叠加在内容上，侧边栏头像会压进去，
       // 整块 body 加 SafeArea。SafeArea 会从后代 MediaQuery 里扣掉已消费的
       // padding，各子页 AppBar/列表不会重复垫高；手机/桌面分支原样不动。
@@ -201,8 +201,12 @@ class _DesktopContentSurface extends StatelessWidget {
           : const EdgeInsets.fromLTRB(14, 12, 16, 16),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: cs.surface.withValues(alpha: surfaceOpacity),
-          borderRadius: isFlat ? BorderRadius.zero : BorderRadius.circular(RadiusToken.xl),
+          color: isFlat
+              ? cs.surface.withValues(alpha: surfaceOpacity)
+              : cs.surface,
+          borderRadius: isFlat
+              ? BorderRadius.zero
+              : BorderRadius.circular(RadiusToken.xl),
           border: isFlat
               ? Border(
                   left: BorderSide(
@@ -232,8 +236,26 @@ class _DesktopContentSurface extends StatelessWidget {
                 ],
         ),
         child: ClipRRect(
-          borderRadius: isFlat ? BorderRadius.zero : BorderRadius.circular(RadiusToken.xl),
-          child: child,
+          borderRadius: isFlat
+              ? BorderRadius.zero
+              : BorderRadius.circular(RadiusToken.xl),
+          // 卡片内部共用同一底色，避免列表和详情因 surface 层级不同而割裂。
+          // 始终保留 Theme 节点，切换布局时不重建页面状态。
+          child: Theme(
+            data: isFlat
+                ? theme
+                : theme.copyWith(
+                    colorScheme: cs.copyWith(
+                      surfaceContainerLowest: cs.surface,
+                    ),
+                    scaffoldBackgroundColor: cs.surface,
+                    appBarTheme: theme.appBarTheme.copyWith(
+                      backgroundColor: cs.surface,
+                      surfaceTintColor: Colors.transparent,
+                    ),
+                  ),
+            child: child,
+          ),
         ),
       ),
     );

@@ -44,8 +44,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     final activeRoomId = ref.watch(activeRoomIdProvider);
     final focusModeEnabled = ref.watch(chatFocusModeProvider);
     final showRightPanel = ref.watch(chatRightPanelVisibleProvider);
-    // 与记事本/联系人页面保持一致：平铺模式去掉详情区卡片，
-    // 避免自定义（视频）背景下各页面右侧区域透明度不一致。
+    // 卡片模式共用主框架外壳，平铺模式保留原有分栏间距。
     final supportsDesktopLayout = DeviceUtil.supportsDesktopLayoutPreference(
       context,
     );
@@ -80,10 +79,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     final listWidth = isTablet ? 280.0 : (isCompactWidth ? 240.0 : 320.0);
     final rightPanelWidth = isTablet ? 280.0 : 320.0;
     final canShowRightPanel = showRightPanel && activeRoomId != null;
-    final inlineRightPanel =
-        canShowRightPanel && !isCompactWidth && !isTablet;
-    final overlayRightPanel =
-        canShowRightPanel && (isCompactWidth || isTablet);
+    final inlineRightPanel = canShowRightPanel && !isCompactWidth && !isTablet;
+    final overlayRightPanel = canShowRightPanel && (isCompactWidth || isTablet);
 
     final detailChild = isFlat
         ? Padding(
@@ -95,28 +92,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     roomId: activeRoomId!,
                   ),
           )
-        : Padding(
-            padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(RadiusToken.xl),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outlineVariant.withValues(alpha: 0.18),
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(RadiusToken.xl),
-                child: room == null
-                    ? const Welcome.chat()
-                    : ChatRoomDetail(
-                        key: ValueKey('chat-$activeRoomId'),
-                        roomId: activeRoomId!,
-                      ),
-              ),
-            ),
+        : room == null
+        ? const Welcome.chat()
+        : ChatRoomDetail(
+            key: ValueKey('chat-$activeRoomId'),
+            roomId: activeRoomId!,
           );
 
     return Row(
@@ -163,10 +143,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
               child: inlineRightPanel
-                  ? _buildRightPanel(context, activeRoomId, isFlat)
-                  : const SizedBox.shrink(
-                      key: ValueKey('right-panel-closed'),
-                    ),
+                  ? _buildRightPanel(context, activeRoomId, true)
+                  : const SizedBox.shrink(key: ValueKey('right-panel-closed')),
             ),
           ),
         ),

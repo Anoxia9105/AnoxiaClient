@@ -259,6 +259,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         title: Text('settings_page_title'.tr()),
       ),
       body: SettingsSplitView(
+        joinedPanels:
+            !DeviceUtil.useSingleColumnPush(context) &&
+            resolveDesktopLayoutStyle(
+                  desktopLayoutPreference,
+                  availableWidth: MediaQuery.sizeOf(context).width,
+                ) ==
+                DesktopLayoutStyle.card,
         destinations: [
           SettingsDestination(
             title: 'announcement_settings_title'.tr(),

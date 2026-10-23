@@ -6,7 +6,6 @@ import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
 import 'package:anoxia/framework/provider/note/note_open_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
-import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -102,15 +101,12 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
       body: mobile
-          ? NoteTreePanel(
-              selectedNoteId: null,
-              onOpenNote: _openNote,
-            )
+          ? NoteTreePanel(selectedNoteId: null, onOpenNote: _openNote)
           : _buildDesktop(context),
     );
   }
 
-  /// 桌面端主从布局：树面板 + 编辑器（按布局偏好以卡片包裹编辑器）
+  /// 桌面端主从布局：树面板与编辑器共用主框架卡片。
   Widget _buildDesktop(BuildContext context) {
     final supportsDesktopLayout = DeviceUtil.supportsDesktopLayoutPreference(
       context,
@@ -123,33 +119,13 @@ class _NotesPageState extends ConsumerState<NotesPage> {
           )
         : DesktopLayoutStyle.card;
     final isFlat = style == DesktopLayoutStyle.flat;
-    final colorScheme = Theme.of(context).colorScheme;
 
     // 切换笔记请求期间用骨架屏替代编辑器，给出加载反馈
     final editorChild = _loadingNoteId != null
         ? const NoteEditorSkeleton()
         : const NoteEditor();
 
-    final editor = Expanded(
-      child: isFlat
-          ? editorChild
-          : Padding(
-              padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(RadiusToken.xl),
-                  border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(alpha: .18),
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(RadiusToken.xl),
-                  child: editorChild,
-                ),
-              ),
-            ),
-    );
+    final editor = Expanded(child: editorChild);
 
     return Row(
       children: [
@@ -160,7 +136,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
             onOpenNote: _openNote,
           ),
         ),
-        const SizedBox(width: 12),
+        if (isFlat) const SizedBox(width: 12),
         editor,
       ],
     );
@@ -188,11 +164,9 @@ class _NotesPageState extends ConsumerState<NotesPage> {
           .openNote(noteId);
       if (!mounted) return;
       if (DeviceUtil.useSingleColumnPush(context)) {
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => const NoteEditorPage(),
-          ),
-        );
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (_) => const NoteEditorPage()));
       } else {
         setState(() => _selectedNoteId = doc.id);
       }
