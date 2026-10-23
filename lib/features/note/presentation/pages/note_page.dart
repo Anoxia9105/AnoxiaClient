@@ -99,7 +99,9 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     // 标题由树面板的 AppBar 提供（与聊天/人员/收藏页一致）：
     // 桌面端靠左显示在树面板栏内，移动端整页居中显示。
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      backgroundColor: mobile
+          ? Theme.of(context).colorScheme.surfaceContainerLowest
+          : Theme.of(context).scaffoldBackgroundColor,
       body: mobile
           ? NoteTreePanel(selectedNoteId: null, onOpenNote: _openNote)
           : _buildDesktop(context),

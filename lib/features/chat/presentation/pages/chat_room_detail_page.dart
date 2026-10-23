@@ -129,7 +129,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     if (currentRoom.isOfficial) {
       return Scaffold(
         resizeToAvoidBottomInset: false,
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: DeviceUtil.useSingleColumnPush(context)
+            ? Theme.of(context).colorScheme.surface
+            : Theme.of(context).scaffoldBackgroundColor,
         appBar: ChatAppBar(roomId: widget.roomId),
         body: const OfficialRoomHomeView(),
       );
@@ -205,7 +207,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         roomId: widget.roomId,
         child: Scaffold(
           resizeToAvoidBottomInset: false,
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: DeviceUtil.useSingleColumnPush(context)
+              ? Theme.of(context).colorScheme.surface
+              : Theme.of(context).scaffoldBackgroundColor,
           appBar: showInitialSkeleton
               ? AppBar()
               : ChatAppBar(roomId: widget.roomId),

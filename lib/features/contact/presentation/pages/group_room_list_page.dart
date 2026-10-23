@@ -29,7 +29,9 @@ class GroupRoomListPage extends ConsumerWidget {
     final groups = ref.watch(groupRoomListProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: DeviceUtil.useSingleColumnPush(context)
+          ? Theme.of(context).colorScheme.surface
+          : Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           '${'contact_joined_groups'.tr()} ${groups.isNotEmpty ? '(${groups.length})' : ''}',

@@ -228,7 +228,9 @@ class _SettingsDetailPanel extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: compact || joined
+        color: joined
+            ? Colors.transparent
+            : compact
             ? colorScheme.surface
             : colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(

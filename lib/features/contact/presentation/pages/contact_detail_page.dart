@@ -1,4 +1,5 @@
-﻿import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_delete_confirm_dialog.dart';
+import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_delete_confirm_dialog.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_actions.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_empty_state.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_header.dart';
@@ -40,7 +41,9 @@ class ContactDetail extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: DeviceUtil.useSingleColumnPush(context)
+          ? Theme.of(context).colorScheme.surface
+          : Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         actionsPadding: const EdgeInsets.symmetric(horizontal: 8),
         actions: [

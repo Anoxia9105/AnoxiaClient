@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/date_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
@@ -25,10 +26,7 @@ class NewFriendsPage extends ConsumerStatefulWidget {
 
 class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
   void _openAddFriend() {
-    presentAdaptivePage(
-      context,
-      builder: (_) => const AddFriendPage(),
-    );
+    presentAdaptivePage(context, builder: (_) => const AddFriendPage());
   }
 
   /// 将请求时间格式化为微信风格相对时间
@@ -46,7 +44,9 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
   Widget build(BuildContext context) {
     final requestAsync = ref.watch(contactRequestsServiceProvider);
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: DeviceUtil.useSingleColumnPush(context)
+          ? Theme.of(context).colorScheme.surface
+          : Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(title: Text('contact_new_friends_title'.tr())),
       body: requestAsync.when(
         data: (req) {
@@ -90,8 +90,7 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
         },
         loading: () => const NewFriendsSkeleton(),
         error: (err, stack) => _ErrorState(
-          message:
-              'contact_load_failed_with_error'.tr(args: [err.toString()]),
+          message: 'contact_load_failed_with_error'.tr(args: [err.toString()]),
           onRetry: () =>
               ref.read(contactRequestsServiceProvider.notifier).refresh(),
         ),

@@ -48,6 +48,7 @@ void main() {
     expect(decorations, isNotEmpty);
     final panel = decorations.first.decoration as BoxDecoration;
     expect(panel.border, isNull);
+    expect(panel.color, Colors.transparent);
     expect(panel.borderRadius, BorderRadius.zero);
     expect(tester.takeException(), isNull);
   });
