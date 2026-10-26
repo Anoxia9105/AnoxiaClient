@@ -277,7 +277,9 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
               _streaming = false;
               _failed = true;
             });
-            reportAiHealth(ref, false);
+            Object? payload;
+            try { payload = jsonDecode(frame.data); } catch (_) {}
+            reportAiHealth(ref, false, error: AiException.fromPayload(payload));
             try {
               final json = jsonDecode(frame.data) as Map<String, dynamic>;
               ref.read(toastServiceProvider).showToast(
@@ -294,7 +296,7 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
           _streaming = false;
           _failed = true;
         });
-        reportAiHealth(ref, false);
+        reportAiHealth(ref, false, error: e);
         String msg = 'note_ai.failed'.tr();
         if (e is AiException) {
           if (e.message.isNotEmpty) msg = e.message;
@@ -337,7 +339,7 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
             _failed = _preview.isEmpty;
           });
           // 断流兜底：有内容视为上游可达，无内容记一次失败
-          reportAiHealth(ref, _preview.isNotEmpty);
+          if (_preview.isNotEmpty) reportAiHealth(ref, true);
         }
       },
     );

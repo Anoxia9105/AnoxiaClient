@@ -38,14 +38,11 @@ class AiRepositoryImpl implements AiRepository {
             throw const AiException('AI请求失败 请稍后在试');
           }
         case 'error':
-          String msg = 'AI请求失败 请稍后在试';
+          var failure = const AiException('AI请求失败 请稍后在试');
           try {
-            msg =
-                (jsonDecode(frame.data) as Map<String, dynamic>)['message']
-                        as String? ??
-                    msg;
+            failure = AiException.fromPayload(jsonDecode(frame.data), fallback: failure.message);
           } catch (_) {}
-          throw AiException(msg);
+          throw failure;
         default:
           break; // 忽略未来新增事件，保证向前兼容
       }

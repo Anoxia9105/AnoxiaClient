@@ -5,7 +5,7 @@
 /// - `event:thinking` + `data:<增量>` 多次，最后一条 `data:[done]` 为思考结束哨兵
 /// - 匿名事件 `data:<正文增量>` 多次
 /// - `event:done` + `data:{"conversationId","text","truncated"}` 终态
-/// - `event:error` + `data:{"message"}` 失败
+/// - `event:error` + `data:{"message","code"?}` 失败，code 为可选机器码
 library;
 
 /// AI 流式事件基类
@@ -44,7 +44,23 @@ class AiDone extends AiStreamEvent {
 /// 直接展示 [message] 即可。
 class AiException implements Exception {
   final String message;
-  const AiException(this.message);
+  final String? code;
+  const AiException(this.message, {this.code});
+
+  /// 网络断开、配额、参数与内部服务故障均不能证明模型不可用。
+  bool get isUpstreamFailure => code == 'UPSTREAM_ERROR';
+
+  factory AiException.fromPayload(
+    Object? payload, {
+    String fallback = 'chat_ai.failed',
+  }) {
+    if (payload is! Map) return AiException(fallback);
+    final message = payload['message'] ?? payload['msg'];
+    return AiException(
+      message is String && message.isNotEmpty ? message : fallback,
+      code: payload['code'] is String ? payload['code'] as String : null,
+    );
+  }
   @override
   String toString() => message;
 }

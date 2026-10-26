@@ -331,6 +331,7 @@ class ChatQuillToolbar extends ConsumerWidget {
                             'chat_ai.assist_title'.tr(),
                             () => showChatAiAssistBubble(
                               context,
+                              roomId: roomId,
                               controller: controller,
                               editorFocusNode: focusNode,
                             ),

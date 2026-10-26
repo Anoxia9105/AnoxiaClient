@@ -62,7 +62,7 @@ final class AiChatControllerProvider
   }
 }
 
-String _$aiChatControllerHash() => r'901e3c43d90c32e52b34a97400fcc621b4416df8';
+String _$aiChatControllerHash() => r'83fae68ceffac803b46005f0eee22896a19def7c';
 
 /// AI 对话控制器（SSE 流式）
 ///

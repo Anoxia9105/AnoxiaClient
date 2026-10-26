@@ -199,7 +199,7 @@ class AiChatController extends _$AiChatController {
         },
         onError: (Object e) {
           _loading = false;
-          reportHealth(false);
+          if (e is AiException && e.isUpstreamFailure) reportHealth(false);
           final msg = e is AiException ? e.message : 'chat_ai.failed'.tr();
           // 保留已收到的增量，仅在完全无内容时展示错误占位
           final collected = _deltaBuf.toString();
@@ -218,7 +218,7 @@ class AiChatController extends _$AiChatController {
             if (collected.isEmpty) {
               // 无 done 即失败兜底
               updateAiMessage(content: '⚠️ ${'chat_ai.failed'.tr()}', streaming: false, clearThinking: true);
-              reportHealth(false);
+              // 无终态是网络/传输异常，不能据此隐藏 AI 入口。
             } else {
               // 有增量但无 done：视为成功（网络提前断开但内容已完整）
               updateAiMessage(content: collected, streaming: false, clearThinking: true);

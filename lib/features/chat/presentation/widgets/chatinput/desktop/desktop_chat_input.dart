@@ -9,7 +9,6 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import 'package:anoxia/common/widgets/toast.dart';
-import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/common/constants/storage_keys.dart';
 import 'package:anoxia/common/utils/sp_util.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -318,11 +317,11 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
         /// 智能回复建议条（手动触发，点击 chip 填入输入框）
         SmartReplyBar(
           roomId: widget.roomId,
+          draftListenable: controller,
+          readDraft: () => controller.document.toPlainText().trim(),
           onPick: (text) {
-            QuillEmbedUtil.insertTextAtCursor(
-              text: text,
-              controller: controller,
-            );
+            controller.replaceText(0, controller.document.length - 1, text,
+              TextSelection.collapsed(offset: text.length));
           },
         ),
 

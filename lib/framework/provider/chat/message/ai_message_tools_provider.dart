@@ -203,7 +203,7 @@ Future<void> runAiToolPrompt({
           firstUnreadMessageId: current.firstUnreadMessageId,
         ),
       );
-      reportHealth(false);
+      // 断流没有上游错误码，不触发模型熔断。
       return;
     }
   } on AiException catch (e, st) {
@@ -215,7 +215,7 @@ Future<void> runAiToolPrompt({
         firstUnreadMessageId: current.firstUnreadMessageId,
       ),
     );
-    reportHealth(false);
+    if (e.isUpstreamFailure) reportHealth(false);
   } catch (e, st) {
     debugLog('[AiTools] 流式异常: $e', e, st);
     safeSet(
@@ -224,6 +224,6 @@ Future<void> runAiToolPrompt({
         firstUnreadMessageId: current.firstUnreadMessageId,
       ),
     );
-    reportHealth(false);
+    // 网络或本地异常不代表模型不可用。
   }
 }

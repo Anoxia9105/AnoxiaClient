@@ -42,8 +42,7 @@ class SseClient {
   /// POST 并返回解析后的 SSE 帧流。
   ///
   /// 连接失败 / 非 2xx 抛 [AiException]（携带服务端或 HTTP 层具体文案）；
-  /// HTTP 层成功但业务失败（如未登录）时，后端直接返回 JSON，此时没有合法 SSE 帧，
-  /// 由调用方按「无 done 即失败」兜底处理。
+  /// HTTP 200 但返回普通 JSON（如未登录）也提取提示并抛错，不当作空 SSE 流。
   static Stream<SseFrame> post(String path, {Object? body}) async* {
     yield* _postHttp(path, body);
   }
@@ -69,6 +68,7 @@ class SseClient {
       final streamed = await client.send(request);
       if (streamed.statusCode != 200) {
         String? errMsg;
+        String? errorCode;
         try {
           final bytes = await streamed.stream
               .fold<List<int>>(<int>[], (a, b) => a..addAll(b))
@@ -79,6 +79,7 @@ class SseClient {
               final j = jsonDecode(bodyStr);
               if (j is Map) {
                 errMsg = (j['message'] ?? j['msg'] ?? j['error'])?.toString();
+                if (j['code'] is String) errorCode = j['code'] as String;
               }
               errMsg ??= bodyStr;
             } catch (_) {
@@ -86,7 +87,20 @@ class SseClient {
             }
           }
         } catch (_) {}
-        throw AiException(errMsg ?? 'AI请求失败 请稍后在试');
+        if (path == '/chat/ai/replies/stream' &&
+            (streamed.statusCode == 404 || streamed.statusCode == 405)) {
+          errorCode = 'ENDPOINT_UNAVAILABLE';
+        } else if (streamed.statusCode == 429) {
+          errorCode = 'RATE_LIMITED';
+        }
+        throw AiException(errMsg ?? 'AI请求失败 请稍后在试', code: errorCode);
+      }
+      final contentType = streamed.headers['content-type'] ?? '';
+      if (!contentType.contains('text/event-stream')) {
+        final bodyText = await streamed.stream.transform(utf8.decoder).join();
+        Object? payload;
+        try { payload = jsonDecode(bodyText); } catch (_) {}
+        throw AiException.fromPayload(payload, fallback: 'AI请求失败 请稍后在试');
       }
       yield* _parse(streamed.stream);
     } finally {

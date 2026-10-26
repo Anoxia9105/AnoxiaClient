@@ -13,6 +13,7 @@ import 'dart:convert';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/domain/ai_stream_event.dart';
 import 'package:anoxia/framework/network/sse_client.dart';
+import 'package:anoxia/framework/provider/chat/message/ai_prompt_builder.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -34,23 +35,23 @@ extension ChatAiActionX on ChatAiAction {
 
   /// 后端 NoteAiAction 枚举名
   String get api => switch (this) {
-        ChatAiAction.explain => 'CUSTOM',
-        ChatAiAction.translate => 'TRANSLATE',
-        ChatAiAction.summarize => 'SUMMARIZE',
-        ChatAiAction.polish => 'POLISH',
-        ChatAiAction.expand => 'EXPAND',
-        ChatAiAction.continueWrite => 'CONTINUE',
-        ChatAiAction.simplify => 'CUSTOM',
-        ChatAiAction.custom => 'CUSTOM',
-      };
+    ChatAiAction.explain => 'CUSTOM',
+    ChatAiAction.translate => 'TRANSLATE',
+    ChatAiAction.summarize => 'SUMMARIZE',
+    ChatAiAction.polish => 'POLISH',
+    ChatAiAction.expand => 'EXPAND',
+    ChatAiAction.continueWrite => 'CONTINUE',
+    ChatAiAction.simplify => 'CUSTOM',
+    ChatAiAction.custom => 'CUSTOM',
+  };
 
   /// CUSTOM 动作的内置指令（后端 CUSTOM 必须携带 instruction）
   String? instruction(String? customText) => switch (this) {
-        ChatAiAction.explain => 'ai_assist_explain_instruction'.tr(),
-        ChatAiAction.simplify => 'ai_assist_simplify_instruction'.tr(),
-        ChatAiAction.custom => customText ?? '',
-        _ => null,
-      };
+    ChatAiAction.explain => 'ai_assist_explain_instruction'.tr(),
+    ChatAiAction.simplify => 'ai_assist_simplify_instruction'.tr(),
+    ChatAiAction.custom => customText ?? '',
+    _ => null,
+  };
 }
 
 /// 流式回调集合
@@ -76,13 +77,19 @@ class ChatAiStreamHandlers {
   /// 推理期增量（多次），[thinking] 为 null 表示思考结束 `[done]` 哨兵
   final void Function(String? thinking)? onThinking;
 
-  /// 终态 settled（成功 exactly once）：true=拿到正文，false=失败/空回复。
-  /// 用于向 [aiFeatureFlagsProvider] 上报上游健康；用户主动 cancel 不触发。
+  /// 上游健康（单次最多一次）：true=拿到正文，false=明确的上游故障/空回复。
+  /// 业务拒绝、网络故障、旧服务端未分类错误及主动取消均不触发。
   final void Function(bool success)? onSettled;
 }
 
 /// 共享流式控制器：一个实例对应一次弹窗生命周期
 class ChatAiAssistCore {
+  ChatAiAssistCore({
+    Stream<SseFrame> Function(String path, {Object? body})? transport,
+  }) : _transport = transport ?? SseClient.post;
+
+  final Stream<SseFrame> Function(String path, {Object? body}) _transport;
+  int _generation = 0;
   StreamSubscription<SseFrame>? _sub;
   final StringBuffer _buffer = StringBuffer();
   final StringBuffer _thinkingBuf = StringBuffer();
@@ -91,6 +98,43 @@ class ChatAiAssistCore {
   bool _streaming = false;
 
   bool get isStreaming => _streaming;
+
+  /// 智能回复是聊天域的一次性任务，不传 conversationId，也不保存历史。
+  void suggestReplies({
+    required Map<String, String> input,
+    required ChatAiStreamHandlers handlers,
+  }) {
+    _run(
+      path: '/chat/ai/replies/stream',
+      body: input,
+      persistent: false,
+      handlers: handlers,
+    );
+  }
+
+  /// 输入框编辑：上下文与待处理文本分离，复用临时任务而不创建持久 AI 会话。
+  void editDraft({
+    required ChatAiAction action,
+    required String content,
+    required String draft,
+    required String conversation,
+    required String targetLang,
+    required ChatAiStreamHandlers handlers,
+  }) {
+    transform(
+      action: ChatAiAction.custom,
+      content: jsonEncode({
+        'conversation': conversation,
+        if (draft != content) 'draft': draft,
+        'target': content,
+      }),
+      customInstruction: buildChatEditInstruction(
+        action.name,
+        targetLang: targetLang,
+      ),
+      handlers: handlers,
+    );
+  }
 
   /// 持久会话聊天（/chat/ai/stream）：首问传 null conversationId，
   /// done 回调返回新 conversationId 供追问续传。
@@ -144,6 +188,7 @@ class ChatAiAssistCore {
     required ChatAiStreamHandlers handlers,
   }) {
     cancel();
+    final generation = _generation;
     _buffer.clear();
     _thinkingBuf.clear();
     _streaming = true;
@@ -158,8 +203,26 @@ class ChatAiAssistCore {
       } catch (_) {}
     }
 
-    _sub = SseClient.post(path, body: body).listen(
+    void stopTimers() {
+      _throttle?.cancel();
+      _thinkingThrottle?.cancel();
+    }
+
+    void preservePartial() {
+      if (_buffer.isNotEmpty) handlers.onDelta(_buffer.toString());
+      _thinkingBuf.clear();
+      handlers.onThinking?.call(null);
+    }
+
+    String failureMessage(AiException failure) => switch (failure.code) {
+      'ENDPOINT_UNAVAILABLE' => 'chat_ai.server_upgrade_required'.tr(),
+      'RATE_LIMITED' => 'chat_ai.retry_later'.tr(),
+      _ => failure.message,
+    };
+
+    _sub = _transport(path, body: body).listen(
       (frame) {
+        if (generation != _generation || gotTerminal) return;
         if (!frame.isNamed) {
           // 首个正文增量到来时，若仍有思考态则通知清空
           if (_thinkingBuf.isNotEmpty) {
@@ -180,6 +243,7 @@ class ChatAiAssistCore {
               _throttledThinking(handlers);
             }
           case 'done':
+            stopTimers();
             gotTerminal = true;
             var full = _buffer.toString();
             var convId = '';
@@ -204,49 +268,72 @@ class ChatAiAssistCore {
             settle(true);
             if (truncated) {
               try {
-                Toast.showToast('chat_ai.truncated'.tr(), type: ToastType.warning);
+                Toast.showToast(
+                  'chat_ai.truncated'.tr(),
+                  type: ToastType.warning,
+                );
               } catch (_) {}
             }
           case 'error':
+            stopTimers();
             gotTerminal = true;
             _streaming = false;
             _thinkingBuf.clear();
             handlers.onThinking?.call(null);
-            var msg = '';
+            var failure = AiException('chat_ai.failed'.tr());
             try {
-              final json = jsonDecode(frame.data) as Map<String, dynamic>;
-              msg = json['message']?.toString() ?? '';
+              failure = AiException.fromPayload(
+                jsonDecode(frame.data),
+                fallback: 'chat_ai.failed'.tr(),
+              );
             } catch (_) {}
+            preservePartial();
             handlers.onError?.call(
-                msg.isEmpty ? 'chat_ai.failed'.tr() : msg);
-            settle(false);
+              _buffer.isNotEmpty
+                  ? '${failureMessage(failure)}\n${'chat_ai.incomplete'.tr()}'
+                  : failureMessage(failure),
+            );
+            if (failure.isUpstreamFailure) {
+              settle(false);
+            } else {
+              settled = true;
+            }
         }
       },
       onError: (Object e) {
+        if (generation != _generation || gotTerminal) return;
+        gotTerminal = true;
+        stopTimers();
         _streaming = false;
         var msg = 'chat_ai.failed'.tr();
         if (e is AiException) {
-          if (e.message.isNotEmpty) msg = e.message;
+          if (e.message.isNotEmpty) msg = failureMessage(e);
         } else if (e is DioException) {
           final err = e.error?.toString();
           if (err != null && err.isNotEmpty && !err.startsWith('SSE HTTP')) {
             msg = err;
           }
         }
-        handlers.onError?.call(msg);
-        settle(false);
+        preservePartial();
+        handlers.onError?.call(
+          _buffer.isNotEmpty ? 'chat_ai.incomplete'.tr() : msg,
+        );
+        if (e is AiException && e.isUpstreamFailure) {
+          settle(false);
+        } else {
+          settled = true;
+        }
       },
       onDone: () {
+        if (generation != _generation) return;
+        stopTimers();
         // 无 done/error 即断流兜底
         if (!gotTerminal && _streaming) {
           _streaming = false;
-          if (_buffer.isEmpty) {
-            handlers.onError?.call('chat_ai.failed'.tr());
-            settle(false);
-          } else {
-            handlers.onDone?.call('', _buffer.toString());
-            settle(true);
-          }
+          preservePartial();
+          handlers.onError?.call('chat_ai.incomplete'.tr());
+          // 断流不得把部分正文当作完整结果，也不据此判定模型不可用。
+          settled = true;
         }
       },
     );
@@ -268,6 +355,7 @@ class ChatAiAssistCore {
 
   /// 取消当前流（弹窗关闭/重新发起时调用）
   void cancel() {
+    _generation++;
     _throttle?.cancel();
     _throttle = null;
     _thinkingThrottle?.cancel();

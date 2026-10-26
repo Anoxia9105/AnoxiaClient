@@ -6,7 +6,6 @@
 /// - [ChatAiAssistHeader]      单行标题 + 作用域徽标 + 关闭
 /// - [ChatAiAssistActionGrid]  3×2 图标网格（移动端）
 /// - [ChatAiAssistActionRow]   一行图标 chip（桌面端）
-/// - [ChatAiAssistCustomInput] 自定义指令输入
 /// - [ChatAiAssistLangField]   翻译目标语言（内联 pill + 下拉，不再单开一行 chip）
 /// - [ChatAiAssistResultHeader] 结果标签 + 字数变化 + 复制 / 换一版
 /// - [ChatAiAssistResultBody]  结果容器（空态 / 生成中 / 失败 / 内容 四态）
@@ -43,7 +42,6 @@ const chatAiAssistActions = <ChatAiAction>[
   ChatAiAction.continueWrite,
   ChatAiAction.translate,
   ChatAiAction.simplify,
-  ChatAiAction.custom,
 ];
 
 /// 动作的图标与文案键
@@ -458,75 +456,8 @@ class ChatAiAssistActionRow extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// 自定义指令 / 翻译语言
+// 翻译语言
 // ---------------------------------------------------------------------------
-
-/// 自定义指令输入行
-class ChatAiAssistCustomInput extends StatelessWidget {
-  const ChatAiAssistCustomInput({
-    super.key,
-    required this.controller,
-    required this.enabled,
-    required this.onSubmit,
-    this.autofocus = false,
-  });
-
-  final TextEditingController controller;
-  final bool enabled;
-  final VoidCallback onSubmit;
-  final bool autofocus;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: TextField(
-            controller: controller,
-            enabled: enabled,
-            autofocus: autofocus,
-            maxLines: 2,
-            minLines: 1,
-            style: const TextStyle(fontSize: 12),
-            onSubmitted: (_) => onSubmit(),
-            decoration: InputDecoration(
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 9,
-              ),
-              hintText: 'chat_ai.custom_hint'.tr(),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(RadiusToken.md),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          height: 36,
-          child: FilledButton(
-            onPressed: enabled ? onSubmit : null,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(RadiusToken.md),
-              ),
-            ),
-            child: Text(
-              'note_ai.run'.tr(),
-              style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                fontWeight: FontWeight.w600,
-                color: enabled ? Colors.white : null,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 /// 翻译目标语言：内联一行「翻译为 [English ⌄]」
 ///

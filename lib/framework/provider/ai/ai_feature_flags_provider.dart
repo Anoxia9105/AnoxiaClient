@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/domain/ai_stream_event.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:dio/dio.dart';
@@ -60,7 +61,8 @@ class AiFeatureFlags {
 /// 连续失败达阈值即本地隐藏入口，成功则解除并向服务端复核。
 /// 有 `WidgetRef` 时用 `ref.read`，普通 `State` 用
 /// `ProviderScope.containerOf(context).read(...)`。
-void reportAiHealth(WidgetRef ref, bool success) {
+void reportAiHealth(WidgetRef ref, bool success, {Object? error}) {
+  if (!success && error != null && !(error is AiException && error.isUpstreamFailure)) return;
   final notifier = ref.read(aiFeatureFlagsProvider.notifier);
   if (success) {
     notifier.reportSuccess();

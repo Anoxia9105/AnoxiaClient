@@ -1,12 +1,14 @@
 /// 桌面端输入框 AI 增强气泡（Notion 式结果卡）
 ///
 /// 锚定工具栏 ✨ 按钮下方：
-/// - 动作区：一行图标 chip；选中「自定义」后就地替换成指令输入框
+/// - 动作区：一行内置编辑动作 chip，结合当前会话上下文
 /// - 内容源：quill 选区（优先）或全文；发起时快照，流式期间编辑不受影响
 /// - 结果区：唯一滚动容器；空态 / 生成中 / 失败 / 内容 四态
 /// - Header 与底部操作固定，不随结果滚动
 /// - 快捷键：⌘/Ctrl + ↵ 应用结果，Esc 关闭
 library;
+
+import 'dart:convert';
 
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -26,6 +28,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 import '../../ai/chat_ai_assist_core.dart';
 import '../../ai/chat_ai_assist_widgets.dart';
+import '../../ai/chat_ai_context.dart';
 
 /// 气泡内容的理想高度（受可用空间收敛）
 const double _kPreferredHeight = 468;
@@ -42,6 +45,7 @@ void showChatAiAssistBubble(
   BuildContext anchorContext, {
   required QuillController controller,
   required FocusNode editorFocusNode,
+  required String roomId,
 }) {
   final colorScheme = Theme.of(anchorContext).colorScheme;
   final screenSize = MediaQuery.sizeOf(anchorContext);
@@ -111,6 +115,7 @@ void showChatAiAssistBubble(
                 width: bubbleWidth,
                 height: contentHeight,
                 child: ChatAiAssistCard(
+                  roomId: roomId,
                   controller: controller,
                   editorFocusNode: editorFocusNode,
                   onClose: close,
@@ -130,19 +135,25 @@ class ChatAiAssistCard extends StatefulWidget {
     required this.controller,
     required this.editorFocusNode,
     required this.onClose,
+    required this.roomId,
+    this.core,
   });
 
   final QuillController controller;
   final FocusNode editorFocusNode;
   final VoidCallback onClose;
+  final String roomId;
+  final ChatAiAssistCore? core;
 
   @override
   State<ChatAiAssistCard> createState() => _ChatAiAssistCardState();
 }
 
 class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
-  final _core = ChatAiAssistCore();
-  final _customCtrl = TextEditingController();
+  late final ChatAiAssistCore _core;
+  String _sourceDocument = '';
+  String _conversation = '';
+  String _draft = '';
 
   ChatAiAction? _action;
   String _targetLang = 'English';
@@ -162,6 +173,7 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
   @override
   void initState() {
     super.initState();
+    _core = widget.core ?? ChatAiAssistCore();
     // 气泡内接管 Esc / ⌘↵：HardwareKeyboard 处理器在焦点分发之前收到按键，
     // 可稳定拦截，不会被 Quill 编辑器或发送快捷键抢先消费。
     HardwareKeyboard.instance.addHandler(_handleHardwareKey);
@@ -171,7 +183,6 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleHardwareKey);
     _core.dispose();
-    _customCtrl.dispose();
     super.dispose();
   }
 
@@ -231,10 +242,6 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
   // ---------------- 流式调用 ----------------
 
   void _onSelectAction(ChatAiAction action) {
-    if (action == ChatAiAction.custom) {
-      setState(() => _action = ChatAiAction.custom);
-      return;
-    }
     _start(action);
   }
 
@@ -252,13 +259,9 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
       Toast.showToast('chat_ai.input_empty'.tr(), type: ToastType.warning);
       return;
     }
-    if (action == ChatAiAction.custom && _customCtrl.text.trim().isEmpty) {
-      Toast.showToast(
-        'chat_ai.instruction_required'.tr(),
-        type: ToastType.warning,
-      );
-      return;
-    }
+    _conversation = captureChatAiContext(context, widget.roomId);
+    _draft = widget.controller.document.toPlainText().trim();
+    _sourceDocument = jsonEncode(widget.controller.document.toDelta().toJson());
 
     setState(() {
       _action = action;
@@ -276,19 +279,11 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
     _runTransform(action);
   }
 
-  /// 同参数重跑（失败后重试 / 结果不满意换一版）
+  /// 基于当前草稿与上下文重新生成，避免沿用过期选区。
   void _rerun() {
     final action = _action;
     if (action == null || _streaming) return;
-    setState(() {
-      _preview = '';
-      _thinking = null;
-      _failed = false;
-      _errorText = null;
-      _copiedTick = false;
-      _streaming = true;
-    });
-    _runTransform(action);
+    _start(action);
   }
 
   /// 中断当前流式生成，保留已生成的部分内容
@@ -317,11 +312,12 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
   }
 
   void _runTransform(ChatAiAction action) {
-    _core.transform(
+    _core.editDraft(
       action: action,
       content: _sourceText,
+      draft: _draft,
+      conversation: _conversation,
       targetLang: _targetLang,
-      customInstruction: _customCtrl.text.trim(),
       handlers: ChatAiStreamHandlers(
         onSettled: _reportAiSettled,
         onDelta: (fullText) {
@@ -355,18 +351,32 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
 
   // ---------------- 应用结果 ----------------
 
+  bool _canApply() {
+    if (jsonEncode(widget.controller.document.toDelta().toJson()) ==
+        _sourceDocument) {
+      return true;
+    }
+    Toast.showToast('chat_ai.draft_changed'.tr(), type: ToastType.warning);
+    return false;
+  }
+
   /// 预览 Markdown 转为插入用的 Delta（去掉末尾纯换行，避免多出空行）
   Delta _previewInsertionDelta() {
     final ops = markdownToDocument(_preview).toDelta().toList();
-    if (ops.length > 1) {
-      final last = ops.last;
-      if (last.isInsert && last.data == '\n' && last.attributes == null) {
-        ops.removeLast();
-      }
-    }
     final delta = Delta();
-    for (final op in ops) {
-      delta.push(op);
+    for (var i = 0; i < ops.length; i++) {
+      final op = ops[i];
+      final data = op.data;
+      if (i == ops.length - 1 &&
+          op.isInsert &&
+          data is String &&
+          data.endsWith('\n') &&
+          op.attributes == null) {
+        final text = data.substring(0, data.length - 1);
+        if (text.isNotEmpty) delta.insert(text);
+      } else {
+        delta.push(op);
+      }
     }
     return delta;
   }
@@ -384,21 +394,18 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
     return len;
   }
 
-  /// 应用前的文档快照，供撤销还原
-  ({Delta delta, TextSelection selection}) _snapshot() => (
-    delta: Delta.fromJson(widget.controller.document.toDelta().toJson()),
-    selection: widget.controller.selection,
-  );
-
   void _applyPrimary() {
-    if (_hasSelectionRange) {
+    if (_action == ChatAiAction.continueWrite) {
+      _appendContinuation();
+    } else if (_hasSelectionRange) {
       _applyToSelection();
     } else {
-      _insertAtCursor();
+      _replaceAll();
     }
   }
 
   void _applyToSelection() {
+    if (!_canApply()) return;
     final s = _selStart;
     final e = _selEnd;
     if (s == null || e == null || e <= s || _preview.isEmpty) {
@@ -408,17 +415,17 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
     if (delta.isEmpty) {
       return;
     }
-    final snap = _snapshot();
     widget.controller.replaceText(
       s,
       e - s,
       delta,
       TextSelection.collapsed(offset: s + _deltaLength(delta)),
     );
-    _finishApply(snap);
+    _finishApply();
   }
 
-  void _insertAtCursor() {
+  void _appendContinuation() {
+    if (!_canApply()) return;
     if (_preview.isEmpty) {
       return;
     }
@@ -426,41 +433,28 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
     if (delta.isEmpty) {
       return;
     }
-    final base = widget.controller.selection.baseOffset;
-    final docLen = widget.controller.document.length;
-    final offset = (base < 0 || base > docLen) ? docLen - 1 : base;
-    // 若原文为空文档长度为1（仅含末尾换行），插入到0更符合追加到文末的预期
-    final insertAt = docLen <= 1 ? 0 : offset;
-    final snap = _snapshot();
+    // 续写只返回新增文字，始终追加到发起时的源文本末尾，不能替换原文。
+    final insertAt = _selEnd ?? widget.controller.document.length - 1;
     widget.controller.replaceText(
       insertAt,
       0,
       delta,
       TextSelection.collapsed(offset: insertAt + _deltaLength(delta)),
     );
-    _finishApply(snap);
+    _finishApply();
   }
 
   void _replaceAll() {
+    if (!_canApply()) return;
     if (_preview.isEmpty) {
       return;
     }
-    final snap = _snapshot();
     widget.controller.document = markdownToDocument(_preview);
-    _finishApply(snap);
+    _finishApply();
   }
 
-  void _finishApply(({Delta delta, TextSelection selection}) snap) {
-    // 写回是破坏性的（尤其「替换全部」），给一次后悔窗口
-    final controller = widget.controller;
-    Toast.showActionToast(
-      'chat_ai.undo_hint'.tr(),
-      actionLabel: 'chat_ai.undo_action'.tr(),
-      onAction: () {
-        controller.document = Document.fromDelta(snap.delta);
-        controller.updateSelection(snap.selection, ChangeSource.local);
-      },
-    );
+  void _finishApply() {
+    Toast.showToast('chat_ai.undo_hint'.tr());
     widget.onClose();
     widget.editorFocusNode.requestFocus();
   }
@@ -478,8 +472,8 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
   // ---------------- UI ----------------
 
   ChatAiResultView get _view {
-    if (_failed) return ChatAiResultView.error;
     if (_preview.isNotEmpty) return ChatAiResultView.content;
+    if (_failed) return ChatAiResultView.error;
     if (_streaming) return ChatAiResultView.loading;
     return ChatAiResultView.empty;
   }
@@ -501,20 +495,11 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
             onClose: widget.onClose,
           ),
           const SizedBox(height: 9),
-          // 自定义指令就地替换动作行，不额外撑高气泡
-          if (_action == ChatAiAction.custom)
-            ChatAiAssistCustomInput(
-              controller: _customCtrl,
-              enabled: !_streaming,
-              autofocus: true,
-              onSubmit: () => _start(ChatAiAction.custom),
-            )
-          else
-            ChatAiAssistActionRow(
-              selected: _action,
-              enabled: !_streaming,
-              onSelect: _onSelectAction,
-            ),
+          ChatAiAssistActionRow(
+            selected: _action,
+            enabled: !_streaming,
+            onSelect: _onSelectAction,
+          ),
           if (_action == ChatAiAction.translate) ...[
             const SizedBox(height: 3),
             ChatAiAssistLangField(
@@ -537,12 +522,27 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
             const SizedBox(height: 8),
           ],
           Expanded(
-            child: ChatAiAssistResultBody(
-              compact: true,
-              view: _view,
-              preview: _preview,
-              thinking: _thinking,
-              errorText: _errorText,
+            child: Column(
+              children: [
+                if (_failed && _preview.isNotEmpty)
+                  Text(
+                    _errorText ?? 'chat_ai.incomplete'.tr(),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                Expanded(
+                  child: ChatAiAssistResultBody(
+                    compact: true,
+                    view: _view,
+                    preview: _preview,
+                    thinking: _thinking,
+                    errorText: _errorText,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 10),
@@ -578,31 +578,15 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
         onTap: null,
       );
     }
-    return Row(
-      children: [
-        Expanded(
-          child: ChatAiAssistPrimaryCta(
-            label: _hasSelectionRange
-                ? 'chat_ai.replace_selection'.tr()
-                : 'chat_ai.insert_cursor'.tr(),
-            compact: true,
-            trailingHint: _applyShortcutHint,
-            onTap: _applyPrimary,
-          ),
-        ),
-        // 无选区时才提供「替换全部」——破坏性操作，用危险色区分
-        if (!_hasSelectionRange) ...[
-          const SizedBox(width: 7),
-          SizedBox(
-            width: 96,
-            child: ChatAiAssistGhostButton(
-              label: 'chat_ai.replace_all'.tr(),
-              danger: true,
-              onTap: _replaceAll,
-            ),
-          ),
-        ],
-      ],
+    return ChatAiAssistPrimaryCta(
+      label: _action == ChatAiAction.continueWrite
+          ? 'chat_ai.append_source'.tr()
+          : _hasSelectionRange
+          ? 'chat_ai.replace_selection'.tr()
+          : 'chat_ai.replace_all'.tr(),
+      compact: true,
+      trailingHint: _applyShortcutHint,
+      onTap: _applyPrimary,
     );
   }
 }

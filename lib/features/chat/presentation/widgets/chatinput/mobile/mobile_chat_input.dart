@@ -527,7 +527,9 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
         // 智能回复建议条（手动触发，点击 chip 填入输入框）
         SmartReplyBar(
           roomId: widget.roomId,
-          onPick: _inputController.insertTextAtCursor,
+          draftListenable: _inputController.textController,
+          readDraft: () => _inputController.textController.text,
+          onPick: (text) => _inputController.replaceAllText(text, cursorOffset: text.length),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
@@ -709,6 +711,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                     },
                   ),
                   MobileBottomPanelType.ai => MobileChatAiPanel(
+                    roomId: widget.roomId,
                     inputController: _inputController,
                     onClose: _hidePanel,
                   ),

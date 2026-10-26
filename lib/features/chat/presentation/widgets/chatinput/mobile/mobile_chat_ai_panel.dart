@@ -2,11 +2,11 @@
 ///
 /// 挂载在 `ChatBottomPanelContainer` 的 `ai` 面板类型，独占纵向高度：
 /// - 内容源：输入框选区（优先）或全文
-/// - 动作区：3×2 图标网格（润色/扩写/续写/翻译/精简/自定义）
+/// - 动作区：内置编辑动作网格，结合当前会话上下文
 /// - 翻译目标语言：内联 pill + 下拉，不再叠一层 chip
 /// - 结果区：唯一滚动容器；空态 / 生成中 / 失败 / 内容 四态
 /// - 底部主操作固定：应用结果 / 停止生成 / 重新生成
-/// - 结果应用：替换选区 / 插入光标 / 替换全文，且应用后 5 秒内可撤销
+/// - 结果应用：替换选区 / 插入光标 / 替换全文，应用后普通通知
 library;
 
 import 'package:anoxia/common/widgets/toast.dart';
@@ -22,24 +22,30 @@ import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 
 import '../ai/chat_ai_assist_core.dart';
 import '../ai/chat_ai_assist_widgets.dart';
+import '../ai/chat_ai_context.dart';
 
 class MobileChatAiPanel extends StatefulWidget {
   const MobileChatAiPanel({
     super.key,
     required this.inputController,
     required this.onClose,
+    required this.roomId,
+    this.core,
   });
 
   final MobileTextInputController inputController;
   final VoidCallback onClose;
+  final String roomId;
+  final ChatAiAssistCore? core;
 
   @override
   State<MobileChatAiPanel> createState() => _MobileChatAiPanelState();
 }
 
 class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
-  final _core = ChatAiAssistCore();
-  final _customCtrl = TextEditingController();
+  late final ChatAiAssistCore _core;
+  String _conversation = '';
+  String _draft = '';
 
   ChatAiAction? _action;
   String _targetLang = 'English';
@@ -59,6 +65,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
   @override
   void initState() {
     super.initState();
+    _core = widget.core ?? ChatAiAssistCore();
     // 让顶部作用域徽标随输入框选区实时变化
     widget.inputController.textController.addListener(_handleInputChanged);
   }
@@ -67,7 +74,6 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
   void dispose() {
     widget.inputController.textController.removeListener(_handleInputChanged);
     _core.dispose();
-    _customCtrl.dispose();
     super.dispose();
   }
 
@@ -114,11 +120,6 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
   // ---------------- 流式调用 ----------------
 
   void _onSelectAction(ChatAiAction action) {
-    if (action == ChatAiAction.custom) {
-      // 自定义指令需要先输入再执行
-      setState(() => _action = ChatAiAction.custom);
-      return;
-    }
     _start(action);
   }
 
@@ -137,13 +138,8 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
       Toast.showToast('chat_ai.input_empty'.tr(), type: ToastType.warning);
       return;
     }
-    if (action == ChatAiAction.custom && _customCtrl.text.trim().isEmpty) {
-      Toast.showToast(
-        'chat_ai.instruction_required'.tr(),
-        type: ToastType.warning,
-      );
-      return;
-    }
+    _conversation = captureChatAiContext(context, widget.roomId);
+    _draft = widget.inputController.textController.text;
 
     setState(() {
       _action = action;
@@ -161,19 +157,11 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
     _runTransform(action);
   }
 
-  /// 同参数重跑（失败后重试 / 结果不满意换一版）
+  /// 基于当前草稿与上下文重新生成，避免沿用过期选区。
   void _rerun() {
     final action = _action;
     if (action == null || _streaming) return;
-    setState(() {
-      _preview = '';
-      _thinking = null;
-      _failed = false;
-      _errorText = null;
-      _copiedTick = false;
-      _streaming = true;
-    });
-    _runTransform(action);
+    _start(action);
   }
 
   /// 中断当前流式生成，保留已生成的部分内容
@@ -202,11 +190,12 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
   }
 
   void _runTransform(ChatAiAction action) {
-    _core.transform(
+    _core.editDraft(
       action: action,
       content: _sourceText,
+      draft: _draft,
+      conversation: _conversation,
       targetLang: _targetLang,
-      customInstruction: _customCtrl.text.trim(),
       handlers: ChatAiStreamHandlers(
         onSettled: _reportAiSettled,
         onDelta: (fullText) {
@@ -240,34 +229,19 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
 
   // ---------------- 应用结果 ----------------
 
-  /// 原子写回并登记可撤销快照
+  /// 原子写回并显示普通通知
   ///
   /// [MobileTextInputController.replaceAllText] 会同步空态与 @提及区间，
   /// 避免直接给 `textController.value` 赋值造成状态漂移。
   void _writeBack(String newText, int cursorOffset) {
     final controller = widget.inputController;
-    final tc = controller.textController;
-    final undoText = tc.text;
-    final undoSelection = tc.selection;
-    final undoMentions = List<MentionSpan>.of(tc.mentions);
-
+    if (controller.textController.text != _draft) {
+      Toast.showToast('chat_ai.draft_changed'.tr(), type: ToastType.warning);
+      return;
+    }
     controller.replaceAllText(newText, cursorOffset: cursorOffset);
-    _offerUndo(undoText, undoSelection, undoMentions);
+    Toast.showToast('chat_ai.undo_hint'.tr());
     widget.onClose();
-  }
-
-  void _offerUndo(
-    String text,
-    TextSelection selection,
-    List<MentionSpan> mentions,
-  ) {
-    Toast.showActionToast(
-      'chat_ai.undo_hint'.tr(),
-      actionLabel: 'chat_ai.undo_action'.tr(),
-      onAction: () {
-        widget.inputController.restoreText(text, selection, mentions);
-      },
-    );
   }
 
   void _applyToSelection() {
@@ -281,11 +255,11 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
     _writeBack(combined, s + _preview.length);
   }
 
-  void _insertAtCursor() {
+  void _appendContinuation() {
     if (_preview.isEmpty) return;
     final tc = widget.inputController.textController;
-    var offset = tc.selection.baseOffset;
-    if (offset < 0 || offset > tc.text.length) offset = tc.text.length;
+    final offset = _selEnd ?? _draft.length;
+    if (offset < 0 || offset > tc.text.length) return;
     final combined =
         tc.text.substring(0, offset) + _preview + tc.text.substring(offset);
     _writeBack(combined, offset + _preview.length);
@@ -294,6 +268,16 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
   void _replaceAll() {
     if (_preview.isEmpty) return;
     _writeBack(_preview, _preview.length);
+  }
+
+  void _applyPrimary() {
+    if (_action == ChatAiAction.continueWrite) {
+      _appendContinuation();
+    } else if (_hasSelectionRange) {
+      _applyToSelection();
+    } else {
+      _replaceAll();
+    }
   }
 
   Future<void> _copyPreview() async {
@@ -309,8 +293,8 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
   // ---------------- UI ----------------
 
   ChatAiResultView get _view {
-    if (_failed) return ChatAiResultView.error;
     if (_preview.isNotEmpty) return ChatAiResultView.content;
+    if (_failed) return ChatAiResultView.error;
     if (_streaming) return ChatAiResultView.loading;
     return ChatAiResultView.empty;
   }
@@ -332,14 +316,6 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
             enabled: !_streaming,
             onSelect: _onSelectAction,
           ),
-          if (_action == ChatAiAction.custom) ...[
-            const SizedBox(height: 8),
-            ChatAiAssistCustomInput(
-              controller: _customCtrl,
-              enabled: !_streaming,
-              onSubmit: () => _start(ChatAiAction.custom),
-            ),
-          ],
           if (_action == ChatAiAction.translate) ...[
             const SizedBox(height: 4),
             ChatAiAssistLangField(
@@ -361,11 +337,26 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
             const SizedBox(height: 8),
           ],
           Expanded(
-            child: ChatAiAssistResultBody(
-              view: _view,
-              preview: _preview,
-              thinking: _thinking,
-              errorText: _errorText,
+            child: Column(
+              children: [
+                if (_failed && _preview.isNotEmpty)
+                  Text(
+                    _errorText ?? 'chat_ai.incomplete'.tr(),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                Expanded(
+                  child: ChatAiAssistResultBody(
+                    view: _view,
+                    preview: _preview,
+                    thinking: _thinking,
+                    errorText: _errorText,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 10),
@@ -413,30 +404,13 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
         onTap: null,
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ChatAiAssistPrimaryCta(
-          label: _hasSelectionRange
-              ? 'chat_ai.replace_selection'.tr()
-              : 'chat_ai.insert_cursor'.tr(),
-          onTap: _hasSelectionRange ? _applyToSelection : _insertAtCursor,
-        ),
-        // 无选区时才提供「替换全部」——破坏性操作，用危险色区分
-        if (!_hasSelectionRange) ...[
-          const SizedBox(height: 7),
-          Row(
-            children: [
-              ChatAiAssistGhostButton(
-                label: 'chat_ai.replace_all'.tr(),
-                danger: true,
-                expand: true,
-                onTap: _replaceAll,
-              ),
-            ],
-          ),
-        ],
-      ],
+    return ChatAiAssistPrimaryCta(
+      label: _action == ChatAiAction.continueWrite
+          ? 'chat_ai.append_source'.tr()
+          : _hasSelectionRange
+          ? 'chat_ai.replace_selection'.tr()
+          : 'chat_ai.replace_all'.tr(),
+      onTap: _applyPrimary,
     );
   }
 }
