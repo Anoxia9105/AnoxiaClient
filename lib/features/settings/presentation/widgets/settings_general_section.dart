@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/setting/chat_bubble_settings_provider.dart';
 import 'package:anoxia/framework/domain/official_room_config.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/desktop/launch_at_startup_provider.dart';
@@ -72,6 +73,14 @@ class SettingsGeneralSection extends ConsumerWidget {
         _GroupLabel(icon: HugeIcons.strokeRoundedMessage02, title: 'settings_general_group_messages'.tr()),
         _SettingsCard(
           children: [
+            _SwitchTile(
+              icon: HugeIcons.strokeRoundedMessage02,
+              title: 'settings_chat_bubble_tail'.tr(),
+              subtitle: 'settings_chat_bubble_tail_desc'.tr(),
+              value: ref.watch(chatBubbleTailEnabledProvider),
+              onChanged: (v) => ref.read(chatBubbleTailEnabledProvider.notifier).setEnabled(v),
+            ),
+            _Divider(),
             _SwitchTile(
               icon: HugeIcons.strokeRoundedSparkles,
               title: 'settings_chat_effects'.tr(),

@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/date_util.dart';
 import 'dart:async';
 import 'package:hugeicons/hugeicons.dart';
 import 'dart:convert';
@@ -7,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_quill/quill_delta.dart';
 
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
@@ -18,14 +18,15 @@ import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.da
 import 'package:anoxia/framework/provider/chat/input/edit_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
-import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
+import '../message_render/quill_renderer_helpers.dart';
 
 import 'ai_ask_bubble.dart';
+import 'message_reaction_picker.dart';
 import '../forward/forward_message_dialog.dart';
 import '../message_bubble/message_resender.dart';
+import '../message_bubble/message_selection_scope.dart';
 import '../chatinput/chat_emoji_bubble.dart';
-import '../message_bubble/message_reaction_bar.dart'
-    show canReactToMessage, reactionEmojiPalette;
+import '../message_bubble/message_reaction_bar.dart' show canReactToMessage;
 import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
@@ -43,11 +44,13 @@ class ChatMessageContextMenu extends ConsumerStatefulWidget {
 
   /// 消息数据
   final ChatMessage message;
+  final bool isCurrentUser;
 
   const ChatMessageContextMenu({
     super.key,
     required this.child,
     required this.message,
+    this.isCurrentUser = false,
   });
 
   @override
@@ -59,6 +62,26 @@ class _ChatMessageContextMenuState
     extends ConsumerState<ChatMessageContextMenu> {
   /// 最近一次菜单弹出的全局坐标（「问AI」气泡锚定用）
   Offset? _lastMenuPosition;
+  PointerDeviceKind? _pointerKind;
+  final _textSelection = MessageSelectionHandle();
+  String? _menuSelectedText;
+
+  @override
+  void initState() {
+    super.initState();
+    _textSelection.addListener(_onSelectionModeChanged);
+  }
+
+  void _onSelectionModeChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _textSelection.removeListener(_onSelectionModeChanged);
+    _textSelection.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,19 +94,43 @@ class _ChatMessageContextMenuState
     // 的 _TransparentTapGestureRecognizer）会注册同级的右击识别器且位于更深的命中路径，
     // 竞技场总是先裁决给 quill，导致富文本消息文字区域右键菜单偶发弹不出来。
     // 原始指针事件不受竞技场影响，沿命中路径必然触发，故改用 onPointerDown 拦截右键。
-    return Listener(
-      behavior: HitTestBehavior.opaque,
-      onPointerDown: (event) {
-        // PointerDownEvent.position 本身已是全局坐标，直接使用；
-        // 不要再经 localToGlobal 二次变换，否则菜单会偏移气泡的全局位置。
-        if (event.buttons & kSecondaryMouseButton == 0) return;
-        _showMenuAtPosition(context, event.position);
-      },
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onLongPressStart: (details) =>
-            _showMenuAtPosition(context, details.globalPosition),
-        child: widget.child,
+    final selectionScope = MessageSelectionScope.maybeOf(context);
+    _textSelection.showMenu = (position) =>
+        _showMenuAtPosition(context, position, touch: true);
+    return MessageSelectionTarget(
+      handle: _textSelection,
+      child: MessageReactionHover(
+        enabled: canReactToMessage(widget.message),
+        timeLabel: DateUtil.formatTimestampToTime(widget.message.timestamp),
+        isCurrentUser: widget.isCurrentUser,
+        sideInset: widget.message.isEdited ? 28 : 8,
+        onSelected: (emoji) {
+          final box = context.findRenderObject() as RenderBox;
+          _lastMenuPosition = box.localToGlobal(Offset.zero);
+          _handleReaction(context, emoji);
+        },
+        child: Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: (event) {
+            _pointerKind = event.kind;
+            _textSelection.activate(selectionScope, pointer: event.pointer);
+            // PointerDownEvent.position 本身已是全局坐标，直接使用；
+            // 不要再经 localToGlobal 二次变换，否则菜单会偏移气泡的全局位置。
+            if (event.buttons & kSecondaryMouseButton == 0) return;
+            _showMenuAtPosition(context, event.position);
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onLongPressStart: _textSelection.selecting
+                ? null
+                : (details) => _showMenuAtPosition(
+                    context,
+                    details.globalPosition,
+                    touch: _pointerKind != PointerDeviceKind.mouse,
+                  ),
+            child: widget.child,
+          ),
+        ),
       ),
     );
   }
@@ -91,8 +138,10 @@ class _ChatMessageContextMenuState
   /// 在指定全局位置弹出原生菜单（桌面右键 / 移动端长按通用）
   Future<void> _showMenuAtPosition(
     BuildContext context,
-    Offset globalPosition,
-  ) async {
+    Offset globalPosition, {
+    bool touch = false,
+  }) async {
+    _menuSelectedText = _textSelection.selectedText?.call();
     _lastMenuPosition = globalPosition;
     final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
@@ -107,12 +156,31 @@ class _ChatMessageContextMenuState
         borderRadius: BorderRadius.circular(RadiusToken.lg),
       ),
       elevation: 8,
-      items: _buildMenuItems(context),
+      constraints: touch && canReactToMessage(widget.message)
+          ? const BoxConstraints(minWidth: 288, maxWidth: 296)
+          : null,
+      items: [
+        if (touch && canReactToMessage(widget.message))
+          PopupMenuItem<String>(
+            enabled: false,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: MessageReactionPicker(
+              touch: true,
+              onSelected: (emoji) =>
+                  Navigator.of(context).pop('reaction:$emoji'),
+            ),
+          ),
+        ..._buildMenuItems(context),
+      ],
       menuPadding: const EdgeInsets.symmetric(vertical: 6),
     );
 
     if (!context.mounted || action == null) return;
-    _handleAction(context, action);
+    if (action.startsWith('reaction:')) {
+      _handleReaction(context, action.substring('reaction:'.length));
+    } else {
+      _handleAction(context, action);
+    }
   }
 
   List<PopupMenuEntry<String>> _buildMenuItems(BuildContext context) {
@@ -150,12 +218,23 @@ class _ChatMessageContextMenuState
         ref.watch(aiFeatureFlagsProvider).value?.chatAvailable ?? true;
 
     if (widget.message.messageType == MessageType.text ||
-        widget.message.messageType == MessageType.richText) {
+        widget.message.messageType == MessageType.richText ||
+        widget.message.messageType == MessageType.codeSnippet) {
       items.add(
         _buildItem('copy', HugeIcons.strokeRoundedCopy01, 'chat_copy'.tr()),
       );
+      if (_textSelection.selectAll != null) {
+        items.add(
+          _buildItem(
+            'selectText',
+            HugeIcons.strokeRoundedText,
+            'chat_select_text'.tr(),
+          ),
+        );
+      }
       // 问AI：人工开关与上游探测同时满足才展示，任一不满足即隐藏入口
-      if (chatEnabled) {
+      if (chatEnabled &&
+          widget.message.messageType != MessageType.codeSnippet) {
         items.add(
           _buildItem(
             'aiAsk',
@@ -178,13 +257,6 @@ class _ChatMessageContextMenuState
           HugeIcons.strokeRoundedMessageCircleReply,
           'chat_reply'.tr(),
         ),
-      );
-    }
-
-    // 表情回应（P2-1）：固定候选集二级弹出
-    if (canReactToMessage(widget.message)) {
-      items.add(
-        _buildItem('react', HugeIcons.strokeRoundedSmile, 'chat_react'.tr()),
       );
     }
 
@@ -282,6 +354,9 @@ class _ChatMessageContextMenuState
       case 'copy':
         _handleCopy(context);
         break;
+      case 'selectText':
+        _textSelection.begin();
+        break;
       case 'aiAsk':
         _handleAiAsk(context);
         break;
@@ -294,84 +369,30 @@ class _ChatMessageContextMenuState
       case 'reply':
         _handleReply();
         break;
-      case 'react':
-        unawaited(_showReactionPalette(context));
-        break;
       case 'revoke':
         unawaited(_handleRevoke(context));
         break;
     }
   }
 
-  /// 表情回应候选面板：固定候选集，任选其一触发乐观切换 + WS 命令
-  Future<void> _showReactionPalette(BuildContext context) async {
+  /// 共用回应入口，保留更多表情与原有乐观切换逻辑。
+  void _handleReaction(BuildContext context, String selected) {
+    if (!canReactToMessage(widget.message)) return;
     final roomId = widget.message.roomId!;
     final messageId = widget.message.messageId!;
-    final selected = await showMenu<String>(
-      context: context,
-      position: RelativeRect.fromRect(
-        (_lastMenuPosition ?? Offset.zero) & const Size(40, 40),
-        Offset.zero &
-            (Overlay.of(context).context.findRenderObject() as RenderBox).size,
-      ),
-      menuPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      constraints: const BoxConstraints(minWidth: 300, maxWidth: 320),
-      items: [
-        // 六个常用表情与独立的更多入口。
-        // 自适应排布，点击任一格 pop 菜单并回传 emoji，
-        // 保留 showMenu 的锚点定位与遮罩语义
-        PopupMenuItem<String>(
-          padding: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 2,
-              runSpacing: 2,
-              children: [
-                for (final item in reactionEmojiPalette)
-                  InkWell(
-                    borderRadius: BorderRadius.circular(10),
-                    onTap: () => Navigator.of(context).pop(item),
-                    child: Padding(
-                      padding: const EdgeInsets.all(3),
-                      child: Text(item, style: const TextStyle(fontSize: 22)),
-                    ),
-                  ),
-                IconButton(
-                  tooltip: 'chat_reaction_more_emoji'.tr(),
-                  icon: HugeIcon(
-                    icon: HugeIcons.strokeRoundedRelieved02,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    size: 22,
-                  ),
-                  onPressed: () => Navigator.of(context).pop('__more__'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-    if (selected == null || !context.mounted) return;
     if (selected == '__more__') {
-      Function? close;
-      close = Toast.showWidgetOffset(
-        target: _lastMenuPosition ?? Offset.zero,
-        child: ChatEmojiBubble(
-          emojiOnly: true,
-          closeOnSelect: true,
-          closeSelected: () => close?.call(),
-          onStickerSelected: (_) {},
-          onEmojiSelected: (emoji) {
-            if (!mounted) return;
-            unawaited(
-              ref
-                  .read(chatMessagesProvider.notifier)
-                  .toggleReaction(messageId, roomId, emoji),
-            );
-          },
-        ),
+      final box = context.findRenderObject() as RenderBox;
+      showReactionEmojiBubble(
+        context: context,
+        targetRect: box.localToGlobal(Offset.zero) & box.size,
+        onSelected: (emoji) {
+          if (!mounted) return;
+          unawaited(
+            ref
+                .read(chatMessagesProvider.notifier)
+                .toggleReaction(messageId, roomId, emoji),
+          );
+        },
       );
       return;
     }
@@ -399,7 +420,7 @@ class _ChatMessageContextMenuState
   }
 
   void _handleCopy(BuildContext context) {
-    final text = _getPlainContent();
+    final text = _menuSelectedText ?? _getPlainContent();
     if (text.isEmpty) return;
 
     Clipboard.setData(ClipboardData(text: text)).then((_) {
@@ -411,30 +432,19 @@ class _ChatMessageContextMenuState
 
   String _getPlainContent() {
     final payload = widget.message.payload;
-    if (payload == null) return '';
+
+    if (widget.message.messageType == MessageType.codeSnippet) {
+      return payload?.code?.code ?? widget.message.content;
+    }
 
     if (widget.message.messageType == MessageType.text) {
-      return payload.content ?? '';
+      return payload?.content ?? widget.message.content;
     }
 
     if (widget.message.messageType == MessageType.richText) {
       try {
-        final deltaJson = jsonDecode(payload.quillDelta ?? '[]');
-        final delta = Delta.fromJson(deltaJson);
-        final sb = StringBuffer();
-
-        for (final op in delta.operations) {
-          if (op.data is String) {
-            sb.write(op.data);
-          } else if (op.data is Map) {
-            final map = op.data as Map;
-            if (map.containsKey('mention')) {
-              final userName = MentionUser.displayName(map['mention']) ?? '';
-              sb.write('@$userName ');
-            }
-          }
-        }
-        return sb.toString().trim();
+        final deltaJson = jsonDecode(payload?.quillDelta ?? '[]');
+        return quillCopyTextFromOps(deltaJson as List).trim();
       } catch (_) {
         return '';
       }

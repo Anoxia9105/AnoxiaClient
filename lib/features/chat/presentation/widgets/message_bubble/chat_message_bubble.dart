@@ -59,14 +59,14 @@ class ChatMessageBubble extends ConsumerWidget {
         baseHorizontalPadding: view.horizontalPadding,
       );
 
-      // 3. 系统消息单独处理（无头像、无气泡、居中显示）
+      // 3. 系统通知统一使用居中的浅色提示条
       if (message.messageType == MessageType.system) {
         return SystemMessageBubble(
           message: message,
           strategy: strategy,
           textColor: view.textColor,
           horizontalPadding: layout.horizontalPadding,
-          verticalPadding: layout.verticalMargin,
+          verticalPadding: layout.verticalMargin.clamp(2, 4).toDouble(),
         );
       }
 

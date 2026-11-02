@@ -1,4 +1,20 @@
 import 'package:flutter_quill/flutter_quill.dart';
+import '../mention_list_widget.dart';
+
+/// 复制正文或选区时保留 mention 的可读名称，不输出对象替换符。
+String quillCopyTextFromOps(List<dynamic> ops) {
+  final buffer = StringBuffer();
+  for (final op in ops) {
+    if (op is! Map) continue;
+    final insert = op['insert'];
+    if (insert is String) {
+      buffer.write(insert);
+    } else if (insert is Map && insert.containsKey('mention')) {
+      buffer.write('@${MentionUser.displayName(insert['mention']) ?? ''}');
+    }
+  }
+  return buffer.toString();
+}
 
 /// 从原始 Delta ops 提取纯文本，绕过 flutter_quill Document。
 String quillPlainTextFromOps(List<dynamic>? opsJson) {

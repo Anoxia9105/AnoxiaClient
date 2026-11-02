@@ -396,11 +396,11 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
   Widget _chip(String text) {
     return InkWell(
       onTap: () => _pick(text),
-      borderRadius: BorderRadius.circular(RadiusToken.pill),
+      borderRadius: BorderRadius.circular(RadiusToken.sm),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(RadiusToken.pill),
+          borderRadius: BorderRadius.circular(RadiusToken.sm),
           border: Border.all(color: _cs.outlineVariant.withValues(alpha: .7)),
           color: _cs.surfaceContainerHighest.withValues(alpha: .35),
         ),
@@ -420,11 +420,11 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
   Widget _pill({required VoidCallback onTap, required Widget child}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(RadiusToken.pill),
+      borderRadius: BorderRadius.circular(RadiusToken.sm),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(RadiusToken.pill),
+          borderRadius: BorderRadius.circular(RadiusToken.sm),
           border: Border.all(color: _cs.outlineVariant.withValues(alpha: .5)),
         ),
         child: child,

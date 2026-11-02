@@ -174,6 +174,7 @@ class MessageBubbleRow extends ConsumerWidget {
             message: message,
             strategy: strategy,
             view: view,
+            placeOnLeft: direction == TextDirection.ltr,
           ),
         ),
         MessageStatusIndicators(
@@ -196,13 +197,11 @@ class _EditedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 2),
-      child: Text(
-        'chat_edited'.tr(),
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(color: colorScheme.outline),
+    return Tooltip(
+      message: 'chat_edited'.tr(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Icon(Icons.edit_outlined, size: 12, color: colorScheme.outline),
       ),
     );
   }
@@ -213,12 +212,14 @@ class MessageContentFrame extends ConsumerWidget {
   final ChatMessage message;
   final MessageRenderStrategy strategy;
   final MessageBubbleViewData view;
+  final bool? placeOnLeft;
 
   const MessageContentFrame({
     super.key,
     required this.message,
     required this.strategy,
     required this.view,
+    this.placeOnLeft,
   });
 
   @override
@@ -231,13 +232,23 @@ class MessageContentFrame extends ConsumerWidget {
 
     return ChatMessageContextMenu(
       message: message,
-      child: view.needsBubble
-          ? BubbleShell(
-              isCurrentUser: view.isCurrentUser,
-              backgroundColor: view.bubbleColor,
-              child: content,
-            )
-          : content,
+      isCurrentUser: view.isCurrentUser,
+      child: DefaultSelectionStyle(
+        // 自己气泡本身就是 primary；再用半透明 primary 叠加，选区会完全消失。
+        selectionColor:
+            (view.isCurrentUser
+                    ? view.textColor
+                    : Theme.of(context).colorScheme.primary)
+                .withValues(alpha: 0.3),
+        child: view.needsBubble
+            ? BubbleShell(
+                isCurrentUser: view.isCurrentUser,
+                placeOnLeft: placeOnLeft,
+                backgroundColor: view.bubbleColor,
+                child: content,
+              )
+            : content,
+      ),
     );
   }
 }

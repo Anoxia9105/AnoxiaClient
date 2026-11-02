@@ -8,6 +8,7 @@ import '../../../../../common/utils/emoji_util.dart';
 import '../../../../../framework/domain/chat_message.dart';
 import 'base/message_render_strategy.dart';
 import 'link_preview_card.dart';
+import 'selectable_message_body.dart';
 
 /// 文本消息渲染策略
 ///
@@ -30,14 +31,16 @@ class TextMessageStrategy extends MessageRenderStrategy {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          content,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 15,
-            height: 1.4,
-            fontWeight: FontWeight.w500,
-            fontVariations: const [FontVariation('wght', 500)],
+        SelectableMessageBody(
+          child: Text(
+            content,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 15,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
+              fontVariations: const [FontVariation('wght', 500)],
+            ),
           ),
         ),
         MessageLinkPreview(text: content),

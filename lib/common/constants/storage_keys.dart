@@ -57,6 +57,9 @@ class StorageKeys {
   /// 本设备是否播放聊天关键词特效。
   static const String chatEffectsEnabled = 'CHAT_EFFECTS_ENABLED';
 
+  /// 聊天气泡是否显示尖角，默认关闭。
+  static const String chatBubbleTailEnabled = 'CHAT_BUBBLE_TAIL_ENABLED';
+
   /// 界面字号缩放（double）
   static const String textScaleFactor = 'TEXT_SCALE_FACTOR';
 

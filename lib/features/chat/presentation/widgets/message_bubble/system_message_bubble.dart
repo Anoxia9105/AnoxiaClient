@@ -1,6 +1,6 @@
 /// 系统消息气泡
 ///
-/// 系统消息（如“xxx加入了群聊”）的专用渲染组件，无头像、无气泡，居中显示。
+/// 系统消息（如“xxx加入了群聊”）的专用渲染组件，无头像，居中显示。
 library;
 
 import 'package:flutter/material.dart';
@@ -15,6 +15,7 @@ class SystemMessageBubble extends StatelessWidget {
   final Color textColor;
   final double horizontalPadding;
   final double verticalPadding;
+  final double contentInset;
 
   const SystemMessageBubble({
     super.key,
@@ -23,14 +24,17 @@ class SystemMessageBubble extends StatelessWidget {
     required this.textColor,
     required this.horizontalPadding,
     required this.verticalPadding,
+    this.contentInset = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        vertical: verticalPadding,
-        horizontal: horizontalPadding,
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        verticalPadding,
+        horizontalPadding,
+        verticalPadding,
       ),
       child: strategy.buildContent(context, message, textColor),
     );

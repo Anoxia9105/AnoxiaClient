@@ -1,6 +1,6 @@
 // 消息表情回应聚合条 + 候选集
 //
-// - [reactionEmojiPalette]：长按菜单/右键菜单点「回应」弹出的固定候选集；
+// - [reactionEmojiPalette]：鼠标悬停和长按菜单上方表情条的固定候选集；
 // - [MessageReactionBar]：气泡下方聚合 chips（emoji + 计数，我方高亮），
 //   状态来自 [roomChatReactionsProvider]（WS 广播 + 进房 REST 补拉 + 本地乐观切换），
 //   无任何回应数据时整体不占位。

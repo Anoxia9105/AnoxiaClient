@@ -202,11 +202,6 @@ class RoomListItem extends ConsumerWidget {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
-          Text(
-            DateUtil.formatTime(room.lastMessage?.timestamp),
-            style: const TextStyle(fontSize: 11),
-            overflow: TextOverflow.ellipsis,
-          ),
         ],
       ),
       subtitle: Text(
@@ -218,7 +213,7 @@ class RoomListItem extends ConsumerWidget {
         style: const TextStyle(fontSize: 12),
       ),
       trailing: SizedBox(
-        width: 44,
+        width: 76 + (isPinned ? 20 : 0) + (isDoNotDisturb ? 20 : 0),
         height: 44,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -236,6 +231,27 @@ class RoomListItem extends ConsumerWidget {
                       strokeWidth: 2,
                       color: Theme.of(context).colorScheme.outline,
                     ),
+                  if (isPinned) const SizedBox(width: 4),
+                  if (isDoNotDisturb) ...[
+                    Tooltip(
+                      message: 'chat_do_not_disturb'.tr(),
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedNotificationOff02,
+                        size: 15,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Flexible(
+                    child: Text(
+                      DateUtil.formatTime(room.lastMessage?.timestamp),
+                      style: const TextStyle(fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -243,16 +259,7 @@ class RoomListItem extends ConsumerWidget {
             SizedBox(
               height: 20,
               child: isDoNotDisturb
-                  // 免打扰时，右下角（未读数位置）改为展示免打扰图标，
-                  // 既提示静音状态，又避免未读数角标打扰用户。所有端统一生效。
-                  ? Tooltip(
-                      message: 'chat_do_not_disturb'.tr(),
-                      child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedNotificationOff02,
-                        size: 15,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    )
+                  ? const SizedBox.shrink()
                   : VibratingBadge(count: room.unreadCount ?? 0),
             ),
           ],
@@ -368,7 +375,9 @@ class RoomListItem extends ConsumerWidget {
     final result = await showMenu<String>(
       context: context,
       position: position,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(RadiusToken.md),
+      ),
       elevation: 4,
       items: items,
     );

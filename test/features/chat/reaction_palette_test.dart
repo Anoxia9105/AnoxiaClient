@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_bubble/message_reaction_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_bubble.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +16,37 @@ class _ReactionRepository implements MessageRepository {
 }
 
 void main() {
+  test('更多表情浮层在消息上下方翻转时尖角仍对准消息', () {
+    for (final screen in [const Size(320, 700), const Size(1280, 800)]) {
+      for (final left in [16.0, screen.width - 96]) {
+        for (final top in [40.0, screen.height - 80]) {
+          final target = Rect.fromLTWH(left, top, 64, 36);
+          final width = (screen.width - 32).clamp(0.0, 344.0);
+          final placement = resolveAnchoredBubblePlacement(
+            targetRect: target,
+            screenSize: screen,
+            bubbleWidth: width,
+            estimatedHeight: 330,
+            preferRightArrow: target.center.dx >= screen.width / 2,
+          );
+          expect(
+            placement.left + placement.arrowOffset,
+            closeTo(target.center.dx, 0.01),
+          );
+          expect(
+            placement.arrowDirection,
+            top < 100 ? AxisDirection.up : AxisDirection.down,
+          );
+          expect(
+            placement.anchorY,
+            placement.showBelow ? target.bottom : target.top,
+          );
+          expect(placement.left, greaterThanOrEqualTo(12));
+          expect(placement.left + width, lessThanOrEqualTo(screen.width - 12));
+        }
+      }
+    }
+  });
   test('共享 Emoji 气泡支持输入框连续选择与回应单次选择', () {
     final input = ChatEmojiBubble(
       onEmojiSelected: (_) {},

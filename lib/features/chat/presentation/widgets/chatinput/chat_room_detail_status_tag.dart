@@ -32,6 +32,7 @@ class ChatRoomDetailStatusTag extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           HugeIcon(
             icon: icon ?? HugeIcons.strokeRoundedAlert02,
@@ -39,14 +40,14 @@ class ChatRoomDetailStatusTag extends StatelessWidget {
             color: cs.onSurfaceVariant.withValues(alpha: 0.7),
           ),
           const SizedBox(width: 8),
-          Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-              color: cs.onSurfaceVariant.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.3,
+          Flexible(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],

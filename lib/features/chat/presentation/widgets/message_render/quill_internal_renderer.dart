@@ -9,12 +9,15 @@ import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.da
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 import '../../../../../framework/domain/chat_message.dart';
 import 'code/code_block_view.dart';
 import 'link_preview_card.dart';
 import 'quill_renderer_helpers.dart';
+import 'selectable_message_body.dart';
+import '../message_bubble/message_selection_scope.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 是否为 WASM 编译模式。
@@ -48,28 +51,9 @@ class QuillInternalRenderer extends StatefulWidget {
 }
 
 class QuillInternalRendererState extends State<QuillInternalRenderer> {
-  static final Set<QuillInternalRendererState> _mountedRenderers = {};
-
-  /// 防止「清理兄弟气泡选区」链路重入。
-  ///
-  /// flutter_quill 的 `QuillRawEditorState` 会**无条件**监听 controller
-  /// (`controller.addListener(_didChangeTextEditingValueListener)`)，并且
-  /// `_didChangeTextEditingValue` 里有 Web 专属分支：
-  ///
-  /// ```dart
-  /// if (kIsWeb) {
-  ///   _onChangeTextEditingValue(ignoreFocus);
-  ///   if (!ignoreFocus) requestKeyboard(); // -> focusNode.requestFocus()
-  ///   return;
-  /// }
-  /// ```
-  ///
-  /// 也就是说在 Web 上，对只读气泡调用一次 `updateSelection` 就会让它把焦点抢回去。
-  /// 于是会出现：A 获得焦点 -> 清空所有兄弟选区 -> 兄弟 requestFocus ->
-  /// 兄弟获得焦点 -> 再清空所有兄弟选区 …… 同步无限互抢，主线程被打死，
-  /// 表现为「切换聊天列表后页面直接卡死、无任何日志」。桌面/移动端不走该分支，
-  /// 所以只在 Web 复现。
-  static bool _clearingSiblings = false;
+  final _editorKey = GlobalKey<QuillEditorState>();
+  MessageSelectionHandle? _selectionHandle;
+  MessageSelectionScopeState? _selectionScope;
 
   QuillController? _controller;
   bool _isError = false;
@@ -86,28 +70,82 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
   @override
   void initState() {
     super.initState();
-    _mountedRenderers.add(this);
-    // Web 端只读气泡：禁止 FocusNode 抢占焦点。
-    //
-    // flutter_quill 的 Web 分支在 _didChangeTextEditingValue 中会无条件调用
-    // requestKeyboard() -> focusNode.requestFocus()（见本文件上方长注释）。
-    // 现有的 _clearingSiblings 标志只能拦住「应用侧」清选区触发的 requestFocus，
-    // 拦不住 quill 内部（手势/选区叠加层）直接 updateSelection 触发的 requestFocus。
-    // 多个只读气泡因此会同步互抢焦点 -> 无限递归 -> Maximum call stack size exceeded，
-    // 表现为「聊天消息渲染卡死」。让 FocusNode 不可抢焦点后 requestFocus 变为 no-op，
-    // 从根本上掐断互抢链路；桌面/移动端不受 kIsWeb 分支影响，保留完整选区交互。
-    _focusNode = FocusNode(canRequestFocus: !kIsWeb);
+    _focusNode = FocusNode();
     _focusNode.addListener(_onFocusChanged);
     _initController();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final handle = MessageSelectionTarget.maybeOf(context);
+    if (handle != _selectionHandle) {
+      _unbindSelection();
+      _selectionHandle = handle;
+      if (!_useWasmRenderer) {
+        handle?.selectAll = _selectAll;
+        handle?.clearSelection = _exitSelection;
+        handle?.selectedText = _selectedText;
+      }
+    }
+    _selectionScope = MessageSelectionScope.maybeOf(context);
+  }
+
+  void _unbindSelection() {
+    if (_selectionHandle?.selectAll == _selectAll) {
+      _selectionHandle?.selectAll = null;
+    }
+    if (_selectionHandle?.clearSelection == _exitSelection) {
+      _selectionHandle?.clearSelection = null;
+    }
+    if (_selectionHandle?.selectedText == _selectedText) {
+      _selectionHandle?.selectedText = null;
+    }
+  }
+
+  String? _selectedText() {
+    final controller = _controller;
+    if (controller == null || controller.selection.isCollapsed) return null;
+    return quillCopyTextFromOps(
+      controller.document
+          .toDelta()
+          .slice(controller.selection.start, controller.selection.end)
+          .toJson(),
+    );
+  }
+
   void _onFocusChanged() {
     if (_focusNode.hasFocus) {
-      _clearSiblingSelections();
-      return;
+      _selectionHandle?.activate(_selectionScope);
+    } else {
+      _selectionHandle?.clear();
+      _clearSelection();
     }
+  }
 
+  void _selectAll() {
+    final controller = _controller;
+    if (controller == null || controller.document.length <= 1) return;
+    _editorKey.currentState?.dragOffsetNotifier?.value = null;
+    _editorKey.currentState?.editableTextKey.currentState?.hideToolbar();
+    _selectionHandle?.activate(_selectionScope);
+    _focusNode.requestFocus();
+    controller.updateSelection(
+      TextSelection(
+        baseOffset: 0,
+        extentOffset: controller.document.length - 1,
+      ),
+      ChangeSource.local,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _selectionHandle?.selecting != true) return;
+      _editorKey.currentState?.editableTextKey.currentState?.showToolbar();
+    });
+  }
+
+  void _exitSelection() {
     _clearSelection();
+    _focusNode.unfocus();
   }
 
   @override
@@ -140,7 +178,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
 
   @override
   void dispose() {
-    _mountedRenderers.remove(this);
+    _unbindSelection();
     _focusNode.removeListener(_onFocusChanged);
     _focusNode.dispose();
     _controller?.dispose();
@@ -169,7 +207,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildWasmRichText(context),
+                SelectableMessageBody(child: _buildWasmRichText(context)),
                 MessageLinkPreview(text: previewSource, maxWidth: targetWidth),
               ],
             ),
@@ -193,17 +231,46 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
               Stack(
                 children: [
                   Listener(
-                    onPointerDown: (_) => _clearSiblingSelections(),
+                    onPointerDown: (event) {
+                      if (event.buttons != 1) return;
+                      if (event.kind == ui.PointerDeviceKind.touch &&
+                          _selectionHandle != null &&
+                          !_selectionHandle!.selecting) {
+                        return;
+                      }
+                      _selectionHandle?.activate(
+                        _selectionScope,
+                        pointer: event.pointer,
+                      );
+                      _focusNode.requestFocus();
+                    },
                     child: QuillEditor.basic(
+                      key: _editorKey,
                       focusNode: _focusNode,
                       controller: _controller!,
                       config: QuillEditorConfig(
                         textSelectionThemeData: TextSelectionThemeData(
-                          selectionColor: Theme.of(context).colorScheme.primary.withValues(
-                            alpha: 0.5,
-                          ),
+                          selectionColor:
+                              DefaultSelectionStyle.of(
+                                context,
+                              ).selectionColor ??
+                              widget.textColor.withValues(alpha: 0.3),
                         ),
-                        enableSelectionToolbar: false,
+                        enableInteractiveSelection: true,
+                        // Overlay 会缓存工具栏 builder；始终提供 builder，避免从
+                        // 消息菜单切换到选择模式后旧 overlay 仍持有 null。
+                        enableSelectionToolbar: true,
+                        contextMenuBuilder: (context, state) {
+                          if (_selectionHandle?.selecting != true) {
+                            return const SizedBox.shrink();
+                          }
+                          return TextFieldTapRegion(
+                            child: AdaptiveTextSelectionToolbar.buttonItems(
+                              buttonItems: state.contextMenuButtonItems,
+                              anchors: state.contextMenuAnchors,
+                            ),
+                          );
+                        },
                         showCursor: false,
                         autoFocus: false,
                         expands: false,
@@ -214,10 +281,33 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
                           color: widget.textColor,
                           compact: true,
                         ),
-                        onTapOutside: (_, focusNode) {
-                          focusNode.unfocus();
-                          _clearSelection();
+                        onTapUp: (details, _) =>
+                            details.kind == ui.PointerDeviceKind.touch &&
+                            _selectionHandle != null &&
+                            !_selectionHandle!.selecting,
+                        onSingleLongTapStart: (details, _) {
+                          if (_selectionHandle == null ||
+                              _selectionHandle!.selecting) {
+                            return false;
+                          }
+                          // 弹出消息菜单会取消当前长按，Quill 不一定收到 end；
+                          // 清掉放大镜位置，否则下次选择工具栏会一直被隐藏。
+                          _editorKey.currentState?.dragOffsetNotifier?.value =
+                              null;
+                          _selectionHandle!.showMenu?.call(
+                            details.globalPosition,
+                          );
+                          return true;
                         },
+                        onSingleLongTapMoveUpdate: (_, _) =>
+                            _selectionHandle != null &&
+                            !_selectionHandle!.selecting,
+                        onSingleLongTapEnd: (_, _) =>
+                            _selectionHandle != null &&
+                            !_selectionHandle!.selecting,
+                        // Quill 的手柄浮层不属于 TextFieldTapRegion，不能在这里
+                        // 清选区；页面 scope 负责空白/其它消息/输入框的退出。
+                        onTapOutsideEnabled: false,
                         embedBuilders: [
                           QuillImageBuild(),
                           QuillFileBuild(),
@@ -228,6 +318,26 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
                   ),
                 ],
               ),
+              // Quill 在 Web 的 showToolbar() 明确返回 false。保留它的选区和
+              // 快捷键，通过显式按钮提供触屏浏览器的复制/完成入口。
+              if (kIsWeb && _selectionHandle?.selecting == true)
+                Wrap(
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        final text = _selectedText();
+                        if (text != null) {
+                          Clipboard.setData(ClipboardData(text: text));
+                        }
+                      },
+                      child: Text('chat_copy'.tr()),
+                    ),
+                    TextButton(
+                      onPressed: () => _selectionHandle?.clear(),
+                      child: Text('dialog_done'.tr()),
+                    ),
+                  ],
+                ),
               MessageLinkPreview(text: previewSource, maxWidth: targetWidth),
             ],
           ),
@@ -236,23 +346,8 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     );
   }
 
-  void _clearSiblingSelections() {
-    if (_clearingSiblings) return;
-    _clearingSiblings = true;
-    try {
-      // 迭代前先快照：_clearSelection 会触发 Quill 重建，期间可能有气泡
-      // mount/dispose 从而增删 _mountedRenderers，直接遍历会抛
-      // ConcurrentModificationError。
-      for (final renderer in _mountedRenderers.toList(growable: false)) {
-        if (identical(renderer, this)) continue;
-        renderer._clearSelection();
-      }
-    } finally {
-      _clearingSiblings = false;
-    }
-  }
-
   void _clearSelection() {
+    _editorKey.currentState?.editableTextKey.currentState?.hideToolbar();
     final controller = _controller;
     if (controller == null) return;
 
@@ -274,6 +369,9 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     } finally {
       controller.ignoreFocusOnTextChange = previousIgnoreFocus;
     }
+    // ignoreFocusOnTextChange 同时跳过 Quill 的重绘，需要显式刷新只读视图，
+    // 否则 Controller 已清空而旧高亮/手柄仍可能留在屏幕上。
+    if (mounted) setState(() {});
   }
 
   /// 计算消息内容的目标宽度
@@ -299,7 +397,8 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     final hasLinkPreview =
         MessageLinkPreview.extractFirstUrl(
           quillLinkPreviewSource(_rawDeltaOps),
-        ) != null;
+        ) !=
+        null;
     // 普通富文本按实际内容收缩；原来的 64px 下限会让 "111" 这类短消息
     // 无缘由地多出大块空白。链接预览仍保留卡片自身需要的最小宽度。
     final minWidth = hasLinkPreview ? MessageLinkPreview.minCardWidth : 1;
@@ -444,7 +543,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
       final richText = Text.rich(TextSpan(style: baseStyle, children: spans));
       children.add(
         isBlockQuote
-              ? Container(
+            ? Container(
                 padding: const EdgeInsets.only(left: _kWasmQuoteTextInset),
                 decoration: BoxDecoration(
                   border: Border(
@@ -499,10 +598,10 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
       if (op is! Map) continue;
       final insert = op['insert'];
       final attributes = op['attributes'];
-      final isCodeBlock = attributes is Map &&
-          attributes.containsKey(Attribute.codeBlock.key);
-      final isBlockQuote = attributes is Map &&
-          attributes.containsKey(Attribute.blockQuote.key);
+      final isCodeBlock =
+          attributes is Map && attributes.containsKey(Attribute.codeBlock.key);
+      final isBlockQuote =
+          attributes is Map && attributes.containsKey(Attribute.blockQuote.key);
 
       if (insert is String) {
         if (isCodeBlock) {
@@ -541,10 +640,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     );
   }
 
-  Widget _buildWasmCodeBlock(
-    BuildContext context,
-    String code,
-  ) {
+  Widget _buildWasmCodeBlock(BuildContext context, String code) {
     // 与编辑框一致的「行号 + 代码」渲染，见 CodeBlockView。
     return CodeBlockView(code: code);
   }
@@ -677,9 +773,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     ];
 
     final style = baseStyle.copyWith(
-      color:
-          foreground ??
-          baseStyle.color,
+      color: foreground ?? baseStyle.color,
       backgroundColor:
           background ??
           (isInlineCode

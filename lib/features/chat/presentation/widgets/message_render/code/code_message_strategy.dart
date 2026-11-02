@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../base/message_render_strategy.dart';
 import 'code_block_view.dart';
+import '../selectable_message_body.dart';
 
 class CodeMessageStrategy extends MessageRenderStrategy {
   @override
@@ -17,9 +18,8 @@ class CodeMessageStrategy extends MessageRenderStrategy {
       // 旧数据可能只有占位 content（如 [code]），此时展示本地化文案。
       final fallback = message.content.trim();
       if (fallback.isNotEmpty && !_isPlaceholder(fallback)) {
-        return Text(
-          message.content,
-          style: TextStyle(color: textColor),
+        return SelectableMessageBody(
+          child: Text(message.content, style: TextStyle(color: textColor)),
         );
       }
       return Text(
@@ -27,18 +27,12 @@ class CodeMessageStrategy extends MessageRenderStrategy {
         style: TextStyle(color: textColor),
       );
     }
-    return CodeBlockView(code: code.code);
+    return CodeBlockView(code: code.code, selectable: true);
   }
 
   static bool _isPlaceholder(String text) {
     final lower = text.trim().toLowerCase();
-    const markers = {
-      '[code]',
-      '[empty]',
-      '[代码]',
-      'plaintext',
-      '[plaintext]',
-    };
+    const markers = {'[code]', '[empty]', '[代码]', 'plaintext', '[plaintext]'};
     if (markers.contains(lower)) return true;
     final trimmed = text.trim();
     if (trimmed.length >= 3 &&

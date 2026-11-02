@@ -1,8 +1,9 @@
 // 系统消息渲染策略
 //
-// 实现系统消息的渲染逻辑，将系统消息以居中的纯文本形式展示在聊天界面中，
-// 仅包含图标和文字（无背景、无时间，时间由消息列表的时间分隔条承担）。
+// 实现系统消息的渲染逻辑，将系统消息以居中的图标和文字展示在聊天界面中，
+// 所有通知使用浅色背景；时间仍由消息列表的时间分隔条承担。
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/features/chat/application/system_message_formatter.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:flutter/material.dart';
@@ -29,14 +30,16 @@ class SystemMessageStrategy extends MessageRenderStrategy {
     Color textColor,
   ) {
     final display = SystemMessageFormatter.display(message, isGroup: isGroup);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16.0),
-        child: _buildChip(
-          context,
-          icon: display.icon,
-          text: display.text,
+    final cs = Theme.of(context).colorScheme;
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(RadiusToken.md),
         ),
+        child: _buildChip(context, icon: display.icon, text: display.text),
       ),
     );
   }
@@ -51,14 +54,18 @@ class SystemMessageStrategy extends MessageRenderStrategy {
 
     return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HugeIcon(icon: icon, size: 14, color: fgColor),
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: HugeIcon(icon: icon, size: 14, color: fgColor),
+        ),
         const SizedBox(width: 6),
         Flexible(
           child: Text(
             text,
-            style: TextStyle(fontSize: 12, color: fgColor),
-            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 12, height: 1.5, color: fgColor),
+            textAlign: TextAlign.left,
           ),
         ),
       ],

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/message_bubble/message_selection_scope.dart';
 
 import 'package:anoxia/common/utils/date_util.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
@@ -183,73 +184,78 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       unawaited(_scrollController.jumpToMessage(next.messageId));
     });
 
-    return DesktopChatDropTarget(
-      roomId: widget.roomId,
-      enabled:
-          currentRoom.roomStatus == 0 &&
-          !entryTask.isLoading &&
-          !entryTask.hasError,
-      onRejected: (names) => ref
-          .read(toastServiceProvider)
-          .showToast(
-            'chat_drop_rejected'.tr(args: [names.join('、')]),
-            type: ToastType.warning,
-          ),
-      onFiles: (files, isActive) async {
-        final roomId = widget.roomId;
-        final controller = ref.read(chatInputControllerProvider(roomId));
-        await ref
-            .read(chatFileUploadControllerProvider.notifier)
-            .insertPickedFiles(controller, files, isActive: isActive);
-        if (isActive()) ref.read(chatFocusNodeProvider(roomId)).requestFocus();
-      },
-      child: ChatEffectLayer(
+    return MessageSelectionScope(
+      key: ValueKey(widget.roomId),
+      child: DesktopChatDropTarget(
         roomId: widget.roomId,
-        child: Scaffold(
-          resizeToAvoidBottomInset: false,
-          backgroundColor: DeviceUtil.useSingleColumnPush(context)
-              ? Theme.of(context).colorScheme.surface
-              : Theme.of(context).scaffoldBackgroundColor,
-          appBar: showInitialSkeleton
-              ? AppBar()
-              : ChatAppBar(roomId: widget.roomId),
-          drawerScrimColor: Colors.transparent,
-          body: Column(
-            children: [
-              if (!showInitialSkeleton && currentRoom.roomType == 1)
-                GroupAnnouncementBanner(
-                  roomId: widget.roomId,
-                  announcement: currentRoom.roomDescription ?? '',
-                ),
-              if (!showInitialSkeleton)
-                AiUnreadSummaryBanner(roomId: widget.roomId),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: _buildChatBody(
-                    showInitialSkeleton: showInitialSkeleton,
-                    entryTask: entryTask,
-                    flatItems: flatItems,
-                    currentRoom: currentRoom,
+        enabled:
+            currentRoom.roomStatus == 0 &&
+            !entryTask.isLoading &&
+            !entryTask.hasError,
+        onRejected: (names) => ref
+            .read(toastServiceProvider)
+            .showToast(
+              'chat_drop_rejected'.tr(args: [names.join('、')]),
+              type: ToastType.warning,
+            ),
+        onFiles: (files, isActive) async {
+          final roomId = widget.roomId;
+          final controller = ref.read(chatInputControllerProvider(roomId));
+          await ref
+              .read(chatFileUploadControllerProvider.notifier)
+              .insertPickedFiles(controller, files, isActive: isActive);
+          if (isActive()) {
+            ref.read(chatFocusNodeProvider(roomId)).requestFocus();
+          }
+        },
+        child: ChatEffectLayer(
+          roomId: widget.roomId,
+          child: Scaffold(
+            resizeToAvoidBottomInset: false,
+            backgroundColor: DeviceUtil.useSingleColumnPush(context)
+                ? Theme.of(context).colorScheme.surface
+                : Theme.of(context).scaffoldBackgroundColor,
+            appBar: showInitialSkeleton
+                ? AppBar()
+                : ChatAppBar(roomId: widget.roomId),
+            drawerScrimColor: Colors.transparent,
+            body: Column(
+              children: [
+                if (!showInitialSkeleton && currentRoom.roomType == 1)
+                  GroupAnnouncementBanner(
+                    roomId: widget.roomId,
+                    announcement: currentRoom.roomDescription ?? '',
+                  ),
+                if (!showInitialSkeleton)
+                  AiUnreadSummaryBanner(roomId: widget.roomId),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: _buildChatBody(
+                      showInitialSkeleton: showInitialSkeleton,
+                      entryTask: entryTask,
+                      flatItems: flatItems,
+                      currentRoom: currentRoom,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
+            floatingActionButton: _scrollController.showScrollDownButton
+                ? ChatRoomDetailScrollDownButton(
+                    onPressed: () =>
+                        _scrollController.scrollToBottom(animated: true),
+                  )
+                : null,
+            bottomNavigationBar: selection.active
+                ? ForwardSelectionBar(roomId: widget.roomId)
+                : ChatRoomDetailBottomBar(
+                    showSkeleton: showInitialSkeleton,
+                    roomStatus: currentRoom.roomStatus,
+                    onFieldTap: () =>
+                        _scrollController.scrollToBottom(animated: true),
+                  ),
           ),
-          floatingActionButton: _scrollController.showScrollDownButton
-              ? ChatRoomDetailScrollDownButton(
-                  onPressed: () =>
-                      _scrollController.scrollToBottom(animated: true),
-                )
-              : null,
-          bottomNavigationBar: selection.active
-              ? ForwardSelectionBar(roomId: widget.roomId)
-              : ChatRoomDetailBottomBar(
-                  showSkeleton: showInitialSkeleton,
-                  roomStatus: currentRoom.roomStatus,
-                  onFieldTap: () =>
-                      _scrollController.scrollToBottom(animated: true),
-                ),
         ),
       ),
     );
@@ -275,7 +281,10 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       children: [
         Listener(
           behavior: HitTestBehavior.translucent,
-          onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+          onPointerDown: (_) {
+            final inputFocus = ref.read(chatFocusNodeProvider(widget.roomId));
+            if (inputFocus.hasFocus) inputFocus.unfocus();
+          },
           child: _buildMessageList(
             flatItems,
             isGroup: currentRoom.roomType == RoomType.groupChat.index,
