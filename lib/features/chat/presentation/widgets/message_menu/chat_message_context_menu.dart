@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/chat/message/chat_content_density_controller.dart';
 import 'package:anoxia/common/utils/date_util.dart';
 import 'dart:async';
 import 'package:hugeicons/hugeicons.dart';
@@ -94,6 +95,8 @@ class _ChatMessageContextMenuState
     // 的 _TransparentTapGestureRecognizer）会注册同级的右击识别器且位于更深的命中路径，
     // 竞技场总是先裁决给 quill，导致富文本消息文字区域右键菜单偶发弹不出来。
     // 原始指针事件不受竞技场影响，沿命中路径必然触发，故改用 onPointerDown 拦截右键。
+    final flat =
+        ref.watch(chatContentDensityProvider) == ChatContentDensity.flat;
     final selectionScope = MessageSelectionScope.maybeOf(context);
     _textSelection.showMenu = (position) =>
         _showMenuAtPosition(context, position, touch: true);
@@ -103,6 +106,7 @@ class _ChatMessageContextMenuState
         enabled: canReactToMessage(widget.message),
         timeLabel: DateUtil.formatTimestampToTime(widget.message.timestamp),
         isCurrentUser: widget.isCurrentUser,
+        timeOnLeft: !flat && widget.isCurrentUser,
         sideInset: widget.message.isEdited ? 28 : 8,
         onSelected: (emoji) {
           final box = context.findRenderObject() as RenderBox;

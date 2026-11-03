@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:anoxia/common/widgets/bubble_dialog.dart';
+import 'package:anoxia/features/schedule/presentation/widgets/schedule_calendar_options.dart';
 
 import 'package:anoxia/domain/repositories/holiday_repository.dart';
 import 'package:anoxia/domain/repositories/schedule_repository.dart';
@@ -8,6 +10,7 @@ import 'package:anoxia/features/schedule/presentation/widgets/schedule_month_vie
 import 'package:anoxia/framework/domain/schedule_event.dart';
 import 'package:anoxia/framework/domain/schedule_holiday.dart';
 import 'package:anoxia/framework/provider/core/schedule_repository_provider.dart';
+import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
 import 'package:anoxia/framework/provider/schedule/schedule_holidays.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +20,71 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('日程保留左侧列表，跟随桌面设置切换右侧卡片和平铺', (tester) async {
+    await pumpCalendar(
+      tester,
+      width: 1440,
+      repository: MemoryScheduleRepository(),
+    );
+    final left = find.byKey(const ValueKey('schedule-left-list'));
+    final card = find.byKey(const ValueKey('schedule-calendar-card'));
+    final month = find.byKey(const ValueKey('schedule-month-view'));
+    expect(tester.getRect(left).right, lessThan(tester.getRect(month).left));
+    expect(
+      (tester.widget<Container>(card).decoration! as BoxDecoration).boxShadow,
+      isNotEmpty,
+    );
+    final controller = ProviderScope.containerOf(
+      tester.element(find.byType(SchedulePage)),
+    ).read(desktopLayoutProvider.notifier);
+    controller.setPreference(DesktopLayoutPreference.flat);
+    await tester.pumpAndSettle();
+    expect(left, findsOneWidget);
+    expect(card, findsNothing);
+    expect(month, findsOneWidget);
+    expect(tester.getRect(month).right, 1440);
+    expect(tester.takeException(), isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+  for (final below in [true, false]) {
+    testWidgets('窄屏气泡翻转并对准设置按钮 below=$below', (tester) async {
+      await pumpCalendar(
+        tester,
+        width: 320,
+        height: 480,
+        repository: MemoryScheduleRepository(),
+        home: Scaffold(
+          body: Align(
+            alignment: below ? Alignment.topRight : Alignment.bottomLeft,
+            child: ScheduleCalendarOptions(
+              region: ScheduleHolidayRegion.cn,
+              showLunar: true,
+              onRegionChanged: (_) {},
+              onLunarChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      final button = find.byKey(const ValueKey('schedule-calendar-options'));
+      final anchor = tester.getRect(button);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      final bubble = find.byType(BubbleWidget);
+      final widget = tester.widget<BubbleWidget>(bubble);
+      final rect = tester.getRect(bubble);
+      expect(
+        widget.arrowDirection,
+        below ? AxisDirection.up : AxisDirection.down,
+      );
+      expect(
+        below ? rect.top : rect.bottom,
+        closeTo(below ? anchor.bottom : anchor.top, 1),
+      );
+      expect(rect.left + widget.arrowOffset!, closeTo(anchor.center.dx, 12));
+      expect(rect.left, greaterThanOrEqualTo(12));
+      expect(rect.right, lessThanOrEqualTo(308));
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets('矮屏仍显示日程数量入口，点击可看到新建日程', (tester) async {
     final repository = MemoryScheduleRepository();
     repository.events.add(
@@ -150,6 +218,7 @@ Future<void> pumpCalendar(
   WidgetTester tester, {
   required double width,
   double height = 900,
+  Widget home = const SchedulePage(),
   required MemoryScheduleRepository repository,
 }) async {
   SharedPreferences.setMockInitialValues(const {});
@@ -178,7 +247,7 @@ Future<void> pumpCalendar(
             locale: context.locale,
             supportedLocales: context.supportedLocales,
             localizationsDelegates: context.localizationDelegates,
-            home: const SchedulePage(),
+            home: home,
           ),
         ),
       ),

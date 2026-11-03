@@ -1,11 +1,14 @@
 // 消息表情回应聚合条 + 候选集
 //
-// - [reactionEmojiPalette]：鼠标悬停和长按菜单上方表情条的固定候选集；
-// - [MessageReactionBar]：气泡下方聚合 chips（emoji + 计数，我方高亮），
+// - [reactionEmojiPalette]：悬停和长按表情条用来补足最近记录的默认表情；
+// - [MessageReactionBar]：气泡底部的表情、计数和更多回应入口，
 //   状态来自 [roomChatReactionsProvider]（WS 广播 + 进房 REST 补拉 + 本地乐观切换），
 //   无任何回应数据时整体不占位。
 //
 // 系统消息（通话/撤回灰条等）不可回应，直接不渲染。
+import 'dart:async';
+
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,7 +34,7 @@ bool canReactToMessage(ChatMessage message) {
   return true;
 }
 
-/// 气泡下方的表情回应聚合条
+/// 气泡底部的表情回应聚合条
 class MessageReactionBar extends ConsumerWidget {
   final ChatMessage message;
 
@@ -56,27 +59,152 @@ class MessageReactionBar extends ConsumerWidget {
     if (aggregates.isEmpty) return const SizedBox.shrink();
 
     final colorScheme = Theme.of(context).colorScheme;
+    const visibleLimit = 5;
+    void toggle(String emoji) {
+      ref
+          .read(chatMessagesProvider.notifier)
+          .toggleReaction(messageId, roomId, emoji);
+    }
+
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Wrap(
         spacing: 6,
         runSpacing: 4,
         children: [
-          for (final aggregate in aggregates)
+          for (final aggregate in aggregates.take(visibleLimit))
             Tooltip(
               message: aggregate.users.values.join('、'),
               child: _ReactionChip(
                 aggregate: aggregate,
                 highlight: aggregate.mine,
-                onTap: () {
-                  ref
-                      .read(chatMessagesProvider.notifier)
-                      .toggleReaction(messageId, roomId, aggregate.emoji);
-                },
+                onTap: () => toggle(aggregate.emoji),
                 colorScheme: colorScheme,
               ),
             ),
+          if (aggregates.length > visibleLimit)
+            _MoreReactions(
+              reactions: aggregates.skip(visibleLimit).toList(),
+              onToggle: toggle,
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class _MoreReactions extends StatefulWidget {
+  const _MoreReactions({required this.reactions, required this.onToggle});
+
+  final List<RoomReactionAggregate> reactions;
+  final ValueChanged<String> onToggle;
+
+  @override
+  State<_MoreReactions> createState() => _MoreReactionsState();
+}
+
+class _MoreReactionsState extends State<_MoreReactions> {
+  final _menu = MenuController();
+  Timer? _closeTimer;
+
+  void _cancelClose() => _closeTimer?.cancel();
+
+  void _closeSoon() {
+    _cancelClose();
+    _closeTimer = Timer(const Duration(milliseconds: 220), _menu.close);
+  }
+
+  @override
+  void dispose() {
+    _cancelClose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final label = 'chat_reaction_more_emoji'.tr();
+    return MenuAnchor(
+      controller: _menu,
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(
+          theme.colorScheme.surfaceContainer,
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
+          ),
+        ),
+      ),
+      menuChildren: [
+        MouseRegion(
+          onEnter: (_) => _cancelClose(),
+          onExit: (_) => _closeSoon(),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 248, maxHeight: 240),
+            child: SingleChildScrollView(
+              primary: false,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: theme.textTheme.labelMedium),
+                  for (final reaction in widget.reactions)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Row(
+                        children: [
+                          _ReactionChip(
+                            aggregate: reaction,
+                            highlight: reaction.mine,
+                            onTap: () => widget.onToggle(reaction.emoji),
+                            colorScheme: theme.colorScheme,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              reaction.users.values.join('、'),
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+      builder: (context, controller, _) => MouseRegion(
+        onEnter: (_) {
+          _cancelClose();
+          if (!controller.isOpen) controller.open();
+        },
+        onExit: (_) => _closeSoon(),
+        child: Semantics(
+          label: label,
+          button: true,
+          child: Material(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(RadiusToken.pill),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () {
+                _cancelClose();
+                if (!controller.isOpen) controller.open();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Text(
+                  '+${widget.reactions.length}',
+                  style: theme.textTheme.labelSmall,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

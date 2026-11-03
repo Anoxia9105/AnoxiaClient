@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/domain/repositories/schedule_repository.dart';
 import 'package:anoxia/features/schedule/presentation/pages/schedule_page.dart';
 import 'package:anoxia/framework/domain/schedule_event.dart';
@@ -70,7 +71,9 @@ void main() {
       final scaffoldContext = tester.element(find.byType(Scaffold));
       expect(
         scaffold.backgroundColor,
-        Theme.of(scaffoldContext).colorScheme.surface,
+        DeviceUtil.useSingleColumnPush(scaffoldContext)
+            ? Theme.of(scaffoldContext).colorScheme.surfaceContainerLowest
+            : Theme.of(scaffoldContext).scaffoldBackgroundColor,
       );
       expect(tester.takeException(), isNull);
     });

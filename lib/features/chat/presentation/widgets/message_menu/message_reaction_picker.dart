@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:anoxia/framework/provider/chat/message/chat_content_density_controller.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../message_bubble/message_reaction_bar.dart';
 
 /// 悬停和长按菜单共用的小尺寸表情条。
-class MessageReactionPicker extends StatelessWidget {
+class MessageReactionPicker extends StatefulWidget {
   const MessageReactionPicker({
     super.key,
     required this.onSelected,
@@ -16,32 +18,66 @@ class MessageReactionPicker extends StatelessWidget {
   final bool touch;
 
   @override
+  State<MessageReactionPicker> createState() => _MessageReactionPickerState();
+}
+
+class _MessageReactionPickerState extends State<MessageReactionPicker> {
+  late final _recent = EmojiPickerUtils().getRecentEmojis();
+
+  // 共用完整表情选择器的历史；快捷条没有需要刷新的 EmojiPicker 实例。
+  static final _historyKey = GlobalKey<EmojiPickerState>();
+
+  Future<void> _remember(String emoji) async {
+    try {
+      await EmojiPickerUtils().addEmojiToRecentlyUsed(
+        key: _historyKey,
+        emoji: Emoji(emoji, emoji),
+      );
+    } catch (_) {
+      // 本地历史写入失败不影响回应。
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final size = touch ? 40.0 : 30.0;
+    final size = widget.touch ? 40.0 : 30.0;
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainer,
       borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(4),
-        child: Wrap(
-          children: [
-            for (final emoji in [...reactionEmojiPalette, '__more__'])
-              SizedBox(
-                width: size,
-                height: size,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  tooltip: emoji == '__more__'
-                      ? 'chat_reaction_more_emoji'.tr()
-                      : emoji,
-                  onPressed: () => onSelected(emoji),
-                  icon: emoji == '__more__'
-                      ? const Icon(Icons.add_reaction_outlined, size: 18)
-                      : Text(emoji, style: const TextStyle(fontSize: 18)),
-                ),
-              ),
-          ],
+        child: FutureBuilder<List<RecentEmoji>>(
+          future: _recent,
+          builder: (context, snapshot) {
+            final emojis = <String>{
+              for (final item in snapshot.data ?? const <RecentEmoji>[])
+                if (item.emoji.emoji.isNotEmpty) item.emoji.emoji,
+              ...reactionEmojiPalette,
+            }.take(reactionEmojiPalette.length);
+            return Wrap(
+              children: [
+                for (final emoji in [...emojis, '__more__'])
+                  SizedBox(
+                    width: size,
+                    height: size,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      tooltip: emoji == '__more__'
+                          ? 'chat_reaction_more_emoji'.tr()
+                          : emoji,
+                      onPressed: () {
+                        if (emoji != '__more__') unawaited(_remember(emoji));
+                        widget.onSelected(emoji);
+                      },
+                      icon: emoji == '__more__'
+                          ? const Icon(Icons.add_reaction_outlined, size: 18)
+                          : Text(emoji, style: const TextStyle(fontSize: 18)),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -57,13 +93,15 @@ class MessageReactionHover extends StatefulWidget {
     this.enabled = true,
     this.timeLabel = '',
     this.isCurrentUser = false,
-    this.sideInset = 8,
+    this.timeOnLeft,
+    this.sideInset = chatHoverTimeGap,
   });
   final Widget child;
   final ValueChanged<String> onSelected;
   final bool enabled;
   final String timeLabel;
   final bool isCurrentUser;
+  final bool? timeOnLeft;
   final double sideInset;
   @override
   State<MessageReactionHover> createState() => _MessageReactionHoverState();
@@ -85,7 +123,11 @@ class _MessageReactionHoverState extends State<MessageReactionHover> {
   @override
   void didUpdateWidget(covariant MessageReactionHover oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!widget.enabled) _hide();
+    if (!widget.enabled ||
+        widget.timeOnLeft != oldWidget.timeOnLeft ||
+        widget.sideInset != oldWidget.sideInset) {
+      _hide();
+    }
   }
 
   void _hide() {
@@ -119,8 +161,8 @@ class _MessageReactionHoverState extends State<MessageReactionHover> {
         ? origin.dy - 42
         : origin.dy + box.size.height + 4;
     // 时间放在气泡外侧，编辑标记预留独立空间；边缘空间不足时放在工具条外侧。
-    const timeWidth = 48.0;
-    final sideLeft = widget.isCurrentUser
+    const timeWidth = chatHoverTimeWidth;
+    final sideLeft = (widget.timeOnLeft ?? widget.isCurrentUser)
         ? origin.dx - widget.sideInset - timeWidth
         : origin.dx + box.size.width + widget.sideInset;
     final fitsSide =

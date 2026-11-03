@@ -1,3 +1,5 @@
+import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
+import 'package:anoxia/framework/theme/composer_frame.dart';
 import 'dart:async';
 
 import 'package:anoxia/common/utils/device_util.dart';
@@ -110,131 +112,165 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         final isMobile = DeviceUtil.isMobile(context);
-        final showQuickPanel = width >= 1120;
-        // 内容宽不足 1120（平板竖屏/横屏窄栏、桌面窄窗口）：快捷面板默认收起，
-        // FAB 按需以 Sheet 弹出。用 !isMobile 而非 isTablet，避免 1032 这类
-        // 刚过旧平板阈值的宽度被判为桌面后面板既不常驻、又无 FAB 入口。
+        final singleColumn = DeviceUtil.useSingleColumnPush(context);
+        final showQuickPanel = width >= 720 && !singleColumn;
         final showQuickSheet = !isMobile && !showQuickPanel && _quickSheetOpen;
         final colors = Theme.of(context).colorScheme;
+        final style = DeviceUtil.supportsDesktopLayoutPreference(context)
+            ? resolveDesktopLayoutStyle(
+                ref.watch(desktopLayoutProvider),
+                availableWidth: MediaQuery.sizeOf(context).width,
+              )
+            : DesktopLayoutStyle.card;
+        final card = showQuickPanel && style == DesktopLayoutStyle.card;
+        final calendar = Column(
+          children: [
+            _ScheduleToolbar(
+              view: _view,
+              focusedDay: _focusedDay,
+              compact: width - (showQuickPanel ? 300 : 0) < 840,
+              calendarOptions: ScheduleCalendarOptions(
+                region: _holidayRegion,
+                showLunar: _showLunar,
+                onRegionChanged: (value) =>
+                    _saveCalendarPreferences(region: value),
+                onLunarChanged: (value) =>
+                    _saveCalendarPreferences(lunar: value),
+              ),
+              onViewChanged: _changeView,
+              onToday: _showToday,
+              onPrevious: () => _moveFocus(-1),
+              onNext: () => _moveFocus(1),
+              onCreate: () => _openEditor(initialStart: _focusedDay),
+            ),
+            Divider(height: 1, color: ComposerFrame.side(colors).color),
+            Expanded(
+              child: schedule.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, _) => _LoadError(onRetry: _load),
+                data: (_) => _buildCalendar(viewOccurrences),
+              ),
+            ),
+          ],
+        );
         return Scaffold(
-          backgroundColor: colors.surface,
+          backgroundColor: singleColumn
+              ? colors.surfaceContainerLowest
+              : Theme.of(context).scaffoldBackgroundColor,
           appBar: isMobile
               ? AppBar(
                   key: const ValueKey('schedule-mobile-app-bar'),
                   centerTitle: true,
                   titleSpacing: 16,
                   title: Text('schedule_title'.tr()),
-                  backgroundColor: colors.surface,
+                  backgroundColor: colors.surfaceContainerLowest,
                   surfaceTintColor: Colors.transparent,
                 )
               : null,
           body: SafeArea(
             key: const ValueKey('schedule-body-safe-area'),
             top: !isMobile,
-            child: Column(
+            child: Stack(
               children: [
-                _ScheduleToolbar(
-                  view: _view,
-                  focusedDay: _focusedDay,
-                  compact: width < 1120,
-                  calendarOptions: ScheduleCalendarOptions(
-                    region: _holidayRegion,
-                    showLunar: _showLunar,
-                    onRegionChanged: (value) =>
-                        _saveCalendarPreferences(region: value),
-                    onLunarChanged: (value) =>
-                        _saveCalendarPreferences(lunar: value),
-                  ),
-                  onViewChanged: _changeView,
-                  onToday: _showToday,
-                  onPrevious: () => _moveFocus(-1),
-                  onNext: () => _moveFocus(1),
-                  onCreate: () => _openEditor(initialStart: _focusedDay),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: schedule.when(
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (_, _) => _LoadError(onRetry: _load),
-                    data: (_) => Stack(
-                      children: [
-                        Row(
+                Row(
+                  children: [
+                    if (showQuickPanel) ...[
+                      SizedBox(
+                        key: const ValueKey('schedule-left-list'),
+                        width: 280,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            if (showQuickPanel) ...[
-                              SizedBox(
-                                width: 270,
-                                child: ScheduleQuickPanel(
-                                  occurrences: quickOccurrences,
-                                  onEventTap: _openExisting,
-                                ),
-                              ),
-                              const VerticalDivider(width: 1),
-                            ],
-                            Expanded(child: _buildCalendar(viewOccurrences)),
-                          ],
-                        ),
-                        if (showQuickSheet)
-                          Positioned.fill(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () =>
-                                  setState(() => _quickSheetOpen = false),
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: GestureDetector(
-                                  onTap: () {},
-                                  child: Container(
-                                    width: 270,
-                                    margin: const EdgeInsets.fromLTRB(
-                                      8,
-                                      10,
-                                      12,
-                                      12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: colors.surfaceContainerLowest,
-                                      borderRadius: BorderRadius.circular(
-                                        RadiusToken.xl,
-                                      ),
-                                      border: Border.all(
-                                        color: colors.outlineVariant.withValues(
-                                          alpha: 0.18,
-                                        ),
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.08,
-                                          ),
-                                          blurRadius: 24,
-                                          offset: const Offset(-8, 8),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                        RadiusToken.xl,
-                                      ),
-                                      child: ScheduleQuickPanel(
-                                        occurrences: quickOccurrences,
-                                        onEventTap: (event) {
-                                          setState(
-                                            () => _quickSheetOpen = false,
-                                          );
-                                          _openExisting(event);
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                              child: Text(
+                                'schedule_title'.tr(),
+                                style: Theme.of(context).textTheme.titleLarge,
                               ),
                             ),
+                            Expanded(
+                              child: ScheduleQuickPanel(
+                                occurrences: quickOccurrences,
+                                onEventTap: _openExisting,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!card) const SizedBox(width: 12),
+                    ],
+                    Expanded(
+                      child: card
+                          ? Container(
+                              key: const ValueKey('schedule-calendar-card'),
+                              margin: const EdgeInsets.fromLTRB(8, 12, 12, 12),
+                              clipBehavior: Clip.antiAlias,
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: ComposerFrame.radius,
+                                border: Border.fromBorderSide(
+                                  ComposerFrame.side(colors),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colors.shadow.withValues(alpha: .10),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                // 内容沿描边内缘裁剪，避免日期网格覆盖圆角。
+                                borderRadius: BorderRadius.circular(
+                                  RadiusToken.lg -
+                                      ComposerFrame.side(colors).width,
+                                ),
+                                child: calendar,
+                              ),
+                            )
+                          : calendar,
+                    ),
+                  ],
+                ),
+                if (showQuickSheet)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => setState(() => _quickSheetOpen = false),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            width: 270,
+                            margin: const EdgeInsets.fromLTRB(8, 10, 12, 12),
+                            clipBehavior: Clip.antiAlias,
+                            decoration: BoxDecoration(
+                              color: colors.surfaceContainerLowest,
+                              borderRadius: ComposerFrame.radius,
+                              border: Border.fromBorderSide(
+                                ComposerFrame.side(colors),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colors.shadow.withValues(alpha: .08),
+                                  blurRadius: 24,
+                                  offset: const Offset(-8, 8),
+                                ),
+                              ],
+                            ),
+                            child: ScheduleQuickPanel(
+                              occurrences: quickOccurrences,
+                              onEventTap: (event) {
+                                setState(() => _quickSheetOpen = false);
+                                _openExisting(event);
+                              },
+                            ),
                           ),
-                      ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -454,14 +490,6 @@ class _ScheduleToolbar extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final navigation = <Widget>[
-            if (!compact)
-              Text(
-                'schedule_title'.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            if (!compact) const SizedBox(width: 20),
             if (compact)
               IconButton(
                 tooltip: 'schedule_today'.tr(),

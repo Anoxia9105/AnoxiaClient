@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/theme/composer_frame.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/schedule_event.dart';
 import 'package:anoxia/features/schedule/presentation/widgets/schedule_event_options.dart';
@@ -156,18 +157,9 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
         : (screen.height - 48).clamp(0.0, 720.0);
     final inputTheme = Theme.of(context).inputDecorationTheme.copyWith(
       filled: false,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: colors.outlineVariant),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: colors.outlineVariant),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: colors.primary, width: 1.6),
-      ),
+      border: ComposerFrame.input(colors),
+      enabledBorder: ComposerFrame.input(colors),
+      focusedBorder: ComposerFrame.input(colors, focused: true),
     );
     final content = SizedBox(
       key: ValueKey(
@@ -194,50 +186,32 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
                           children: [
                             _buildPrimaryColumn(context),
                             const SizedBox(height: 24),
-                            Divider(color: colors.outlineVariant),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 8),
                             _buildSettingsColumn(context),
                           ],
                         ),
                       )
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: SingleChildScrollView(
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(28, 24, 28, 32),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
                               key: const ValueKey(
                                 'schedule-dialog-primary-column',
                               ),
-                              padding: const EdgeInsets.fromLTRB(
-                                28,
-                                24,
-                                28,
-                                32,
-                              ),
                               child: _buildPrimaryColumn(context),
                             ),
-                          ),
-                          VerticalDivider(
-                            width: 1,
-                            thickness: 1,
-                            color: colors.outlineVariant,
-                          ),
-                          SizedBox(
-                            key: const ValueKey(
-                              'schedule-dialog-settings-column',
-                            ),
-                            width: 344,
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.fromLTRB(
-                                24,
-                                24,
-                                24,
-                                32,
+                            const SizedBox(width: 28),
+                            SizedBox(
+                              key: const ValueKey(
+                                'schedule-dialog-settings-column',
                               ),
+                              width: 300,
                               child: _buildSettingsColumn(context),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
               ),
             ),
@@ -247,7 +221,7 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
             decoration: BoxDecoration(
               color: colors.surfaceContainerLow,
-              border: Border(top: BorderSide(color: colors.outlineVariant)),
+              border: Border(top: ComposerFrame.side(colors)),
             ),
             child: Row(
               children: isCompact
@@ -350,7 +324,10 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
       surfaceTintColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(24),
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: ComposerFrame.radius,
+        side: ComposerFrame.side(colors),
+      ),
       child: content,
     );
   }
@@ -361,7 +338,7 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
       padding: EdgeInsets.fromLTRB(isCompact ? 18 : 24, 12, 12, 12),
       decoration: BoxDecoration(
         color: colors.surfaceContainerLow,
-        border: Border(bottom: BorderSide(color: colors.outlineVariant)),
+        border: Border(bottom: ComposerFrame.side(colors)),
       ),
       child: Row(
         children: [
@@ -447,64 +424,56 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
           ),
         ),
         const SizedBox(height: 22),
-        Container(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-          decoration: BoxDecoration(
-            color: colors.surfaceContainerLow,
-            border: Border.all(color: colors.outlineVariant),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.schedule_rounded, size: 20, color: colors.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
+        Column(
+          children: [
+            Row(
+              children: [
+                Icon(Icons.schedule_rounded, size: 20, color: colors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'schedule_time_section'.tr(),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 72),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
                     child: Text(
-                      'schedule_time_section'.tr(),
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      'schedule_all_day'.tr(),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 72),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        'schedule_all_day'.tr(),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Switch(
-                    key: const ValueKey('schedule-all-day'),
-                    value: _allDay,
-                    onChanged: _saving ? null : _setAllDay,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _DateTimeRow(
-                label: 'schedule_start'.tr(),
-                value: _start,
-                allDay: _allDay,
-                onDateTap: () => _pickDate(isStart: true),
-                onTimeTap: () => _pickTime(isStart: true),
-              ),
-              const SizedBox(height: 10),
-              _DateTimeRow(
-                label: 'schedule_end'.tr(),
-                value: _end,
-                allDay: _allDay,
-                onDateTap: () => _pickDate(isStart: false),
-                onTimeTap: () => _pickTime(isStart: false),
-              ),
-            ],
-          ),
+                ),
+                const SizedBox(width: 6),
+                Switch(
+                  key: const ValueKey('schedule-all-day'),
+                  value: _allDay,
+                  onChanged: _saving ? null : _setAllDay,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _DateTimeRow(
+              label: 'schedule_start'.tr(),
+              value: _start,
+              allDay: _allDay,
+              onDateTap: () => _pickDate(isStart: true),
+              onTimeTap: () => _pickTime(isStart: true),
+            ),
+            const SizedBox(height: 10),
+            _DateTimeRow(
+              label: 'schedule_end'.tr(),
+              value: _end,
+              allDay: _allDay,
+              onDateTap: () => _pickDate(isStart: false),
+              onTimeTap: () => _pickTime(isStart: false),
+            ),
+          ],
         ),
         const SizedBox(height: 22),
         TextFormField(
@@ -725,11 +694,16 @@ class _DateTimeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.toString();
+    final style = OutlinedButton.styleFrom(
+      side: ComposerFrame.side(Theme.of(context).colorScheme),
+      shape: const RoundedRectangleBorder(borderRadius: ComposerFrame.radius),
+    );
     return Row(
       children: [
         SizedBox(width: 62, child: Text(label)),
         Expanded(
           child: OutlinedButton(
+            style: style,
             onPressed: onDateTap,
             child: Text(DateFormat.yMMMd(locale).format(value)),
           ),
@@ -737,6 +711,7 @@ class _DateTimeRow extends StatelessWidget {
         if (!allDay) ...[
           const SizedBox(width: 8),
           OutlinedButton(
+            style: style,
             onPressed: onTimeTap,
             child: Text(DateFormat.Hm(locale).format(value)),
           ),

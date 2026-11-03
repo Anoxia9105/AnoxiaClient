@@ -58,55 +58,52 @@ class ScheduleQuickPanel extends StatelessWidget {
       return start.isAfter(now) && start.isBefore(nextWeek);
     }).toList()..sort((a, b) => a.startAt.compareTo(b.startAt));
 
-    return ColoredBox(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _SectionTitle(title: 'schedule_today_events'.tr()),
-          const SizedBox(height: 8),
-          if (todaysEvents.isEmpty)
-            Text(
-              'schedule_empty'.tr(),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            )
-          else
-            ...todaysEvents
-                .take(4)
-                .map(
-                  (occurrence) => ScheduleEventTile(
-                    event: occurrence.event,
-                    occurrence: occurrence,
-                    compact: true,
-                    onTap: () => onEventTap(occurrence.event),
-                  ),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _SectionTitle(title: 'schedule_today_events'.tr()),
+        const SizedBox(height: 8),
+        if (todaysEvents.isEmpty)
+          Text(
+            'schedule_empty'.tr(),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          )
+        else
+          ...todaysEvents
+              .take(4)
+              .map(
+                (occurrence) => ScheduleEventTile(
+                  event: occurrence.event,
+                  occurrence: occurrence,
+                  compact: true,
+                  onTap: () => onEventTap(occurrence.event),
                 ),
-          const SizedBox(height: 24),
-          _SectionTitle(title: 'schedule_upcoming'.tr()),
-          const SizedBox(height: 8),
-          if (upcoming.isEmpty)
-            Text(
-              'schedule_no_upcoming'.tr(),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-            )
-          else
-            ...upcoming
-                .take(8)
-                .map(
-                  (occurrence) => ScheduleEventTile(
-                    event: occurrence.event,
-                    occurrence: occurrence,
-                    compact: true,
-                    showDate: true,
-                    onTap: () => onEventTap(occurrence.event),
-                  ),
+        const SizedBox(height: 24),
+        _SectionTitle(title: 'schedule_upcoming'.tr()),
+        const SizedBox(height: 8),
+        if (upcoming.isEmpty)
+          Text(
+            'schedule_no_upcoming'.tr(),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          )
+        else
+          ...upcoming
+              .take(8)
+              .map(
+                (occurrence) => ScheduleEventTile(
+                  event: occurrence.event,
+                  occurrence: occurrence,
+                  compact: true,
+                  showDate: true,
+                  onTap: () => onEventTap(occurrence.event),
                 ),
-        ],
-      ),
+              ),
+      ],
     );
   }
 }

@@ -1,7 +1,9 @@
 import 'package:anoxia/features/chat/presentation/widgets/message_menu/message_reaction_picker.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('鼠标移入显示紧凑表情条，移入表情条保持并可选择', (tester) async {
@@ -13,6 +15,8 @@ void main() {
             child: MessageReactionHover(
               onSelected: (value) => selected = value,
               timeLabel: '12:34',
+              isCurrentUser: true,
+              timeOnLeft: false,
               sideInset: 28,
               child: const SizedBox(width: 150, height: 60, child: Text('消息')),
             ),
@@ -59,6 +63,33 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     expect(find.byType(MessageReactionPicker), findsNothing);
     await mouse.removePointer();
+  });
+
+  testWidgets('快捷表情优先最近使用，并去重补足默认表情', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final pickerKey = GlobalKey<EmojiPickerState>();
+    final history = EmojiPickerUtils();
+    await history.addEmojiToRecentlyUsed(
+      key: pickerKey,
+      emoji: const Emoji('👍', '赞'),
+    );
+    await history.addEmojiToRecentlyUsed(
+      key: pickerKey,
+      emoji: const Emoji('🎉', '庆祝'),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: MessageReactionPicker(onSelected: (_) {})),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.getTopLeft(find.text('🎉')).dx,
+      lessThan(tester.getTopLeft(find.text('👍')).dx),
+    );
+    expect(find.text('👍'), findsOneWidget);
+    expect(find.text('❤️'), findsOneWidget);
+    expect(find.byType(IconButton), findsNWidgets(7));
   });
 
   testWidgets('触屏菜单顶部表情条一行显示，点击直接回传回应', (tester) async {

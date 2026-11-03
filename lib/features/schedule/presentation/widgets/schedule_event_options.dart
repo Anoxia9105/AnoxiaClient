@@ -213,179 +213,169 @@ class _ScheduleRecurrenceEditorState extends State<ScheduleRecurrenceEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Column(
       key: const ValueKey('schedule-recurrence'),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppSelectField<ScheduleRecurrenceFrequency?>(
-            key: const ValueKey('schedule-recurrence-frequency'),
-            value: _frequency,
-            label: 'schedule_repeat'.tr(),
-            icon: Icons.repeat_rounded,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppSelectField<ScheduleRecurrenceFrequency?>(
+          key: const ValueKey('schedule-recurrence-frequency'),
+          value: _frequency,
+          label: 'schedule_repeat'.tr(),
+          icon: Icons.repeat_rounded,
+          enabled: widget.enabled,
+          options: [
+            AppSelectOption<ScheduleRecurrenceFrequency?>(
+              value: null,
+              label: 'schedule_repeat_none'.tr(),
+            ),
+            ...ScheduleRecurrenceFrequency.values.map(
+              (frequency) => AppSelectOption(
+                value: frequency,
+                label: _frequencyLabel(frequency),
+              ),
+            ),
+          ],
+          onChanged: (frequency) {
+            setState(() {
+              _frequency = frequency;
+              if (frequency == ScheduleRecurrenceFrequency.weekly &&
+                  _weekdays.isEmpty) {
+                _weekdays.add(DateTime.now().weekday);
+              }
+            });
+            _emit();
+          },
+        ),
+        if (_frequency != null) ...[
+          const SizedBox(height: 12),
+          TextFormField(
+            key: const ValueKey('schedule-recurrence-interval'),
+            controller: _intervalController,
             enabled: widget.enabled,
-            options: [
-              AppSelectOption<ScheduleRecurrenceFrequency?>(
-                value: null,
-                label: 'schedule_repeat_none'.tr(),
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'schedule_repeat_interval'.tr(),
+            ),
+            validator: (value) {
+              if (_frequency == null) return null;
+              final interval = int.tryParse(value ?? '');
+              return interval == null || interval < 1 || interval > 99
+                  ? 'schedule_repeat_interval_invalid'.tr()
+                  : null;
+            },
+            onChanged: (_) => _emit(),
+          ),
+          if (_frequency == ScheduleRecurrenceFrequency.weekly) ...[
+            const SizedBox(height: 12),
+            Text(
+              'schedule_repeat_on'.tr(),
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 6),
+            FormField<Set<int>>(
+              initialValue: _weekdays,
+              validator: (_) => _weekdays.isEmpty
+                  ? 'schedule_repeat_weekday_required'.tr()
+                  : null,
+              builder: (field) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 6,
+                    children: List.generate(7, (index) {
+                      final weekday = index + 1;
+                      return FilterChip(
+                        key: ValueKey('schedule-recurrence-weekday-$weekday'),
+                        selected: _weekdays.contains(weekday),
+                        label: Text(_weekdayLabel(context, weekday)),
+                        onSelected: widget.enabled
+                            ? (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _weekdays.add(weekday);
+                                  } else {
+                                    _weekdays.remove(weekday);
+                                  }
+                                });
+                                field.didChange(_weekdays);
+                                _emit();
+                              }
+                            : null,
+                      );
+                    }),
+                  ),
+                  if (field.hasError) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      field.errorText!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              ...ScheduleRecurrenceFrequency.values.map(
-                (frequency) => AppSelectOption(
-                  value: frequency,
-                  label: _frequencyLabel(frequency),
-                ),
-              ),
-            ],
-            onChanged: (frequency) {
-              setState(() {
-                _frequency = frequency;
-                if (frequency == ScheduleRecurrenceFrequency.weekly &&
-                    _weekdays.isEmpty) {
-                  _weekdays.add(DateTime.now().weekday);
-                }
-              });
+            ),
+          ],
+          const SizedBox(height: 12),
+          AppSelectField<ScheduleRecurrenceEndType>(
+            key: const ValueKey('schedule-recurrence-end'),
+            value: _endType,
+            label: 'schedule_repeat_end'.tr(),
+            enabled: widget.enabled,
+            options: ScheduleRecurrenceEndType.values
+                .map(
+                  (type) =>
+                      AppSelectOption(value: type, label: _endTypeLabel(type)),
+                )
+                .toList(growable: false),
+            onChanged: (type) {
+              setState(() => _endType = type);
               _emit();
             },
           ),
-          if (_frequency != null) ...[
-            const SizedBox(height: 12),
+          if (_endType == ScheduleRecurrenceEndType.until) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              key: const ValueKey('schedule-recurrence-until'),
+              onPressed: widget.enabled ? _pickUntil : null,
+              icon: const Icon(Icons.event_outlined),
+              label: Text(
+                DateFormat.yMMMd(context.locale.toString()).format(_until),
+              ),
+            ),
+          ],
+          if (_endType == ScheduleRecurrenceEndType.count) ...[
+            const SizedBox(height: 10),
             TextFormField(
-              key: const ValueKey('schedule-recurrence-interval'),
-              controller: _intervalController,
+              key: const ValueKey('schedule-recurrence-count'),
+              controller: _countController,
               enabled: widget.enabled,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'schedule_repeat_interval'.tr(),
+                labelText: 'schedule_repeat_occurrences'.tr(),
               ),
               validator: (value) {
-                if (_frequency == null) return null;
-                final interval = int.tryParse(value ?? '');
-                return interval == null || interval < 1 || interval > 99
-                    ? 'schedule_repeat_interval_invalid'.tr()
+                if (_frequency == null ||
+                    _endType != ScheduleRecurrenceEndType.count) {
+                  return null;
+                }
+                final count = int.tryParse(value ?? '');
+                return count == null || count < 1 || count > 999
+                    ? 'schedule_repeat_count_invalid'.tr()
                     : null;
               },
               onChanged: (_) => _emit(),
             ),
-            if (_frequency == ScheduleRecurrenceFrequency.weekly) ...[
-              const SizedBox(height: 12),
-              Text(
-                'schedule_repeat_on'.tr(),
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 6),
-              FormField<Set<int>>(
-                initialValue: _weekdays,
-                validator: (_) => _weekdays.isEmpty
-                    ? 'schedule_repeat_weekday_required'.tr()
-                    : null,
-                builder: (field) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 6,
-                      children: List.generate(7, (index) {
-                        final weekday = index + 1;
-                        return FilterChip(
-                          key: ValueKey('schedule-recurrence-weekday-$weekday'),
-                          selected: _weekdays.contains(weekday),
-                          label: Text(_weekdayLabel(context, weekday)),
-                          onSelected: widget.enabled
-                              ? (selected) {
-                                  setState(() {
-                                    if (selected) {
-                                      _weekdays.add(weekday);
-                                    } else {
-                                      _weekdays.remove(weekday);
-                                    }
-                                  });
-                                  field.didChange(_weekdays);
-                                  _emit();
-                                }
-                              : null,
-                        );
-                      }),
-                    ),
-                    if (field.hasError) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        field.errorText!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            AppSelectField<ScheduleRecurrenceEndType>(
-              key: const ValueKey('schedule-recurrence-end'),
-              value: _endType,
-              label: 'schedule_repeat_end'.tr(),
-              enabled: widget.enabled,
-              options: ScheduleRecurrenceEndType.values
-                  .map(
-                    (type) => AppSelectOption(
-                      value: type,
-                      label: _endTypeLabel(type),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: (type) {
-                setState(() => _endType = type);
-                _emit();
-              },
-            ),
-            if (_endType == ScheduleRecurrenceEndType.until) ...[
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                key: const ValueKey('schedule-recurrence-until'),
-                onPressed: widget.enabled ? _pickUntil : null,
-                icon: const Icon(Icons.event_outlined),
-                label: Text(
-                  DateFormat.yMMMd(context.locale.toString()).format(_until),
-                ),
-              ),
-            ],
-            if (_endType == ScheduleRecurrenceEndType.count) ...[
-              const SizedBox(height: 10),
-              TextFormField(
-                key: const ValueKey('schedule-recurrence-count'),
-                controller: _countController,
-                enabled: widget.enabled,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'schedule_repeat_occurrences'.tr(),
-                ),
-                validator: (value) {
-                  if (_frequency == null ||
-                      _endType != ScheduleRecurrenceEndType.count) {
-                    return null;
-                  }
-                  final count = int.tryParse(value ?? '');
-                  return count == null || count < 1 || count > 999
-                      ? 'schedule_repeat_count_invalid'.tr()
-                      : null;
-                },
-                onChanged: (_) => _emit(),
-              ),
-            ],
-            const SizedBox(height: 8),
-            Text(
-              'schedule_repeat_series_hint'.tr(),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
           ],
+          const SizedBox(height: 8),
+          Text(
+            'schedule_repeat_series_hint'.tr(),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
-      ),
+      ],
     );
   }
 

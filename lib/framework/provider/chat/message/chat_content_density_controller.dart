@@ -3,6 +3,9 @@ import 'dart:math' as math;
 import 'package:anoxia/common/utils/sp_util.dart';
 import 'package:flutter_riverpod/legacy.dart' as legacy;
 
+const double chatHoverTimeWidth = 48;
+const double chatHoverTimeGap = 8;
+
 enum ChatContentDensity {
   comfortable('comfortable'),
   compact('compact'),
@@ -70,7 +73,7 @@ ChatMessageLayout resolveChatMessageLayout(
       avatarSize: 30,
       avatarGap: 8,
       headerInset: 38,
-      trailingSpace: 8,
+      trailingSpace: chatHoverTimeWidth + 2 * chatHoverTimeGap,
       horizontalPadding: math.min(baseHorizontalPadding, 16),
     ),
   };

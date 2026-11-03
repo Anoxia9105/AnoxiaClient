@@ -16,6 +16,61 @@ class _ReactionRepository implements MessageRepository {
 }
 
 void main() {
+  testWidgets('超过五种回应时折叠，并在底部向上展开', (tester) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final emojis = [...reactionEmojiPalette, '🎉'];
+    final reactions = container.read(roomChatReactionsProvider.notifier);
+    for (var i = 0; i < emojis.length; i++) {
+      reactions.applyEvent(
+        roomId: 'r',
+        messageId: 'm',
+        emoji: emojis[i],
+        isRemove: false,
+        senderUserId: i + 1,
+        currentUserId: null,
+        senderName: '回应者${i + 1}',
+      );
+    }
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomRight,
+              child: MessageReactionBar(
+                message: ChatMessage(roomId: 'r', messageId: 'm'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final more = find.text('+2');
+    expect(more, findsOneWidget);
+    expect(find.text('回应者6'), findsNothing);
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: const Offset(10, 10));
+    await mouse.moveTo(tester.getCenter(more));
+    await tester.pumpAndSettle();
+    final hiddenUser = find.text('回应者6');
+    expect(hiddenUser, findsOneWidget);
+    expect(
+      tester.getCenter(hiddenUser).dy,
+      lessThan(tester.getCenter(more).dy),
+    );
+    await mouse.moveTo(tester.getCenter(hiddenUser));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(hiddenUser, findsOneWidget);
+    await mouse.moveTo(const Offset(10, 10));
+    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+    expect(hiddenUser, findsNothing);
+    await mouse.removePointer();
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+    expect(hiddenUser, findsOneWidget);
+  });
   test('更多表情浮层在消息上下方翻转时尖角仍对准消息', () {
     for (final screen in [const Size(320, 700), const Size(1280, 800)]) {
       for (final left in [16.0, screen.width - 96]) {

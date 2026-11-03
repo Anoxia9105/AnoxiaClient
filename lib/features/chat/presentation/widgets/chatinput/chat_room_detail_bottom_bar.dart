@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/theme/composer_frame.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_input_field.dart';
@@ -49,7 +50,8 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     /// 桌面布局：真实桌面环境，或宽度超过平板的 Web 页面
-    final isDesktop = DeviceUtil.isRealDesktop() ||
+    final isDesktop =
+        DeviceUtil.isRealDesktop() ||
         (DeviceUtil.isRealWeb() && DeviceUtil.isDesktop(context));
     final content = switch (roomStatus) {
       0 => ChatInputField(bottomSheet: onFieldTap),
@@ -79,10 +81,9 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(RadiusToken.lg),
-                  border: Border.all(
-                    width: 1,
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+                  borderRadius: ComposerFrame.radius,
+                  border: Border.fromBorderSide(
+                    ComposerFrame.side(colorScheme),
                   ),
                   boxShadow: [
                     BoxShadow(

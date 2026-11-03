@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/theme/composer_frame.dart';
 import 'dart:math' as math;
 import 'package:anoxia/features/schedule/presentation/schedule_calendar_layout.dart';
 import 'package:anoxia/framework/domain/schedule_event.dart';
@@ -35,7 +36,7 @@ class ScheduleMonthView extends StatelessWidget {
           height: 42,
           decoration: BoxDecoration(
             color: colors.surfaceContainerLow,
-            border: Border(bottom: BorderSide(color: colors.outlineVariant)),
+            border: Border(bottom: ComposerFrame.side(colors)),
           ),
           child: Row(
             children: List.generate(
@@ -115,12 +116,9 @@ class _MonthDayCell extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(4, 3, 4, 2),
         decoration: BoxDecoration(
-          color: day.month == currentMonth
-              ? colors.surface
-              : colors.surfaceContainerLowest,
           border: Border(
-            right: BorderSide(color: colors.outlineVariant),
-            bottom: BorderSide(color: colors.outlineVariant),
+            right: ComposerFrame.side(colors),
+            bottom: ComposerFrame.side(colors),
           ),
         ),
         child: LayoutBuilder(

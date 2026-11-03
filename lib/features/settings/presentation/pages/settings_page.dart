@@ -252,20 +252,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       orElse: () => '--',
     );
 
+    final singleColumn = DeviceUtil.useSingleColumnPush(context);
+    final flat =
+        !singleColumn &&
+        resolveDesktopLayoutStyle(
+              desktopLayoutPreference,
+              availableWidth: MediaQuery.sizeOf(context).width,
+            ) ==
+            DesktopLayoutStyle.flat;
+
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: flat
+          ? Theme.of(context).scaffoldBackgroundColor
+          : colorScheme.surface,
       appBar: AppBar(
         centerTitle: DeviceUtil.isMobile(context),
         title: Text('settings_page_title'.tr()),
       ),
       body: SettingsSplitView(
-        joinedPanels:
-            !DeviceUtil.useSingleColumnPush(context) &&
-            resolveDesktopLayoutStyle(
-                  desktopLayoutPreference,
-                  availableWidth: MediaQuery.sizeOf(context).width,
-                ) ==
-                DesktopLayoutStyle.card,
+        joinedPanels: flat,
         destinations: [
           SettingsDestination(
             title: 'announcement_settings_title'.tr(),

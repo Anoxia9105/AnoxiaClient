@@ -107,8 +107,6 @@ class UserMessageBubble extends StatelessWidget {
               ),
             ],
           ),
-          // 表情回应聚合条：仅发送成功的非系统消息渲染，无回应时不占位
-          if (canReactToMessage(message)) MessageReactionBar(message: message),
         ],
       ),
     );
@@ -224,11 +222,21 @@ class MessageContentFrame extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final content = MessageContent(
+    final body = MessageContent(
       message: message,
       strategy: strategy,
       textColor: view.textColor,
     );
+    final content = canReactToMessage(message)
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              body,
+              MessageReactionBar(message: message),
+            ],
+          )
+        : body;
 
     return ChatMessageContextMenu(
       message: message,
