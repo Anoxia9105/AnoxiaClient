@@ -5,6 +5,10 @@ import 'package:anoxia/features/schedule/presentation/schedule_calendar_layout.d
 import 'package:anoxia/features/schedule/presentation/widgets/schedule_event_dialog.dart';
 import 'package:anoxia/features/schedule/presentation/widgets/schedule_event_list.dart';
 import 'package:anoxia/features/schedule/presentation/widgets/schedule_month_view.dart';
+import 'package:anoxia/features/schedule/presentation/widgets/schedule_calendar_options.dart';
+import 'package:anoxia/framework/domain/schedule_holiday.dart';
+import 'package:anoxia/framework/provider/schedule/schedule_holidays.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:anoxia/features/schedule/presentation/widgets/schedule_timeline_view.dart';
 import 'package:anoxia/framework/domain/schedule_event.dart';
 import 'package:anoxia/framework/core/notification_helper.dart';
@@ -24,6 +28,9 @@ class SchedulePage extends ConsumerStatefulWidget {
 class _SchedulePageState extends ConsumerState<SchedulePage> {
   ScheduleViewMode _view = ScheduleViewMode.month;
   DateTime _focusedDay = DateTime.now();
+  ScheduleHolidayRegion _holidayRegion = ScheduleHolidayRegion.none;
+  bool _showLunar = false;
+  bool _preferencesStarted = false;
   final Map<String, Timer> _reminderTimers = {};
 
   /// 平板快捷面板（近期日程）是否以叠加 Sheet 打开。
@@ -36,6 +43,52 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_preferencesStarted) {
+      _preferencesStarted = true;
+      unawaited(_restoreCalendarPreferences(context.locale.languageCode));
+    }
+  }
+
+  Future<void> _restoreCalendarPreferences(String language) async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('schedule.holidayRegion');
+    final region =
+        ScheduleHolidayRegion.values
+            .where((r) => r.name == saved)
+            .firstOrNull ??
+        switch (language) {
+          'zh' => ScheduleHolidayRegion.cn,
+          'ja' => ScheduleHolidayRegion.jp,
+          _ => ScheduleHolidayRegion.none,
+        };
+    final lunar =
+        prefs.getBool('schedule.showLunar') ??
+        region == ScheduleHolidayRegion.cn;
+    if (!mounted) return;
+    setState(() {
+      _holidayRegion = region;
+      _showLunar = lunar;
+    });
+    await prefs.setString('schedule.holidayRegion', region.name);
+    await prefs.setBool('schedule.showLunar', lunar);
+  }
+
+  Future<void> _saveCalendarPreferences({
+    ScheduleHolidayRegion? region,
+    bool? lunar,
+  }) async {
+    setState(() {
+      _holidayRegion = region ?? _holidayRegion;
+      _showLunar = lunar ?? _showLunar;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('schedule.holidayRegion', _holidayRegion.name);
+    await prefs.setBool('schedule.showLunar', _showLunar);
   }
 
   @override
@@ -84,6 +137,14 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                   view: _view,
                   focusedDay: _focusedDay,
                   compact: width < 1120,
+                  calendarOptions: ScheduleCalendarOptions(
+                    region: _holidayRegion,
+                    showLunar: _showLunar,
+                    onRegionChanged: (value) =>
+                        _saveCalendarPreferences(region: value),
+                    onLunarChanged: (value) =>
+                        _saveCalendarPreferences(lunar: value),
+                  ),
                   onViewChanged: _changeView,
                   onToday: _showToday,
                   onPrevious: () => _moveFocus(-1),
@@ -225,6 +286,14 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
           key: key,
           focusedDay: _focusedDay,
           occurrences: occurrences,
+          holidays:
+              ref
+                  .watch(
+                    scheduleHolidaysProvider(_holidayRegion, _focusedDay.year),
+                  )
+                  .value ??
+              const {},
+          showLunar: _showLunar,
           onDayTap: (date) => _openEditor(initialStart: date),
           onEventTap: _openExisting,
         );
@@ -354,6 +423,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
 }
 
 class _ScheduleToolbar extends StatelessWidget {
+  final Widget calendarOptions;
   final ScheduleViewMode view;
   final DateTime focusedDay;
   final bool compact;
@@ -364,6 +434,7 @@ class _ScheduleToolbar extends StatelessWidget {
   final VoidCallback onCreate;
 
   const _ScheduleToolbar({
+    required this.calendarOptions,
     required this.view,
     required this.focusedDay,
     required this.compact,
@@ -380,107 +451,121 @@ class _ScheduleToolbar extends StatelessWidget {
     final title = DateFormat.yMMMM(locale).format(focusedDay);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          if (!compact)
-            Text(
-              'schedule_title'.tr(),
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-          if (!compact) const SizedBox(width: 20),
-          if (compact)
-            IconButton(
-              tooltip: 'schedule_today'.tr(),
-              onPressed: onToday,
-              icon: const Icon(Icons.today_outlined),
-            )
-          else
-            OutlinedButton(
-              onPressed: onToday,
-              child: Text('schedule_today'.tr()),
-            ),
-          IconButton(
-            tooltip: MaterialLocalizations.of(context).previousMonthTooltip,
-            onPressed: onPrevious,
-            icon: const Icon(Icons.chevron_left),
-          ),
-          IconButton(
-            tooltip: MaterialLocalizations.of(context).nextMonthTooltip,
-            onPressed: onNext,
-            icon: const Icon(Icons.chevron_right),
-          ),
-          if (compact)
-            Expanded(
-              child: Text(
-                title,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final navigation = <Widget>[
+            if (!compact)
+              Text(
+                'schedule_title'.tr(),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
-            )
-          else
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-          if (!compact) const Spacer(),
-          _ScheduleNotificationButton(locale: context.locale),
-          const SizedBox(width: 8),
-          if (compact)
-            PopupMenuButton<ScheduleViewMode>(
-              tooltip: _viewLabel(view),
-              initialValue: view,
-              icon: const Icon(Icons.calendar_view_week_outlined),
-              itemBuilder: (_) => ScheduleViewMode.values
-                  .map(
-                    (item) => PopupMenuItem(
-                      value: item,
-                      child: Text(_viewLabel(item)),
+            if (!compact) const SizedBox(width: 20),
+            if (compact)
+              IconButton(
+                tooltip: 'schedule_today'.tr(),
+                onPressed: onToday,
+                icon: const Icon(Icons.today_outlined),
+              )
+            else
+              OutlinedButton(
+                onPressed: onToday,
+                child: Text('schedule_today'.tr()),
+              ),
+            IconButton(
+              tooltip: MaterialLocalizations.of(context).previousMonthTooltip,
+              onPressed: onPrevious,
+              icon: const Icon(Icons.chevron_left),
+            ),
+            IconButton(
+              tooltip: MaterialLocalizations.of(context).nextMonthTooltip,
+              onPressed: onNext,
+              icon: const Icon(Icons.chevron_right),
+            ),
+            if (compact)
+              Expanded(
+                child: Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              )
+            else
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+            if (!compact) const Spacer(),
+          ];
+          final actions = <Widget>[
+            _ScheduleNotificationButton(locale: context.locale),
+            calendarOptions,
+            const SizedBox(width: 8),
+            if (compact)
+              PopupMenuButton<ScheduleViewMode>(
+                tooltip: _viewLabel(view),
+                initialValue: view,
+                icon: const Icon(Icons.calendar_view_week_outlined),
+                itemBuilder: (_) => ScheduleViewMode.values
+                    .map(
+                      (item) => PopupMenuItem(
+                        value: item,
+                        child: Text(_viewLabel(item)),
+                      ),
+                    )
+                    .toList(),
+                onSelected: onViewChanged,
+              )
+            else
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: SegmentedButton<ScheduleViewMode>(
+                    style: SegmentedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(RadiusToken.md),
+                      ),
                     ),
-                  )
-                  .toList(),
-              onSelected: onViewChanged,
-            )
-          else
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: SegmentedButton<ScheduleViewMode>(
-                  style: SegmentedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(RadiusToken.md),
-                    ),
+                    segments: ScheduleViewMode.values
+                        .map(
+                          (item) => ButtonSegment(
+                            value: item,
+                            label: Text(_viewLabel(item)),
+                          ),
+                        )
+                        .toList(),
+                    selected: {view},
+                    showSelectedIcon: false,
+                    onSelectionChanged: (selection) =>
+                        onViewChanged(selection.first),
                   ),
-                  segments: ScheduleViewMode.values
-                      .map(
-                        (item) => ButtonSegment(
-                          value: item,
-                          label: Text(_viewLabel(item)),
-                        ),
-                      )
-                      .toList(),
-                  selected: {view},
-                  showSelectedIcon: false,
-                  onSelectionChanged: (selection) =>
-                      onViewChanged(selection.first),
                 ),
               ),
-            ),
-          const SizedBox(width: 12),
-          if (compact)
-            IconButton.filled(
-              key: const ValueKey('schedule-create-button'),
-              tooltip: 'schedule_new'.tr(),
-              onPressed: onCreate,
-              icon: const Icon(Icons.add, color: Colors.white),
-            )
-          else
-            FilledButton.icon(
-              key: const ValueKey('schedule-create-button'),
-              onPressed: onCreate,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: Text('schedule_new'.tr()),
-            ),
-        ],
+            const SizedBox(width: 12),
+            if (compact)
+              IconButton.filled(
+                key: const ValueKey('schedule-create-button'),
+                tooltip: 'schedule_new'.tr(),
+                onPressed: onCreate,
+                icon: const Icon(Icons.add, color: Colors.white),
+              )
+            else
+              FilledButton.icon(
+                key: const ValueKey('schedule-create-button'),
+                onPressed: onCreate,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: Text('schedule_new'.tr()),
+              ),
+          ];
+          if (compact && constraints.maxWidth < 500) {
+            return Column(
+              children: [
+                Row(children: navigation),
+                Row(children: [const Spacer(), ...actions]),
+              ],
+            );
+          }
+          return Row(children: [...navigation, ...actions]);
+        },
       ),
     );
   }

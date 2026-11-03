@@ -11,6 +11,28 @@
 
 import 'package:flutter/widgets.dart';
 
+class $AssetsHolidaysGen {
+  const $AssetsHolidaysGen();
+
+  /// File path: assets/holidays/CN-2025.json
+  String get cn2025 => 'assets/holidays/CN-2025.json';
+
+  /// File path: assets/holidays/CN-2026.json
+  String get cn2026 => 'assets/holidays/CN-2026.json';
+
+  /// File path: assets/holidays/JP-2025.json
+  String get jp2025 => 'assets/holidays/JP-2025.json';
+
+  /// File path: assets/holidays/JP-2026.json
+  String get jp2026 => 'assets/holidays/JP-2026.json';
+
+  /// File path: assets/holidays/JP-2027.json
+  String get jp2027 => 'assets/holidays/JP-2027.json';
+
+  /// List of all assets
+  List<String> get values => [cn2025, cn2026, jp2025, jp2026, jp2027];
+}
+
 class $AssetsI18nGen {
   const $AssetsI18nGen();
 
@@ -48,6 +70,7 @@ class $AssetsImagesGen {
 class Assets {
   const Assets._();
 
+  static const $AssetsHolidaysGen holidays = $AssetsHolidaysGen();
   static const $AssetsI18nGen i18n = $AssetsI18nGen();
   static const $AssetsImagesGen images = $AssetsImagesGen();
 }

@@ -189,6 +189,7 @@ const allDependencies = <Package>[
   _logger,
   _logging,
   _lpinyin,
+  _lunar,
   _markdown,
   _matcher,
   _material_color_utilities,
@@ -414,7 +415,8 @@ const dependencies = <Package>[
   _launch_at_startup,
   _permission_handler,
   _mobile_scanner
-];
+,
+  _lunar];
 
 /// Direct `dev_dependencies`.
 const devDependencies = <Package>[
@@ -17679,7 +17681,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('flutter_riverpod'), PackageRef('riverpod_annotation'), PackageRef('go_router'), PackageRef('dio'), PackageRef('http'), PackageRef('web_socket_channel'), PackageRef('connectivity_plus'), PackageRef('protobuf'), PackageRef('fixnum'), PackageRef('anoxia_protocol'), PackageRef('shared_preferences'), PackageRef('flutter_secure_storage'), PackageRef('path_provider'), PackageRef('path'), PackageRef('drift'), PackageRef('sqlite3_flutter_libs'), PackageRef('cross_cache'), PackageRef('easy_localization'), PackageRef('intl'), PackageRef('uuid'), PackageRef('characters'), PackageRef('pub_semver'), PackageRef('crypto'), PackageRef('package_info_plus'), PackageRef('device_info_plus'), PackageRef('url_launcher'), PackageRef('share_plus'), PackageRef('open_filex'), PackageRef('web'), PackageRef('html'), PackageRef('flutter_screenutil'), PackageRef('hugeicons'), PackageRef('bot_toast'), PackageRef('flutter_list_view'), PackageRef('scrollable_positioned_list'), PackageRef('alphabet_list_view'), PackageRef('lpinyin'), PackageRef('photo_view'), PackageRef('flutter_staggered_animations'), PackageRef('flutter_zoom_drawer'), PackageRef('emoji_picker_flutter'), PackageRef('qr_flutter'), PackageRef('chat_bottom_container'), PackageRef('flutter_quill'), PackageRef('dart_quill_delta'), PackageRef('flutter_quill_delta_from_html'), PackageRef('flutter_markdown_plus'), PackageRef('markdown'), PackageRef('image'), PackageRef('image_picker'), PackageRef('image_cropper'), PackageRef('image_gallery_saver_plus'), PackageRef('file_picker'), PackageRef('cross_file'), PackageRef('desktop_drop'), PackageRef('video_player'), PackageRef('video_player_win'), PackageRef('just_audio'), PackageRef('audio_waveforms'), PackageRef('pdf'), PackageRef('flutter_map'), PackageRef('latlong2'), PackageRef('geolocator'), PackageRef('livekit_client'), PackageRef('flutter_webrtc'), PackageRef('jpush_flutter'), PackageRef('firebase_core'), PackageRef('firebase_messaging'), PackageRef('flutter_local_notifications'), PackageRef('app_badge_plus'), PackageRef('flutter_background'), PackageRef('pip'), PackageRef('window_manager'), PackageRef('tray_manager'), PackageRef('desktop_multi_window'), PackageRef('hotkey_manager'), PackageRef('pasteboard'), PackageRef('launch_at_startup'), PackageRef('permission_handler'), PackageRef('mobile_scanner')],
+    dependencies: [PackageRef('lunar'), PackageRef('flutter'), PackageRef('flutter_riverpod'), PackageRef('riverpod_annotation'), PackageRef('go_router'), PackageRef('dio'), PackageRef('http'), PackageRef('web_socket_channel'), PackageRef('connectivity_plus'), PackageRef('protobuf'), PackageRef('fixnum'), PackageRef('anoxia_protocol'), PackageRef('shared_preferences'), PackageRef('flutter_secure_storage'), PackageRef('path_provider'), PackageRef('path'), PackageRef('drift'), PackageRef('sqlite3_flutter_libs'), PackageRef('cross_cache'), PackageRef('easy_localization'), PackageRef('intl'), PackageRef('uuid'), PackageRef('characters'), PackageRef('pub_semver'), PackageRef('crypto'), PackageRef('package_info_plus'), PackageRef('device_info_plus'), PackageRef('url_launcher'), PackageRef('share_plus'), PackageRef('open_filex'), PackageRef('web'), PackageRef('html'), PackageRef('flutter_screenutil'), PackageRef('hugeicons'), PackageRef('bot_toast'), PackageRef('flutter_list_view'), PackageRef('scrollable_positioned_list'), PackageRef('alphabet_list_view'), PackageRef('lpinyin'), PackageRef('photo_view'), PackageRef('flutter_staggered_animations'), PackageRef('flutter_zoom_drawer'), PackageRef('emoji_picker_flutter'), PackageRef('qr_flutter'), PackageRef('chat_bottom_container'), PackageRef('flutter_quill'), PackageRef('dart_quill_delta'), PackageRef('flutter_quill_delta_from_html'), PackageRef('flutter_markdown_plus'), PackageRef('markdown'), PackageRef('image'), PackageRef('image_picker'), PackageRef('image_cropper'), PackageRef('image_gallery_saver_plus'), PackageRef('file_picker'), PackageRef('cross_file'), PackageRef('desktop_drop'), PackageRef('video_player'), PackageRef('video_player_win'), PackageRef('just_audio'), PackageRef('audio_waveforms'), PackageRef('pdf'), PackageRef('flutter_map'), PackageRef('latlong2'), PackageRef('geolocator'), PackageRef('livekit_client'), PackageRef('flutter_webrtc'), PackageRef('jpush_flutter'), PackageRef('firebase_core'), PackageRef('firebase_messaging'), PackageRef('flutter_local_notifications'), PackageRef('app_badge_plus'), PackageRef('flutter_background'), PackageRef('pip'), PackageRef('window_manager'), PackageRef('tray_manager'), PackageRef('desktop_multi_window'), PackageRef('hotkey_manager'), PackageRef('pasteboard'), PackageRef('launch_at_startup'), PackageRef('permission_handler'), PackageRef('mobile_scanner')],
     devDependencies: [PackageRef('flutter_lints'), PackageRef('riverpod_generator'), PackageRef('riverpod_lint'), PackageRef('build_runner'), PackageRef('drift_dev'), PackageRef('flutter_gen_runner'), PackageRef('go_router_builder'), PackageRef('flutter_oss_licenses'), PackageRef('connectivity_plus_platform_interface'), PackageRef('plugin_platform_interface')],
   );
 
@@ -17913,6 +17915,40 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.''',
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [],
+    devDependencies: [],
+  );
+
+/// lunar 1.7.8
+const _lunar = Package(
+    name: 'lunar',
+    description: 'a calendar library for Solar and Chinese Lunar',
+    homepage: 'https://github.com/6tail/lunar-flutter',
+    authors: [],
+    version: '1.7.8',
+    license: '''MIT License
+
+Copyright (c) 2021 6tail
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.''',
     isMarkdown: false,
     isSdk: false,
     dependencies: [],
