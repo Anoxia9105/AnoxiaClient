@@ -8,6 +8,8 @@
 // 系统消息（通话/撤回灰条等）不可回应，直接不渲染。
 import 'dart:async';
 
+import 'package:anoxia/framework/provider/chat/room/room_write_access_provider.dart';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -90,9 +92,11 @@ class MessageReactionBar extends ConsumerWidget {
       ];
     }
 
+    final canWrite = ref.watch(roomWriteAccessProvider(roomId));
     final colorScheme = Theme.of(context).colorScheme;
     const visibleLimit = 5;
     void toggle(String emoji) {
+      if (!ref.read(roomWriteAccessProvider(roomId))) return;
       ref
           .read(chatMessagesProvider.notifier)
           .toggleReaction(messageId, roomId, emoji);
@@ -110,14 +114,14 @@ class MessageReactionBar extends ConsumerWidget {
               child: _ReactionChip(
                 aggregate: aggregate,
                 highlight: aggregate.mine,
-                onTap: () => toggle(aggregate.emoji),
+                onTap: canWrite ? () => toggle(aggregate.emoji) : null,
                 colorScheme: colorScheme,
               ),
             ),
           if (aggregates.length > visibleLimit)
             _MoreReactions(
               reactions: aggregates.skip(visibleLimit).toList(),
-              onToggle: toggle,
+              onToggle: canWrite ? toggle : null,
             ),
         ],
       ),
@@ -129,7 +133,7 @@ class _MoreReactions extends StatefulWidget {
   const _MoreReactions({required this.reactions, required this.onToggle});
 
   final List<RoomReactionAggregate> reactions;
-  final ValueChanged<String> onToggle;
+  final ValueChanged<String>? onToggle;
 
   @override
   State<_MoreReactions> createState() => _MoreReactionsState();
@@ -190,7 +194,9 @@ class _MoreReactionsState extends State<_MoreReactions> {
                           _ReactionChip(
                             aggregate: reaction,
                             highlight: reaction.mine,
-                            onTap: () => widget.onToggle(reaction.emoji),
+                            onTap: widget.onToggle == null
+                                ? null
+                                : () => widget.onToggle?.call(reaction.emoji),
                             colorScheme: theme.colorScheme,
                           ),
                           const SizedBox(width: 8),
@@ -245,7 +251,7 @@ class _MoreReactionsState extends State<_MoreReactions> {
 class _ReactionChip extends StatelessWidget {
   final RoomReactionAggregate aggregate;
   final bool highlight;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final ColorScheme colorScheme;
 
   const _ReactionChip({

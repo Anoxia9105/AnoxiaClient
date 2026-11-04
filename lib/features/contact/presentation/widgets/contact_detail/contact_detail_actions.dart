@@ -9,7 +9,9 @@ import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/provider/chat/chat_focus_mode_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_write_access_provider.dart';
 import 'package:anoxia/framework/provider/contact/contact_detail_controller.dart';
+import 'package:anoxia/framework/provider/contact/private_contact_access.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -158,6 +160,29 @@ class ContactDetailActions extends ConsumerWidget {
     );
     final roomId = room?.roomId;
     if (roomId == null || !context.mounted) return;
+
+    final peerId = room?.peerId;
+    if (room?.roomType == RoomType.singleChat.index && peerId != null) {
+      try {
+        await ref.read(privateContactAccessProvider(peerId).future);
+      } catch (_) {
+        if (context.mounted) {
+          Toast.showToast(
+            'chat_operation_retry_failed'.tr(),
+            type: ToastType.error,
+          );
+        }
+        return;
+      }
+    }
+    if (!context.mounted) return;
+    if (!ref.read(roomWriteAccessProvider(roomId))) {
+      Toast.showToast(
+        'chat_destination_read_only'.tr(),
+        type: ToastType.warning,
+      );
+      return;
+    }
 
     final card = CardPayload(
       cardType: 'contact',

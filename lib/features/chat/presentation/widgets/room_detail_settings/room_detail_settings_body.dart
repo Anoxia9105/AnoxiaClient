@@ -1,4 +1,6 @@
 import 'package:anoxia/features/contact/presentation/pages/blocked_contacts_page.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_header.dart';
+import 'package:anoxia/framework/provider/chat/room/room_write_access_provider.dart';
 import 'package:anoxia/framework/provider/contact/private_contact_access.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
@@ -78,15 +80,12 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     final isGroup = currentRoom.roomType == 1;
     final peerId = currentRoom.peerId;
     final canCall =
-        peerId != null &&
-        ref.watch(privateContactAccessProvider(peerId)).value == true;
+        peerId != null && ref.watch(roomWriteAccessProvider(roomId));
+    final blockedList = !isGroup && peerId != null
+        ? ref.watch(blockedContactsProvider).value
+        : null;
     final blocked =
-        peerId != null &&
-        (ref
-                .watch(blockedContactsProvider)
-                .value
-                ?.any((contact) => contact.contactId == peerId) ??
-            false);
+        blockedList?.any((contact) => contact.contactId == peerId) ?? false;
     final currentUser = ref.watch(authControllerProvider).value;
     final isAdmin = ref.watch(
       isRoomAdminProvider((roomId, currentUser?.userId ?? 0)),
@@ -249,14 +248,6 @@ class RoomDetailSettingsBody extends ConsumerWidget {
             ],
           ),
 
-        if (!isGroup && peerId != null)
-          ListTile(
-            leading: const Icon(Icons.block),
-            title: Text((blocked ? 'contact_unblock' : 'contact_block').tr()),
-            onTap: () =>
-                changeContactBlock(context, ref, peerId, blocked: !blocked),
-          ),
-
         if (isGroup) ...[
           // 区块 1：群聊基础资料管理
           RoomSectionCaption('chat_detail_group_management'.tr()),
@@ -388,6 +379,19 @@ class RoomDetailSettingsBody extends ConsumerWidget {
 
         // 区块 4：底部危险动作
         RoomSectionCaption('chat_detail_danger'.tr()),
+        if (!isGroup && peerId != null)
+          _dangerButton(
+            context,
+            (blocked ? 'contact_unblock' : 'contact_block').tr(),
+            blockedList == null
+                ? null
+                : () => changeContactBlock(
+                    context,
+                    ref,
+                    peerId,
+                    blocked: !blocked,
+                  ),
+          ),
         _buildDangerActionCard(
           context,
           ref,
@@ -612,25 +616,38 @@ class RoomDetailSettingsBody extends ConsumerWidget {
       return;
     }
 
-    var contactMap = ref.read(contactListServiceProvider).value;
-    if (contactMap == null || !contactMap.containsKey(peerId)) {
-      await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
-      contactMap = ref.read(contactListServiceProvider).value;
-    }
-
-    final contact = contactMap?[peerId];
-    if (contact == null) {
-      Toast.showToast(
-        'chat_operation_retry_failed'.tr(),
-        type: ToastType.error,
-      );
+    final contact = ref.read(contactListServiceProvider).value?[peerId];
+    final blockedContacts = ref.read(blockedContactsProvider).value;
+    final blockedContact = blockedContacts
+        ?.where((entry) => entry.contactId == peerId)
+        .firstOrNull;
+    if (contact != null &&
+        blockedContact == null &&
+        ref.read(privateContactAccessProvider(peerId)).value == true) {
+      ref.read(contactSelectionProvider.notifier).selectContact(contact);
+      await presentAdaptivePage(context, builder: (_) => const ContactDetail());
       return;
     }
 
-    ref.read(contactSelectionProvider.notifier).selectContact(contact);
-    if (context.mounted) {
-      await presentAdaptivePage(context, builder: (_) => const ContactDetail());
-    }
+    await presentAdaptivePage(
+      context,
+      builder: (context) => Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        appBar: AppBar(title: Text('chat_contact_info'.tr())),
+        body: ListView(
+          children: [
+            ContactDetailHeader(
+              avatar: blockedContact?.avatar ?? currentRoom.roomAvatar,
+              nickName: blockedContact?.nickName ?? _displayName(currentRoom),
+              isOnline: false,
+              showOnlineStatus: false,
+            ),
+            if (blockedContact != null)
+              Center(child: Text('contact_blocked_success'.tr())),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _openContactDetailByMember(
@@ -713,31 +730,27 @@ class RoomDetailSettingsBody extends ConsumerWidget {
       );
     }
 
-    // 危险区：左右留边距的居中长按钮，淡红底 + 红字
-    final colorScheme = Theme.of(context).colorScheme;
-    final borderRadius = BorderRadius.circular(RadiusToken.lg);
+    return _dangerButton(context, actionLabel, onTap);
+  }
+
+  Widget _dangerButton(
+    BuildContext context,
+    String label,
+    VoidCallback? onTap,
+  ) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 6, 14, 0),
-      child: Material(
-        color: colorScheme.error.withValues(alpha: 0.1),
-        borderRadius: borderRadius,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 13),
-            child: Center(
-              child: Text(
-                actionLabel,
-                style: TextStyle(
-                  color: colorScheme.error,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
-              ),
-            ),
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          foregroundColor: colors.onError,
+          backgroundColor: colors.error,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
           ),
         ),
+        onPressed: onTap,
+        child: Text(label),
       ),
     );
   }

@@ -73,6 +73,7 @@ Future<void> changeContactBlock(
       title: 'contact_block'.tr(),
       content: 'contact_block_confirm'.tr(),
       confirmLabel: 'contact_block'.tr(),
+      compact: true,
     );
     if (!confirmed || !context.mounted) return;
   }

@@ -1,4 +1,4 @@
-import 'package:anoxia/framework/provider/contact/private_contact_access.dart';
+import 'package:anoxia/framework/provider/chat/room/room_write_access_provider.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
@@ -41,11 +41,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     // 用新的 Provider：只有当前房间成员变化才重建，不受其他房间影响
     final members = ref.watch(roomMembersProvider(roomId));
     final contactMap = ref.watch(contactListServiceProvider).value;
-    final peerId = room?.peerId;
-    final canCall =
-        room?.roomType != 0 ||
-        (peerId != null &&
-            ref.watch(privateContactAccessProvider(peerId)).value == true);
+    final canCall = ref.watch(roomWriteAccessProvider(roomId));
 
     /// 是否有人正在输入（通过高优消息监听）
     final isTyping = ref.watch(

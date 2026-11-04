@@ -22,6 +22,33 @@ class _DiskAssetLoader extends AssetLoader {
 }
 
 void main() {
+  test('搜索匹配可见内容，忽略协议占位和系统事件', () {
+    final video = ChatMessage(messageType: MessageType.video, content: 'video');
+    final event = ChatMessage(
+      messageType: MessageType.system,
+      content: 'CALL_CANCELED',
+    );
+    final text = ChatMessage(
+      messageType: MessageType.text,
+      content: 'Photo_1 at 100%',
+    );
+    expect(MessagePreviewFormatter.searchText(video), isEmpty);
+    expect(MessagePreviewFormatter.searchText(event), isEmpty);
+    final preview = MessagePreviewFormatter.searchText(text);
+    expect(
+      MessagePreviewFormatter.searchPattern('photo_1').hasMatch(preview),
+      isTrue,
+    );
+    expect(
+      MessagePreviewFormatter.searchPattern('100%').hasMatch(preview),
+      isTrue,
+    );
+    expect(
+      MessagePreviewFormatter.searchPattern('photo.1').hasMatch(preview),
+      isFalse,
+    );
+  });
+
   for (final entry in {
     'zh': ['[图像]', '[语音]', '[视频]', '[文件]'],
     'en': ['[Image]', '[Voice message]', '[Video]', '[File]'],

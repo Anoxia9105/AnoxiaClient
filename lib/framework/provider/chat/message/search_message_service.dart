@@ -1,3 +1,4 @@
+import 'package:anoxia/features/chat/application/message_preview_formatter.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/domain/message_search_result.dart';
 import 'package:anoxia/framework/provider/core/message_repository_provider.dart';
@@ -69,13 +70,14 @@ class SearchMessageService extends _$SearchMessageService {
           );
 
       if (!identical(state, loading)) return;
+      final matches = _resolveMatchIndices(result, normalizedKeyword);
       state = loading.copyWith(
         isLoading: false,
         keyword: normalizedKeyword,
         messages: result.messages,
-        firstMatchIndex: result.firstMatchIndex,
-        matchIndices: _resolveMatchIndices(result, normalizedKeyword),
-        lastMatchIndex: result.lastMatchIndex,
+        firstMatchIndex: matches.firstOrNull ?? -1,
+        matchIndices: matches,
+        lastMatchIndex: matches.lastOrNull ?? -1,
         hasMoreBefore: result.hasMoreBefore,
         hasMoreAfter: result.hasMoreAfter,
         contextSize: effectiveContextSize,
@@ -90,22 +92,17 @@ class SearchMessageService extends _$SearchMessageService {
   }
 
   List<int> _resolveMatchIndices(MessageSearchResult result, String keyword) {
-    final indices = result.matchIndices;
-    if (indices != null) {
-      return indices
-          .where((i) => i >= 0 && i < result.messages.length)
-          .toList();
-    }
-
-    // 兼容只返回首尾命中位置的旧服务端。
-    final query = keyword.toLowerCase();
+    final pattern = MessagePreviewFormatter.searchPattern(keyword);
+    final candidates =
+        result.matchIndices ??
+        List<int>.generate(result.messages.length, (index) => index);
     return [
-      for (var i = 0; i < result.messages.length; i++)
-        if (i == result.firstMatchIndex ||
-            i == result.lastMatchIndex ||
-            (i > result.firstMatchIndex &&
-                i < result.lastMatchIndex &&
-                result.messages[i].content.toLowerCase().contains(query)))
+      for (final i in candidates)
+        if (i >= 0 &&
+            i < result.messages.length &&
+            pattern.hasMatch(
+              MessagePreviewFormatter.searchText(result.messages[i]),
+            ))
           i,
     ];
   }

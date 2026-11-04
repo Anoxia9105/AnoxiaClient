@@ -12,6 +12,7 @@ import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_write_access_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,6 +49,7 @@ class ChatBarHandlers {
       Toast.showToast('appbar_connection_lost'.tr(), type: ToastType.warning);
       return;
     }
+    if (!ref.read(roomWriteAccessProvider(roomId))) return;
     final isGroup = room.roomType == 1;
     final hasActiveCall = ref
         .read(callStatusControllerProvider.notifier)

@@ -1,6 +1,8 @@
 /// 只展示 @提及、发送中和发送失败；成功发送后不展示回执、不占位。
 library;
 
+import 'package:anoxia/framework/provider/chat/room/room_write_access_provider.dart';
+
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:flutter/material.dart';
@@ -67,6 +69,11 @@ class DeliveryStatusIndicator extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!isCurrentUser) return const SizedBox.shrink();
+    final roomId = message.roomId;
+    final canRetry =
+        message.deliveryStatus == DeliveryStatus.failed &&
+        roomId != null &&
+        ref.watch(roomWriteAccessProvider(roomId));
     return switch (message.deliveryStatus) {
       DeliveryStatus.sent => const SizedBox.shrink(),
       DeliveryStatus.sending => const RepaintBoundary(
@@ -77,7 +84,13 @@ class DeliveryStatusIndicator extends ConsumerWidget {
         ),
       ),
       DeliveryStatus.failed => GestureDetector(
-        onTap: () => MessageResender.resend(ref, message),
+        onTap: canRetry
+            ? () {
+                if (ref.read(roomWriteAccessProvider(roomId))) {
+                  MessageResender.resend(ref, message);
+                }
+              }
+            : null,
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedAlertCircle,
           size: 16,

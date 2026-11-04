@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/chat/room/room_write_access_provider.dart';
 import 'package:anoxia/framework/provider/contact/private_contact_access.dart';
 import 'package:anoxia/framework/domain/user_vo.dart';
 import 'package:anoxia/features/contact/presentation/widgets/add_friend/add_friend_dialog.dart';
@@ -199,7 +200,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       child: DesktopChatDropTarget(
         roomId: widget.roomId,
         enabled:
-            currentRoom.roomStatus == 0 &&
+            ref.watch(roomWriteAccessProvider(widget.roomId)) &&
             !entryTask.isLoading &&
             !entryTask.hasError,
         onRejected: (names) => ref
@@ -277,10 +278,10 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     if (loading ||
         room.isOfficial ||
         room.roomType != 0 ||
-        peerId == null ||
         room.roomStatus != 0) {
       return null;
     }
+    if (peerId == null) return const SizedBox.shrink();
     final access = ref.watch(privateContactAccessProvider(peerId));
     if (access.isLoading) return const SizedBox.shrink();
     if (access.value == true) return null;

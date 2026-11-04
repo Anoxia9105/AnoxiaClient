@@ -16,6 +16,7 @@ Future<bool> showDangerConfirmDialog(
   required String title,
   required String content,
   required String confirmLabel,
+  bool compact = false,
 }) {
   return showEscClosableDialog<bool>(
     context: context,
@@ -24,6 +25,7 @@ Future<bool> showDangerConfirmDialog(
       title: title,
       content: content,
       confirmLabel: confirmLabel,
+      compact: compact,
     ),
   ).then((result) => result ?? false);
 }
@@ -36,6 +38,7 @@ class DangerConfirmDialog extends StatelessWidget {
     required this.title,
     required this.content,
     required this.confirmLabel,
+    this.compact = false,
   });
 
   /// 顶部圆形图标（HugeIcon）
@@ -49,6 +52,7 @@ class DangerConfirmDialog extends StatelessWidget {
 
   /// 确认按钮文案（如「删除会话」「退出群聊」）
   final String confirmLabel;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +60,18 @@ class DangerConfirmDialog extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return AlertDialog(
+      constraints: compact
+          ? const BoxConstraints(minWidth: 260, maxWidth: 320)
+          : null,
+      insetPadding: compact
+          ? const EdgeInsets.symmetric(horizontal: 16, vertical: 24)
+          : null,
+      iconPadding: compact ? const EdgeInsets.only(top: 16, bottom: 10) : null,
+      titlePadding: compact ? const EdgeInsets.symmetric(horizontal: 16) : null,
+      contentPadding: compact ? const EdgeInsets.fromLTRB(16, 8, 16, 8) : null,
       icon: Container(
-        width: 56,
-        height: 56,
+        width: compact ? 40 : 56,
+        height: compact ? 40 : 56,
         decoration: BoxDecoration(
           color: colorScheme.errorContainer,
           shape: BoxShape.circle,
@@ -87,7 +100,9 @@ class DangerConfirmDialog extends StatelessWidget {
         ),
       ),
       actionsAlignment: MainAxisAlignment.spaceEvenly,
-      actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      actionsPadding: compact
+          ? const EdgeInsets.fromLTRB(12, 4, 12, 12)
+          : const EdgeInsets.fromLTRB(20, 8, 20, 20),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),

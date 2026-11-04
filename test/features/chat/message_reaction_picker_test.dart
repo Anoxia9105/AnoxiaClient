@@ -64,6 +64,7 @@ void main() {
         );
     await tester.pump();
     expect(tester.widget<Tooltip>(find.byType(Tooltip)).message, '2');
+    expect(tester.widget<InkWell>(find.byType(InkWell)).onTap, isNull);
 
     (container.read(roomMemberServiceProvider.notifier) as _ReactionMembers)
         .addMember();

@@ -11,6 +11,9 @@ import 'package:anoxia/features/chat/presentation/widgets/message_bubble/message
 import 'package:anoxia/framework/provider/setting/chat_bubble_settings_provider.dart';
 import 'package:anoxia/framework/protocol/message/code_payload.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/domain/chat_favorite.dart';
+import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_write_access_provider.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
@@ -53,11 +56,13 @@ class _Loader extends AssetLoader {
   Future<Map<String, dynamic>> load(String path, Locale locale) async => {
     'chat_select_text': 'Select text',
     'chat_copy': 'Copy message',
+    'chat_already_favorited': 'Favorited',
   };
 }
 
 ChatMessage _message(String text, {bool rich = true}) => ChatMessage(
   messageId: text,
+  roomId: 'room',
   messageType: rich ? MessageType.richText : MessageType.text,
   content: text,
   payload: MessagePayload(
@@ -75,6 +80,8 @@ Future<void> _fixture(
   Key? roomKey,
   bool code = false,
   bool selfBubbles = false,
+  bool writable = true,
+  List<ChatFavorite> favorites = const [],
   Brightness brightness = Brightness.light,
   Color seedColor = Colors.deepPurple,
   String codeText = 'final value = 42;\n\n  print(value);',
@@ -85,6 +92,8 @@ Future<void> _fixture(
         authControllerProvider.overrideWith(_Auth.new),
         aiFeatureFlagsProvider.overrideWith(_Flags.new),
         chatBubbleTailEnabledProvider.overrideWith(_NoTails.new),
+        roomWriteAccessProvider('room').overrideWith((ref) => writable),
+        chatFavoriteListProvider.overrideWith((ref) async => favorites),
       ],
       child: EasyLocalization(
         supportedLocales: const [Locale('en')],
@@ -236,6 +245,32 @@ void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets('只读菜单保留复制和收藏状态并隐藏消息写操作', (tester) async {
+    await _fixture(
+      tester,
+      TargetPlatform.android,
+      writable: false,
+      favorites: [
+        ChatFavorite.fromJson({'msgId': 'first message text'}),
+      ],
+    );
+    await tester.longPressAt(tester.getCenter(find.byType(QuillEditor).first));
+    await tester.pumpAndSettle();
+    final items = tester
+        .widgetList<PopupMenuItem<String>>(find.byType(PopupMenuItem<String>))
+        .toList();
+    expect(items.map((item) => item.value), contains('copy'));
+    expect(items.map((item) => item.value), isNot(contains('reply')));
+    expect(items.map((item) => item.value), isNot(contains('revoke')));
+    expect(items.map((item) => item.value), isNot(contains('edit')));
+    expect(items.map((item) => item.value), isNot(contains(null)));
+    expect(find.text('Favorited'), findsOneWidget);
+    expect(
+      items.singleWhere((item) => item.value == 'favorite').enabled,
+      isFalse,
+    );
   });
 
   for (final brightness in Brightness.values) {

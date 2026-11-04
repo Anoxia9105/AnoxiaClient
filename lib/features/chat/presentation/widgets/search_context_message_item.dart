@@ -1,3 +1,6 @@
+import 'package:anoxia/features/chat/application/message_preview_formatter.dart';
+import 'package:anoxia/features/chat/application/system_message_formatter.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
@@ -53,21 +56,42 @@ class SearchContextMessageItem extends ConsumerWidget {
         ? currentUser?.avatar
         : senderMember?.avatar;
 
+    final pattern = MessagePreviewFormatter.searchPattern(keyword);
+    final searchable = MessagePreviewFormatter.searchText(message);
+    final match = keyword.isNotEmpty && isHighlighted
+        ? pattern.firstMatch(searchable)
+        : null;
+    final highlighted = match != null;
+    final String preview;
+    if (match != null) {
+      final before = searchable.substring(0, match.start);
+      preview = before.length > 24 || before.contains('\n')
+          ? '…${searchable.substring(match.start)}'
+          : searchable;
+    } else if (SystemMessageFormatter.isSystemMessage(message)) {
+      final isGroup = ref.watch(
+        currentRoomProvider(roomId).select((room) => room?.roomType == 1),
+      );
+      preview = SystemMessageFormatter.display(message, isGroup: isGroup).text;
+    } else {
+      preview = MessagePreviewFormatter.format(message);
+    }
+
     return Container(
       margin: EdgeInsets.symmetric(
         horizontal: isDesktop ? 16 : 12,
         vertical: isDesktop ? 8 : 6,
       ),
       decoration: BoxDecoration(
-        color: isHighlighted
+        color: highlighted
             ? colorScheme.primary.withValues(alpha: 0.08)
             : colorScheme.surface,
         borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(
-          color: isHighlighted
+          color: highlighted
               ? colorScheme.primary.withValues(alpha: 0.3)
               : colorScheme.outlineVariant.withValues(alpha: 0.3),
-          width: isHighlighted ? 1.5 : 0.8,
+          width: highlighted ? 1.5 : 0.8,
         ),
         boxShadow: [
           BoxShadow(
@@ -126,13 +150,14 @@ class SearchContextMessageItem extends ConsumerWidget {
                     message,
                     colorScheme,
                     textTheme,
-                    keyword,
+                    preview,
+                    highlighted ? pattern : null,
                   ),
                 ],
               ),
             ),
             // 高亮指示器
-            if (isHighlighted) ...[
+            if (highlighted) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -159,7 +184,8 @@ class SearchContextMessageItem extends ConsumerWidget {
     ChatMessage chatMessage,
     ColorScheme colorScheme,
     TextTheme textTheme,
-    String keyword,
+    String preview,
+    RegExp? pattern,
   ) {
     // 检查消息类型（image: 1）
     final imageAttachment = chatMessage.payload?.image;
@@ -207,11 +233,14 @@ class SearchContextMessageItem extends ConsumerWidget {
                 },
               ),
             ),
-            if (chatMessage.content.isNotEmpty == true) ...[
+            if (MessagePreviewFormatter.searchText(
+                  chatMessage,
+                ).trim().isNotEmpty ||
+                pattern != null) ...[
               const SizedBox(height: 8),
               _buildHighlightedText(
-                chatMessage.content,
-                keyword,
+                preview,
+                pattern,
                 colorScheme,
                 textTheme,
                 maxLines: 2,
@@ -220,20 +249,14 @@ class SearchContextMessageItem extends ConsumerWidget {
           ],
         );
       } else {
-        return Text(
-          'search_image_placeholder'.tr(),
-          style: textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurface.withValues(alpha: 0.6),
-            fontStyle: FontStyle.italic,
-          ),
-        );
+        return _buildHighlightedText(preview, pattern, colorScheme, textTheme);
       }
     }
 
     // 其他消息类型：显示文本内容（带高亮）
     return _buildHighlightedText(
-      chatMessage.content,
-      keyword,
+      preview,
+      pattern,
       colorScheme,
       textTheme,
       maxLines: 3,
@@ -243,75 +266,47 @@ class SearchContextMessageItem extends ConsumerWidget {
   /// 构建高亮文本
   Widget _buildHighlightedText(
     String text,
-    String keyword,
+    RegExp? pattern,
     ColorScheme colorScheme,
     TextTheme textTheme, {
     int maxLines = 3,
   }) {
-    if (keyword.isEmpty || !text.contains(keyword)) {
-      return Text(
-        text,
-        style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
+    final style = textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface);
+    return Text.rich(
+      TextSpan(
+        style: style,
+        children: pattern == null
+            ? [TextSpan(text: text)]
+            : _highlightSpans(text, pattern, colorScheme),
+      ),
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
 
-    // 使用手动查找替换而不是 RegExp.split
+  List<TextSpan> _highlightSpans(
+    String text,
+    RegExp pattern,
+    ColorScheme colors,
+  ) {
     final spans = <TextSpan>[];
-    int lastIndex = 0;
-
-    // 查找所有匹配的关键词位置
-    while (true) {
-      // 不区分大小写的查找（对于中文实际上没区别）
-      int index = text.indexOf(keyword, lastIndex);
-
-      if (index == -1) {
-        // 没有找到，添加剩余的文本
-        if (lastIndex < text.length) {
-          spans.add(
-            TextSpan(
-              text: text.substring(lastIndex),
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface,
-              ),
-            ),
-          );
-        }
-        break;
-      }
-
-      // 添加关键词之前的文本
-      if (index > lastIndex) {
-        spans.add(
-          TextSpan(
-            text: text.substring(lastIndex, index),
-            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
-          ),
-        );
-      }
-
-      // 添加高亮的关键词
+    var end = 0;
+    for (final match in pattern.allMatches(text)) {
+      spans.add(TextSpan(text: text.substring(end, match.start)));
       spans.add(
         TextSpan(
-          text: keyword,
-          style: textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onPrimary,
-            backgroundColor: colorScheme.primary,
+          text: match[0],
+          style: TextStyle(
+            color: colors.onPrimary,
+            backgroundColor: colors.primary,
             fontWeight: FontWeight.w600,
           ),
         ),
       );
-
-      // 更新位置
-      lastIndex = index + keyword.length;
+      end = match.end;
     }
-
-    return RichText(
-      text: TextSpan(children: spans),
-      maxLines: maxLines,
-      overflow: TextOverflow.ellipsis,
-    );
+    spans.add(TextSpan(text: text.substring(end)));
+    return spans;
   }
 
   /// 格式化时间

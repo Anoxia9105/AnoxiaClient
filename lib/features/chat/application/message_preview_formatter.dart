@@ -9,6 +9,21 @@ import 'package:easy_localization/easy_localization.dart';
 
 /// Produces localized, user-facing text for compact message previews.
 abstract final class MessagePreviewFormatter {
+  /// 与服务端搜索使用相同的消息预览列，排除系统事件和协议占位。
+  static String searchText(ChatMessage message) {
+    if (SystemMessageFormatter.isSystemMessage(message)) return '';
+    final content = message.content;
+    if (message.messageType == MessageType.text ||
+        message.messageType == MessageType.richText ||
+        message.messageType == null) {
+      return content;
+    }
+    return _isProtocolPlaceholder(content.trim()) ? '' : content;
+  }
+
+  static RegExp searchPattern(String keyword) =>
+      RegExp(RegExp.escape(keyword), caseSensitive: false);
+
   /// 格式化消息为预览文本。
   ///
   /// [message] 需要格式化的聊天消息，为 `null` 时返回 [fallback]。
@@ -60,7 +75,9 @@ abstract final class MessagePreviewFormatter {
         return _meaningfulContent(message) ?? 'reply_placeholder_card'.tr();
       case MessageType.emoji:
         final content = message.content.trim();
-        if (content.isNotEmpty) return message.content;
+        if (content.isNotEmpty && !_isProtocolPlaceholder(content)) {
+          return message.content;
+        }
         final emojiCode = message.payload?.emojiCode?.trim();
         if (emojiCode != null && emojiCode.isNotEmpty) return emojiCode;
         return 'reply_placeholder_emoji'.tr();
@@ -114,6 +131,14 @@ abstract final class MessagePreviewFormatter {
   }) {
     final lower = trimmed.toLowerCase();
     const markers = {
+      'image',
+      'video',
+      'file',
+      'audio',
+      'emoji',
+      'location',
+      'card',
+      'code',
       '[image]',
       '[audio]',
       '[voice]',

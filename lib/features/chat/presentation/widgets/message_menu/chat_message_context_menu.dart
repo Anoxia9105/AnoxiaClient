@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/provider/chat/message/chat_content_density_controller.dart';
+import 'package:anoxia/framework/provider/chat/room/room_write_access_provider.dart';
 import 'package:anoxia/common/utils/date_util.dart';
 import 'dart:async';
 import 'package:hugeicons/hugeicons.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 
+import 'package:anoxia/framework/domain/chat_favorite.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
@@ -66,6 +68,7 @@ class _ChatMessageContextMenuState
   PointerDeviceKind? _pointerKind;
   final _textSelection = MessageSelectionHandle();
   String? _menuSelectedText;
+  bool _menuOpen = false;
 
   @override
   void initState() {
@@ -99,11 +102,11 @@ class _ChatMessageContextMenuState
         ref.watch(chatContentDensityProvider) == ChatContentDensity.flat;
     final selectionScope = MessageSelectionScope.maybeOf(context);
     _textSelection.showMenu = (position) =>
-        _showMenuAtPosition(context, position, touch: true);
+        _showMenuAtPosition(position, touch: true);
     return MessageSelectionTarget(
       handle: _textSelection,
       child: MessageReactionHover(
-        enabled: canReactToMessage(widget.message),
+        enabled: _canWrite(watch: true) && canReactToMessage(widget.message),
         timeLabel: DateUtil.formatTimestampToTime(widget.message.timestamp),
         isCurrentUser: widget.isCurrentUser,
         timeOnLeft: !flat && widget.isCurrentUser,
@@ -121,14 +124,13 @@ class _ChatMessageContextMenuState
             // PointerDownEvent.position 本身已是全局坐标，直接使用；
             // 不要再经 localToGlobal 二次变换，否则菜单会偏移气泡的全局位置。
             if (event.buttons & kSecondaryMouseButton == 0) return;
-            _showMenuAtPosition(context, event.position);
+            _showMenuAtPosition(event.position);
           },
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onLongPressStart: _textSelection.selecting
                 ? null
                 : (details) => _showMenuAtPosition(
-                    context,
                     details.globalPosition,
                     touch: _pointerKind != PointerDeviceKind.mouse,
                   ),
@@ -141,11 +143,36 @@ class _ChatMessageContextMenuState
 
   /// 在指定全局位置弹出原生菜单（桌面右键 / 移动端长按通用）
   Future<void> _showMenuAtPosition(
-    BuildContext context,
     Offset globalPosition, {
     bool touch = false,
   }) async {
+    if (_menuOpen) return;
+    _menuOpen = true;
+    try {
+      await _showMenu(globalPosition, touch: touch);
+    } finally {
+      _menuOpen = false;
+    }
+  }
+
+  Future<void> _showMenu(Offset globalPosition, {required bool touch}) async {
     _menuSelectedText = _textSelection.selectedText?.call();
+    final message = widget.message;
+    List<ChatFavorite>? favorites;
+    if (message.messageId != null &&
+        message.deliveryStatus == DeliveryStatus.sent) {
+      try {
+        favorites = await ref.read(chatFavoriteListProvider.future);
+      } catch (_) {
+        // 收藏查询失败时仍然允许打开消息菜单。
+      }
+    }
+    if (!mounted) return;
+    if (widget.message.messageId != message.messageId) return;
+    final isFavorite =
+        favorites?.any((item) => item.msgId == message.messageId) ?? false;
+    final canWrite = _canWrite();
+    final showReaction = touch && canWrite && canReactToMessage(message);
     _lastMenuPosition = globalPosition;
     final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
@@ -160,11 +187,11 @@ class _ChatMessageContextMenuState
         borderRadius: BorderRadius.circular(RadiusToken.lg),
       ),
       elevation: 8,
-      constraints: touch && canReactToMessage(widget.message)
+      constraints: showReaction
           ? const BoxConstraints(minWidth: 288, maxWidth: 296)
           : null,
       items: [
-        if (touch && canReactToMessage(widget.message))
+        if (showReaction)
           PopupMenuItem<String>(
             enabled: false,
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -174,12 +201,12 @@ class _ChatMessageContextMenuState
                   Navigator.of(context).pop('reaction:$emoji'),
             ),
           ),
-        ..._buildMenuItems(context),
+        ..._buildMenuItems(context, canWrite: canWrite, isFavorite: isFavorite),
       ],
       menuPadding: const EdgeInsets.symmetric(vertical: 6),
     );
 
-    if (!context.mounted || action == null) return;
+    if (!mounted || action == null) return;
     if (action.startsWith('reaction:')) {
       _handleReaction(context, action.substring('reaction:'.length));
     } else {
@@ -187,10 +214,22 @@ class _ChatMessageContextMenuState
     }
   }
 
-  List<PopupMenuEntry<String>> _buildMenuItems(BuildContext context) {
+  bool _canWrite({bool watch = false}) {
+    final roomId = widget.message.roomId;
+    if (roomId == null) return false;
+    final access = roomWriteAccessProvider(roomId);
+    return watch ? ref.watch(access) : ref.read(access);
+  }
+
+  List<PopupMenuEntry<String>> _buildMenuItems(
+    BuildContext context, {
+    required bool canWrite,
+    required bool isFavorite,
+  }) {
     if (widget.message.deliveryStatus == DeliveryStatus.failed) {
       return [
-        _buildItem('retry', HugeIcons.strokeRoundedRefresh, 'retry'.tr()),
+        if (canWrite)
+          _buildItem('retry', HugeIcons.strokeRoundedRefresh, 'retry'.tr()),
         _buildItem(
           'deleteFailed',
           HugeIcons.strokeRoundedDelete02,
@@ -219,7 +258,7 @@ class _ChatMessageContextMenuState
     }
 
     final chatEnabled =
-        ref.watch(aiFeatureFlagsProvider).value?.chatAvailable ?? true;
+        ref.read(aiFeatureFlagsProvider).value?.chatAvailable ?? true;
 
     if (widget.message.messageType == MessageType.text ||
         widget.message.messageType == MessageType.richText ||
@@ -254,7 +293,7 @@ class _ChatMessageContextMenuState
         widget.message.deliveryStatus == DeliveryStatus.sent &&
         widget.message.messageId?.isNotEmpty == true;
 
-    if (canReply) {
+    if (canWrite && canReply) {
       items.add(
         _buildItem(
           'reply',
@@ -265,7 +304,7 @@ class _ChatMessageContextMenuState
     }
 
     // 编辑（P1-1）：仅本人、Text/RichText（富文本不带 embed）、15 分钟窗口内
-    if (canEditMessage(widget.message, currentUser?.userId)) {
+    if (canWrite && canEditMessage(widget.message, currentUser?.userId)) {
       items.add(
         _buildItem('edit', HugeIcons.strokeRoundedEdit01, 'chat_edit'.tr()),
       );
@@ -275,11 +314,12 @@ class _ChatMessageContextMenuState
       _buildItem(
         'favorite',
         HugeIcons.strokeRoundedFavourite,
-        'chat_favorite'.tr(),
+        (isFavorite ? 'chat_already_favorited' : 'chat_favorite').tr(),
+        enabled: !isFavorite,
       ),
     );
 
-    if (isMe) {
+    if (canWrite && isMe) {
       items.add(
         _buildItem(
           'revoke',
@@ -298,12 +338,14 @@ class _ChatMessageContextMenuState
     List<List<dynamic>> icon,
     String label, {
     Color? color,
+    bool enabled = true,
   }) {
     return PopupMenuItem<String>(
       value: value,
+      enabled: enabled,
       height: 32,
       child: MouseRegion(
-        cursor: SystemMouseCursors.click,
+        cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
         child: SizedBox(
           width: double.infinity,
           child: Row(
@@ -327,6 +369,10 @@ class _ChatMessageContextMenuState
   // --- 动作处理逻辑 ---
 
   void _handleAction(BuildContext context, String action) {
+    if (const {'retry', 'edit', 'reply', 'revoke'}.contains(action) &&
+        !_canWrite()) {
+      return;
+    }
     switch (action) {
       case 'retry':
         MessageResender.resend(ref, widget.message);
@@ -381,7 +427,7 @@ class _ChatMessageContextMenuState
 
   /// 共用回应入口，保留更多表情与原有乐观切换逻辑。
   void _handleReaction(BuildContext context, String selected) {
-    if (!canReactToMessage(widget.message)) return;
+    if (!_canWrite() || !canReactToMessage(widget.message)) return;
     final roomId = widget.message.roomId!;
     final messageId = widget.message.messageId!;
     if (selected == '__more__') {
@@ -390,7 +436,7 @@ class _ChatMessageContextMenuState
         context: context,
         targetRect: box.localToGlobal(Offset.zero) & box.size,
         onSelected: (emoji) {
-          if (!mounted) return;
+          if (!mounted || !_canWrite()) return;
           unawaited(
             ref
                 .read(chatMessagesProvider.notifier)

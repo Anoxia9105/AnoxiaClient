@@ -10,6 +10,7 @@ class ContactDetailHeader extends StatelessWidget {
   final String? nickName;
   final String? remark;
   final bool isOnline;
+  final bool showOnlineStatus;
 
   const ContactDetailHeader({
     super.key,
@@ -17,6 +18,7 @@ class ContactDetailHeader extends StatelessWidget {
     this.nickName,
     this.remark,
     this.isOnline = false,
+    this.showOnlineStatus = true,
   });
 
   @override
@@ -33,7 +35,11 @@ class ContactDetailHeader extends StatelessWidget {
             name: nickName,
             size: 96,
             borderRadius: 16,
-            status: isOnline ? AvatarStatus.online : AvatarStatus.offline,
+            status: !showOnlineStatus
+                ? AvatarStatus.none
+                : isOnline
+                ? AvatarStatus.online
+                : AvatarStatus.offline,
           ),
           const SizedBox(height: 14),
           Text(
