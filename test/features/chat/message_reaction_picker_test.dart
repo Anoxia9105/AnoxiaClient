@@ -1,11 +1,76 @@
+import 'package:anoxia/features/chat/presentation/widgets/message_bubble/message_reaction_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_menu/message_reaction_picker.dart';
+import 'package:anoxia/framework/domain/chat_contact_vo.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
+import 'package:anoxia/framework/provider/chat/message/chat_reaction_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class _ReactionMembers extends RoomMemberService {
+  @override
+  Map<String, Map<int, ChatRoomMemberVO>> build() => {};
+
+  void addMember() {
+    state = {
+      'room': {2: ChatRoomMemberVO(userId: 2, nickName: 'Alice')},
+    };
+  }
+}
+
+class _ReactionContacts extends ContactListService {
+  @override
+  Map<int, ChatContactVO> build() => {};
+}
+
 void main() {
+  testWidgets('实时回应随成员资料补齐悬浮昵称', (tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        roomMemberServiceProvider.overrideWith(_ReactionMembers.new),
+        contactListServiceProvider.overrideWith(_ReactionContacts.new),
+        currentRoomProvider('room').overrideWith((ref) => null),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(
+            body: MessageReactionBar(
+              message: ChatMessage(messageId: 'message', roomId: 'room'),
+            ),
+          ),
+        ),
+      ),
+    );
+    container
+        .read(roomChatReactionsProvider.notifier)
+        .applyEvent(
+          roomId: 'room',
+          messageId: 'message',
+          emoji: '👍',
+          isRemove: false,
+          senderUserId: 2,
+          currentUserId: 1,
+        );
+    await tester.pump();
+    expect(tester.widget<Tooltip>(find.byType(Tooltip)).message, '2');
+
+    (container.read(roomMemberServiceProvider.notifier) as _ReactionMembers)
+        .addMember();
+    await tester.pump();
+    expect(tester.widget<Tooltip>(find.byType(Tooltip)).message, 'Alice');
+  });
+
   testWidgets('鼠标移入显示紧凑表情条，移入表情条保持并可选择', (tester) async {
     String? selected;
     await tester.pumpWidget(

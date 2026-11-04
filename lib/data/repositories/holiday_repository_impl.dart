@@ -8,6 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class HolidayRepositoryImpl implements HolidayRepository {
   final Future<dynamic> Function(String region, int year) _fetch;
+  final Map<(String, int), Future<void>> _refreshing = {};
+  static final _bundledAssets = AssetManifest.loadFromAssetBundle(
+    rootBundle,
+  ).then((manifest) => manifest.listAssets().toSet());
 
   HolidayRepositoryImpl({Future<dynamic> Function(String, int)? fetch})
     : _fetch = fetch ?? _fetchRemote;
@@ -41,11 +45,10 @@ class HolidayRepositoryImpl implements HolidayRepository {
       }
       if (calendar == null) {
         try {
-          calendar = _parse(
-            await rootBundle.loadString('assets/holidays/$region-$y.json'),
-            region,
-            y,
-          );
+          final path = 'assets/holidays/$region-$y.json';
+          if ((await _bundledAssets).contains(path)) {
+            calendar = _parse(await rootBundle.loadString(path), region, y);
+          }
         } catch (_) {
           /* 未公布年份保持空白。 */
         }
@@ -59,33 +62,43 @@ class HolidayRepositoryImpl implements HolidayRepository {
   Future<List<HolidayCalendar>> refresh(String region, int year) async {
     final prefs = await SharedPreferences.getInstance();
     await Future.wait(
-      _years(year).map((y) async {
-        final key = 'schedule.holidays.$region.$y';
-        final checked = prefs.getInt('$key.checked') ?? 0;
-        if (DateTime.now().millisecondsSinceEpoch - checked <
-            const Duration(hours: 6).inMilliseconds) {
-          return;
-        }
-        try {
-          final calendar = _parse(
-            jsonEncode(await _fetch(region, y)),
-            region,
-            y,
-          );
-          // 空响应表示尚未公布，不覆盖已核验的快照。
-          if (calendar.days.isNotEmpty) {
-            await prefs.setString(key, jsonEncode(calendar.toJson()));
-          }
-          await prefs.setInt(
-            '$key.checked',
-            DateTime.now().millisecondsSinceEpoch,
-          );
-        } catch (_) {
-          /* 网络失败保留旧数据，不影响个人日程。 */
-        }
+      _years(year).map((y) {
+        final key = (region, y);
+        return _refreshing[key] ??= _refreshYear(prefs, region, y).whenComplete(
+          () {
+            _refreshing.remove(key);
+          },
+        );
       }),
     );
     return cached(region, year);
+  }
+
+  Future<void> _refreshYear(
+    SharedPreferences prefs,
+    String region,
+    int year,
+  ) async {
+    final key = 'schedule.holidays.$region.$year';
+    final checked = prefs.getInt('$key.checked') ?? 0;
+    if (DateTime.now().millisecondsSinceEpoch - checked <
+        const Duration(hours: 6).inMilliseconds) {
+      return;
+    }
+    try {
+      final calendar = _parse(
+        jsonEncode(await _fetch(region, year)),
+        region,
+        year,
+      );
+      // 空响应表示尚未公布，不覆盖已核验的快照。
+      if (calendar.days.isNotEmpty) {
+        await prefs.setString(key, jsonEncode(calendar.toJson()));
+      }
+      await prefs.setInt('$key.checked', DateTime.now().millisecondsSinceEpoch);
+    } catch (_) {
+      /* 网络失败保留旧数据，不影响个人日程。 */
+    }
   }
 
   HolidayCalendar _parse(String raw, String region, int year) {

@@ -68,17 +68,12 @@ class RemoteDataSource {
 
   /// 获取会话列表
   ///
-  /// [since] 可选，获取该时间之后更新的会话，用于增量同步。
+  /// 服务端返回完整会话列表，供本地对账。
   ///
   /// 返回 null 表示服务端响应异常（data 字段缺失/类型不符），
   /// 调用方不应把 null 当作「用户没有房间」，避免据此清空本地缓存。
-  Future<List<ChatRoomVO>?> fetchConversations({DateTime? since}) async {
-    final res = await _client.get(
-      API.chatRooms,
-      queryParameters: {
-        if (since != null) 'updatedAfter': since.toIso8601String(),
-      },
-    );
+  Future<List<ChatRoomVO>?> fetchConversations() async {
+    final res = await _client.get(API.chatRooms);
     final data = res.data['data'];
     if (data is! List) return null;
     return data

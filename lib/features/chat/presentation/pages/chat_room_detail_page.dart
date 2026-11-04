@@ -282,9 +282,15 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       return null;
     }
     final access = ref.watch(privateContactAccessProvider(peerId));
+    if (access.isLoading) return const SizedBox.shrink();
     if (access.value == true) return null;
-    final contacts = ref.watch(contactListServiceProvider).value;
-    final blocked = ref.watch(blockedContactsProvider).value;
+    final canOfferAdd =
+        !access.hasError &&
+        ref.watch(contactListServiceProvider).value?.containsKey(peerId) ==
+            false;
+    final blocked = canOfferAdd
+        ? ref.watch(blockedContactsProvider).value
+        : null;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -292,22 +298,14 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text(
-              (access.isLoading
-                      ? 'contact_access_loading'
-                      : 'contact_chat_read_only')
-                  .tr(),
-            ),
+            Text('contact_chat_read_only'.tr()),
             if (access.hasError)
               TextButton(
                 onPressed: () =>
                     ref.invalidate(privateContactAccessProvider(peerId)),
                 child: Text('retry'.tr()),
               )
-            else if (!access.isLoading &&
-                contacts != null &&
-                !contacts.containsKey(peerId) &&
-                blocked != null &&
+            else if (blocked != null &&
                 !blocked.any((contact) => contact.contactId == peerId))
               TextButton(
                 onPressed: () => AddFriendDialog.show(

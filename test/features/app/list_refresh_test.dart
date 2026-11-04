@@ -26,10 +26,19 @@ class _DiskLoader extends AssetLoader {
 }
 
 class _Rooms extends RoomListService {
+  _Rooms({this.failStartup = false});
+
+  final bool failStartup;
+  int builds = 0;
   int refreshes = 0;
   final pending = Completer<void>();
   @override
-  List<ChatRoomVO> build() => [];
+  FutureOr<List<ChatRoomVO>> build() {
+    builds++;
+    if (failStartup) return Future.error(StateError('offline'));
+    return [];
+  }
+
   @override
   Future<void> refresh({bool silent = false}) {
     refreshes++;
@@ -50,8 +59,12 @@ class _Contacts extends ContactListService {
 }
 
 class _RoomFailure extends RoomListRefreshFailed {
+  _RoomFailure(this.failed);
+
+  final bool failed;
+
   @override
-  bool build() => false;
+  bool build() => failed;
 }
 
 class _ContactFailure extends ContactRefreshFailed {
@@ -66,6 +79,7 @@ Future<void> _mount(
   required _Contacts contacts,
   bool desktop = false,
   bool contactError = false,
+  bool roomError = false,
   bool emptyContacts = false,
   Brightness brightness = Brightness.light,
 }) async {
@@ -86,9 +100,13 @@ Future<void> _mount(
       child: ProviderScope(
         overrides: [
           roomListServiceProvider.overrideWith(() => rooms),
-          roomListRefreshFailedProvider.overrideWith(_RoomFailure.new),
+          roomListRefreshFailedProvider.overrideWith(
+            () => _RoomFailure(roomError),
+          ),
           filteredSortedRoomListAsyncProvider.overrideWith(
-            (ref) => const AsyncData([]),
+            (ref) => roomError
+                ? AsyncError(StateError('offline'), StackTrace.empty)
+                : const AsyncData([]),
           ),
           contactListServiceProvider.overrideWith(() => contacts),
           contactRefreshFailedProvider.overrideWith(_ContactFailure.new),
@@ -121,6 +139,37 @@ Future<void> _mount(
 }
 
 void main() {
+  testWidgets('会话首次加载失败时不自动重试', (tester) async {
+    final rooms = _Rooms(failStartup: true);
+    await _mount(
+      tester,
+      page: const ChatRoomList(),
+      rooms: rooms,
+      contacts: _Contacts(),
+      roomError: true,
+    );
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('加载失败'), findsOneWidget);
+    expect(rooms.builds, 1);
+  });
+
+  testWidgets('空会话缓存时只显示页面中央的重试入口', (tester) async {
+    await _mount(
+      tester,
+      page: const ChatRoomList(),
+      rooms: _Rooms(),
+      contacts: _Contacts(),
+      roomError: true,
+    );
+    expect(find.text('加载失败'), findsOneWidget);
+    final button = find.byType(FilledButton);
+    final label = find.descendant(of: button, matching: find.text('重试'));
+    expect(
+      tester.getCenter(label).dx,
+      closeTo(tester.getCenter(button).dx, 0.5),
+    );
+  });
+
   for (final brightness in Brightness.values) {
     testWidgets('聊天刷新圆盘使用不透明底色：$brightness', (tester) async {
       final rooms = _Rooms();

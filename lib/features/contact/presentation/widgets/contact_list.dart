@@ -1,4 +1,3 @@
-import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/contact/presentation/pages/blocked_contacts_page.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/list_retry_banner.dart';
@@ -144,10 +143,14 @@ class _ContactListState extends ConsumerState<ContactList> {
               ListTile(
                 leading: const Icon(Icons.block),
                 title: Text('contact_blocked_list'.tr()),
-                onTap: () => presentAdaptivePage<void>(
-                  context,
-                  builder: (_) => const BlockedContactsPage(),
-                ),
+                onTap: () {
+                  ref
+                      .read(contactSelectionProvider.notifier)
+                      .selectBlockedContacts();
+                  if (DeviceUtil.useSingleColumnPush(context)) {
+                    _openMobileDetail(context, const BlockedContactsPage());
+                  }
+                },
                 trailing: const HugeIcon(
                   icon: HugeIcons.strokeRoundedArrowRight01,
                   size: 18,

@@ -17,6 +17,22 @@ void main() {
     'days': <dynamic>[],
   };
 
+  test('同时查看相邻年份时，共用重叠年份的查询', () async {
+    SharedPreferences.setMockInitialValues(const {});
+    final calls = <int>[];
+    final repository = HolidayRepositoryImpl(
+      fetch: (_, year) async {
+        calls.add(year);
+        return empty(year);
+      },
+    );
+    await Future.wait([
+      repository.refresh('CN', 2026),
+      repository.refresh('CN', 2027),
+    ]);
+    expect(calls..sort(), [2025, 2026, 2027, 2028]);
+  });
+
   test('有效更新持久化，六小时内不重复请求，离线继续显示', () async {
     SharedPreferences.setMockInitialValues(const {});
     var calls = 0;

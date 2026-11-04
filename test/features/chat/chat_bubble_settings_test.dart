@@ -9,6 +9,41 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('回应撑宽气泡并跨过下缘，后续消息留在回应下方', (tester) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    container.read(chatBubbleTailEnabledProvider.notifier).setEnabled(true);
+    const footerKey = ValueKey('reaction-footer');
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                BubbleShell(
+                  isCurrentUser: true,
+                  backgroundColor: Colors.blue,
+                  footer: SizedBox(key: footerKey, width: 160, height: 28),
+                  child: Text('短消息'),
+                ),
+                Text('下一条'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final bubble = tester.getRect(find.byType(BubbleWidget));
+    final footer = tester.getRect(find.byKey(footerKey));
+    expect(bubble.width, greaterThan(footer.width));
+    expect(bubble.bottom, greaterThan(footer.top));
+    expect(bubble.bottom, lessThan(footer.bottom));
+    expect(
+      tester.getTopLeft(find.text('下一条')).dy,
+      greaterThanOrEqualTo(footer.bottom),
+    );
+  });
   testWidgets('气泡开关立即切换双方尖角并保存本机偏好', (tester) async {
     SharedPreferences.setMockInitialValues({});
     await SPUtil.instance.init();

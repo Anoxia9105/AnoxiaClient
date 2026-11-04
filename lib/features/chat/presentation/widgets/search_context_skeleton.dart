@@ -4,13 +4,15 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 搜索结果的加载骨架屏。
 class SearchContextSkeleton extends StatelessWidget {
-  const SearchContextSkeleton({super.key});
+  const SearchContextSkeleton({super.key, this.itemCount = 8});
+
+  final int itemCount;
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: 8,
+      itemCount: itemCount,
       separatorBuilder: (context, index) => const SizedBox(height: 4),
       itemBuilder: (context, index) {
         return Container(

@@ -47,7 +47,9 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     // 桌面端常驻 IndexedStack 只走一次，由下方布局监听负责切页签时刷新。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(noteTreeServiceProvider.notifier).refresh(quiet: true);
+      ref
+          .read(noteTreeServiceProvider.notifier)
+          .refresh(quiet: true, reuseRecent: true);
     });
     final initial = widget.initialNoteId;
     if (initial != null) {
@@ -88,8 +90,12 @@ class _NotesPageState extends ConsumerState<NotesPage> {
       final noteIndex = next.items.indexWhere(
         (item) => item.name == 'sidebar_note',
       );
-      if (noteIndex != -1 && next.currentIndex == noteIndex) {
-        ref.read(noteTreeServiceProvider.notifier).refresh(quiet: true);
+      if (noteIndex != -1 &&
+          next.currentIndex == noteIndex &&
+          previous?.currentIndex != noteIndex) {
+        ref
+            .read(noteTreeServiceProvider.notifier)
+            .refresh(quiet: true, reuseRecent: true);
       }
     });
 

@@ -2,8 +2,8 @@ import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/message/search_message_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -44,6 +44,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
   /// 边界触发锁，避免停留在顶部/底部时重复触发 loadMore
   bool _topLoadLatched = false;
   bool _bottomLoadLatched = false;
+  ScrollDirection _userScrollDirection = ScrollDirection.idle;
   String? _selectedMatchId;
 
   @override
@@ -68,20 +69,25 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
 
   /// 滚动到指定索引
   void _scrollToIndex(int index) {
+    _userScrollDirection = ScrollDirection.idle;
+    _topLoadLatched = false;
+    _bottomLoadLatched = false;
     final searchState = ref.read(searchMessageServiceProvider);
     if (_itemScrollController.isAttached &&
         index >= 0 &&
         index < searchState.messages.length) {
-      _itemScrollController.scrollTo(
-        index: index,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
+      final alignment = switch (index) {
+        0 => 0.0,
+        _ when index == searchState.messages.length - 1 => 0.8,
+        _ => 0.35,
+      };
+      _itemScrollController.jumpTo(index: index, alignment: alignment);
     }
   }
 
   /// 滚动事件处理函数
   void _onScroll() {
+    if (_userScrollDirection == ScrollDirection.idle) return;
     // 检测滚动位置，实现触顶/触底加载
     final searchState = ref.read(searchMessageServiceProvider);
     final position = _itemPositionsListener.itemPositions.value;
@@ -105,20 +111,24 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     }
 
     // 触顶加载更多历史消息（单次触发，离开边界后才可再次触发）
-    if (atTop &&
+    if (_userScrollDirection == ScrollDirection.forward &&
+        atTop &&
         !_topLoadLatched &&
         !searchState.isLoading &&
         searchState.hasMoreBefore) {
       _topLoadLatched = true;
+      _userScrollDirection = ScrollDirection.idle;
       _loadMoreBefore();
     }
 
     // 触底加载更多新消息（单次触发，离开边界后才可再次触发）
-    if (atBottom &&
+    if (_userScrollDirection == ScrollDirection.reverse &&
+        atBottom &&
         !_bottomLoadLatched &&
         !searchState.isLoading &&
         searchState.hasMoreAfter) {
       _bottomLoadLatched = true;
+      _userScrollDirection = ScrollDirection.idle;
       _loadMoreAfter();
     }
   }
@@ -157,6 +167,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     if (ref.read(searchMessageServiceProvider).isLoading) return;
     _topLoadLatched = false;
     _bottomLoadLatched = false;
+    _userScrollDirection = ScrollDirection.idle;
     _selectedMatchId = null;
 
     await ref
@@ -241,6 +252,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                           _searchController.clear();
                           _topLoadLatched = false;
                           _bottomLoadLatched = false;
+                          _userScrollDirection = ScrollDirection.idle;
                           ref
                               .read(searchMessageServiceProvider.notifier)
                               .reset();
@@ -346,35 +358,36 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
               if (searchState.isLoading && searchState.messages.isEmpty)
                 const SearchContextSkeleton(),
               if (searchState.messages.isNotEmpty)
-                ScrollablePositionedList.builder(
-                  itemScrollController: _itemScrollController,
-                  itemPositionsListener: _itemPositionsListener,
-                  itemCount: searchState.messages.length,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemBuilder: (context, index) {
-                    final message = searchState.messages[index];
-                    final messageId = message.messageId;
-                    return AnimationConfiguration.staggeredList(
-                      position: index,
-                      duration: const Duration(milliseconds: 220),
-                      child: SlideAnimation(
-                        verticalOffset: 18,
-                        child: FadeInAnimation(
-                          child: InkWell(
-                            onTap: messageId == null || messageId.isEmpty
-                                ? null
-                                : () => Navigator.of(context).pop(messageId),
-                            child: SearchContextMessageItem(
-                              message: message,
-                              isHighlighted: matches.contains(index),
-                              keyword: searchState.keyword,
-                              roomId: widget.roomId,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
+                NotificationListener<UserScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification.depth == 0 &&
+                        notification.direction != ScrollDirection.idle) {
+                      _userScrollDirection = notification.direction;
+                    }
+                    return false;
                   },
+                  child: ScrollablePositionedList.builder(
+                    itemScrollController: _itemScrollController,
+                    itemPositionsListener: _itemPositionsListener,
+                    itemCount: searchState.messages.length,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemBuilder: (context, index) {
+                      final message = searchState.messages[index];
+                      final messageId = message.messageId;
+                      return InkWell(
+                        key: ValueKey(messageId ?? index),
+                        onTap: messageId == null || messageId.isEmpty
+                            ? null
+                            : () => Navigator.of(context).pop(messageId),
+                        child: SearchContextMessageItem(
+                          message: message,
+                          isHighlighted: matches.contains(index),
+                          keyword: searchState.keyword,
+                          roomId: widget.roomId,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               if (searchState.messages.isEmpty && !searchState.isLoading)
                 Center(
@@ -417,17 +430,19 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                     ),
                   ),
                 ),
-              // 有结果时的增量加载提示：不再遮挡列表
+              // 补拉时保留现有结果，只显示一条加载占位。
               if (searchState.isLoading && searchState.messages.isNotEmpty)
                 Positioned(
-                  top: 0,
+                  bottom: 0,
                   left: 0,
                   right: 0,
-                  child: LinearProgressIndicator(
-                    minHeight: 2,
-                    color: colorScheme.primary,
-                    backgroundColor: colorScheme.primary.withValues(
-                      alpha: 0.15,
+                  child: IgnorePointer(
+                    child: ColoredBox(
+                      color: colorScheme.surface,
+                      child: const SizedBox(
+                        height: 96,
+                        child: SearchContextSkeleton(itemCount: 1),
+                      ),
                     ),
                   ),
                 ),

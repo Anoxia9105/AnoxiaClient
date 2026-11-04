@@ -15,6 +15,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/chat/message/chat_reaction_service.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
@@ -49,14 +52,43 @@ class MessageReactionBar extends ConsumerWidget {
     if (groups == null || groups.isEmpty) return const SizedBox.shrink();
 
     // 多个 emoji 稳定排序：计数多的靠前，同计数按 emoji 码序
-    final aggregates =
-        groups.values.where((e) => e.count > 0 || e.mine).toList()
-          ..sort((a, b) {
-            final byCount = b.count.compareTo(a.count);
-            if (byCount != 0) return byCount;
-            return a.emoji.compareTo(b.emoji);
-          });
+    var aggregates = groups.values.where((e) => e.count > 0 || e.mine).toList()
+      ..sort((a, b) {
+        final byCount = b.count.compareTo(a.count);
+        if (byCount != 0) return byCount;
+        return a.emoji.compareTo(b.emoji);
+      });
     if (aggregates.isEmpty) return const SizedBox.shrink();
+    if (aggregates.any(
+      (reaction) => reaction.users.entries.any(
+        (entry) => entry.value.isEmpty || entry.value == '${entry.key}',
+      ),
+    )) {
+      final members = ref.watch(
+        roomMemberServiceProvider.select((state) => state[roomId]),
+      );
+      final contacts = ref.watch(contactListServiceProvider).value;
+      final room = ref.watch(currentRoomProvider(roomId));
+      aggregates = [
+        for (final reaction in aggregates)
+          reaction.copyWith(
+            users: reaction.users.map((id, name) {
+              if (name.isNotEmpty && name != '$id') return MapEntry(id, name);
+              for (final candidate in [
+                members?[id]?.nickName,
+                contacts?[id]?.nickName,
+                if (room?.peerId == id) room?.roomName,
+              ]) {
+                final displayName = candidate?.trim();
+                if (displayName != null && displayName.isNotEmpty) {
+                  return MapEntry(id, displayName);
+                }
+              }
+              return MapEntry(id, '$id');
+            }),
+          ),
+      ];
+    }
 
     final colorScheme = Theme.of(context).colorScheme;
     const visibleLimit = 5;

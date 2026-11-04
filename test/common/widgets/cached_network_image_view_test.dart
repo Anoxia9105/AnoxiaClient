@@ -67,4 +67,21 @@ void main() {
       WebHtmlElementStrategy.prefer,
     );
   }, skip: !kIsWeb);
+
+  testWidgets('复用列表项时按地址重建 Web 原生图片', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    final context = tester.element(find.byType(SizedBox));
+
+    Widget imageFor(String url) => CachedNetworkImageView(
+      imageUrl: url,
+      preferWebHtmlElement: true,
+    ).build(context);
+
+    const oldAvatar = 'https://cdn.example.com/avatar/old.png';
+    const newAvatar = 'https://cdn.example.com/avatar/new.png';
+    final image = imageFor(oldAvatar);
+
+    expect(Widget.canUpdate(image, imageFor(oldAvatar)), isTrue);
+    expect(Widget.canUpdate(image, imageFor(newAvatar)), isFalse);
+  }, skip: !kIsWeb);
 }

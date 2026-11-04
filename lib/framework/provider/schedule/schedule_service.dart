@@ -9,6 +9,8 @@ class ScheduleService extends _$ScheduleService {
   ScheduleRange? _range;
   ScheduleRange? _supplementRange;
   int _requestSerial = 0;
+  Future<void>? _loading;
+  DateTime? _loadedAt;
 
   @override
   FutureOr<List<ScheduleEvent>> build() => const [];
@@ -17,10 +19,35 @@ class ScheduleService extends _$ScheduleService {
     ScheduleRange range, {
     ScheduleRange? supplement,
     bool quiet = false,
-  }) async {
+    bool force = false,
+  }) {
+    if (!force &&
+        _sameRange(_range, range) &&
+        _sameRange(_supplementRange, supplement)) {
+      final pending = _loading;
+      if (pending != null) return pending;
+      final loadedAt = _loadedAt;
+      if (loadedAt != null &&
+          DateTime.now().difference(loadedAt) < const Duration(seconds: 30)) {
+        return Future.value();
+      }
+    }
     _range = range;
     _supplementRange = supplement;
+    _loadedAt = null;
     final requestSerial = ++_requestSerial;
+    return _loading = _load(range, supplement, quiet, requestSerial)
+        .whenComplete(() {
+          if (requestSerial == _requestSerial) _loading = null;
+        });
+  }
+
+  Future<void> _load(
+    ScheduleRange range,
+    ScheduleRange? supplement,
+    bool quiet,
+    int requestSerial,
+  ) async {
     if (!quiet) state = const AsyncValue.loading();
     final result = await AsyncValue.guard(() async {
       final repository = ref.read(scheduleRepositoryProvider);
@@ -38,13 +65,14 @@ class ScheduleService extends _$ScheduleService {
         ..sort((a, b) => a.startAt.compareTo(b.startAt));
     });
     if (!ref.mounted || requestSerial != _requestSerial) return;
+    if (result.hasValue) _loadedAt = DateTime.now();
     state = result;
   }
 
   Future<void> refresh() async {
     final range = _range;
     if (range != null) {
-      await load(range, supplement: _supplementRange, quiet: true);
+      await load(range, supplement: _supplementRange, quiet: true, force: true);
     }
   }
 
@@ -122,4 +150,7 @@ class ScheduleService extends _$ScheduleService {
   bool _contains(ScheduleRange outer, ScheduleRange inner) {
     return !inner.from.isBefore(outer.from) && !inner.to.isAfter(outer.to);
   }
+
+  bool _sameRange(ScheduleRange? left, ScheduleRange? right) =>
+      left?.from == right?.from && left?.to == right?.to;
 }

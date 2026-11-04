@@ -50,7 +50,7 @@ final class ContactSelectionProvider
   }
 }
 
-String _$contactSelectionHash() => r'91e35f6d88a84a76f2babc0e2831b367223e1207';
+String _$contactSelectionHash() => r'1c36dc16880a582452c071e6492d9e2a6ea5f2d3';
 
 /// 联系人选择控制器
 ///

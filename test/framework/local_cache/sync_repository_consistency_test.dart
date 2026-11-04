@@ -23,6 +23,8 @@ class _Remote extends RemoteDataSource {
   List<({int id, String messageId, String payload})> edits = [];
   List<ChatMessage> messages = [];
   List<ChatRoomVO> rooms = [];
+  final recallCursors = <int>[];
+  final editCursors = <int>[];
   bool failRecalls = false;
   bool failEdits = false;
   bool failRooms = false;
@@ -32,6 +34,7 @@ class _Remote extends RemoteDataSource {
     String roomId,
     int afterId,
   ) async {
+    recallCursors.add(afterId);
     if (failRecalls) throw StateError('recall service unavailable');
     return recalls.where((r) => r.id > afterId).take(100).toList();
   }
@@ -41,6 +44,7 @@ class _Remote extends RemoteDataSource {
     String roomId,
     int afterId,
   ) async {
+    editCursors.add(afterId);
     if (failEdits) throw StateError('edit service unavailable');
     return edits.where((e) => e.id > afterId).take(100).toList();
   }
@@ -97,6 +101,25 @@ void main() {
   });
   tearDown(() => db.close());
 
+  test('撤回和编辑补偿在重新进入房间时从本地游标继续', () async {
+    await local.upsertMessage(_message('edited', 1));
+    remote.recalls = [(id: 5, messageId: 'recalled')];
+    remote.edits = [
+      (id: 9, messageId: 'edited', payload: '{"text":{"text":"updated"}}'),
+    ];
+    await repository.syncMessages('room');
+
+    final reentered = SyncRepository(
+      local: local,
+      remote: remote,
+      connectivity: _Connected(),
+    );
+    await reentered.syncMessages('room');
+
+    expect(remote.recallCursors, [0, 5]);
+    expect(remote.editCursors, [0, 9]);
+  });
+
   test('主动同步会话失败可重试，后台同步仍容错', () async {
     remote.failRooms = true;
     await expectLater(
@@ -139,7 +162,11 @@ void main() {
   test('离线编辑补偿把 payload 快照回放到消息与末条预览', () async {
     await local.upsertMessage(_message('original', 1));
     remote.edits = [
-      (id: 1, messageId: 'original', payload: '{"text":{"text":"edited-final"}}'),
+      (
+        id: 1,
+        messageId: 'original',
+        payload: '{"text":{"text":"edited-final"}}',
+      ),
     ];
     await repository.syncMessages('room');
     final target = (await local.getMessagesForConversation('room')).single;

@@ -14,6 +14,14 @@ import 'database.dart';
 import 'session_epoch.dart';
 
 class LocalDataSource {
+  static const roomRecallSyncScope = 'room_recalls';
+  static const roomEditSyncScope = 'room_edits';
+  static const _roomSyncScopes = [
+    'messages',
+    'read_cursor_pending',
+    roomRecallSyncScope,
+    roomEditSyncScope,
+  ];
   LocalDataSource(this.db, {SessionEpoch? sessionEpoch})
     : _sessionEpoch = sessionEpoch,
       _epoch = sessionEpoch?.value;
@@ -565,7 +573,7 @@ class LocalDataSource {
         )..where((tbl) => tbl.id.equals(conversationId))).go();
         await (db.delete(db.syncStates)..where(
               (tbl) =>
-                  tbl.scope.isIn(['messages', 'read_cursor_pending']) &
+                  tbl.scope.isIn(_roomSyncScopes) &
                   tbl.scopeId.equals(conversationId),
             ))
             .go();
@@ -585,10 +593,9 @@ class LocalDataSource {
         if (keep.isEmpty) {
           await db.delete(db.messages).go();
           await db.delete(db.conversations).go();
-          await (db.delete(db.syncStates)..where(
-                (tbl) => tbl.scope.isIn(['messages', 'read_cursor_pending']),
-              ))
-              .go();
+          await (db.delete(
+            db.syncStates,
+          )..where((tbl) => tbl.scope.isIn(_roomSyncScopes))).go();
           return;
         }
         await (db.delete(
@@ -599,8 +606,7 @@ class LocalDataSource {
         )..where((tbl) => tbl.id.isNotIn(keep))).go();
         await (db.delete(db.syncStates)..where(
               (tbl) =>
-                  tbl.scope.isIn(['messages', 'read_cursor_pending']) &
-                  tbl.scopeId.isNotIn(keep),
+                  tbl.scope.isIn(_roomSyncScopes) & tbl.scopeId.isNotIn(keep),
             ))
             .go();
       });
@@ -759,6 +765,10 @@ class LocalDataSource {
     return _write(() async {
       return db.messageDao.deleteMessagesForConversation(conversationId);
     });
+  }
+
+  Future<int> operationSyncCursor(String scope, String roomId) async {
+    return (await db.syncStateDao.getState(scope, roomId))?.lastSeq ?? 0;
   }
 
   Future<void> updateSyncState({

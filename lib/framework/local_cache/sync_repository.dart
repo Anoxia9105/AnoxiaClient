@@ -96,8 +96,7 @@ class SyncRepository implements ChatRepository {
     if (!await _hasNetwork()) throw StateError('Network unavailable');
 
     try {
-      final since = await _local.latestConversationUpdatedAt();
-      final remoteRooms = await _remote.fetchConversations(since: since);
+      final remoteRooms = await _remote.fetchConversations();
       // 服务端响应异常（null）时不视为「用户无房间」，跳过合并与对账，
       // 避免用一次错误响应把本地缓存清空。
       if (remoteRooms == null) {
@@ -191,19 +190,28 @@ class SyncRepository implements ChatRepository {
   }
 
   Future<void> _syncRecalls(String roomId) async {
-    var cursor = 0;
+    const scope = LocalDataSource.roomRecallSyncScope;
+    var cursor = await _local.operationSyncCursor(scope, roomId);
     while (true) {
       final recalls = await _remote.fetchRecalls(roomId, cursor);
       if (recalls.isEmpty) return;
       await _local.applyRecalls(recalls.map((r) => r.messageId));
-      cursor = recalls.map((r) => r.id).reduce((a, b) => a > b ? a : b);
+      final next = recalls.map((r) => r.id).reduce(max);
+      if (next <= cursor) return;
+      cursor = next;
+      await _local.updateSyncState(
+        scope: scope,
+        scopeId: roomId,
+        lastSeq: cursor,
+      );
       if (recalls.length < 100) return;
     }
   }
 
   /// 编辑补偿循环：游标分页，把离线期间错过的编辑按 payload 快照回放到消息行。
   Future<void> _syncEdits(String roomId) async {
-    var cursor = 0;
+    const scope = LocalDataSource.roomEditSyncScope;
+    var cursor = await _local.operationSyncCursor(scope, roomId);
     while (true) {
       final edits = await _remote.fetchEdits(roomId, cursor);
       if (edits.isEmpty) return;
@@ -212,7 +220,14 @@ class SyncRepository implements ChatRepository {
             .map((e) => (messageId: e.messageId, payloadJson: e.payload))
             .toList(),
       );
-      cursor = edits.map((e) => e.id).reduce((a, b) => a > b ? a : b);
+      final next = edits.map((e) => e.id).reduce(max);
+      if (next <= cursor) return;
+      cursor = next;
+      await _local.updateSyncState(
+        scope: scope,
+        scopeId: roomId,
+        lastSeq: cursor,
+      );
       if (edits.length < 100) return;
     }
   }

@@ -119,13 +119,13 @@ class ContactListService extends _$ContactListService {
     state = result.hasError && previous.hasValue ? previous : result;
   }
 
-  /// 删除联系人（解除好友后调用，同步更新内存和本地 DB）
+  /// 将联系人从本地列表与缓存移除。
   Future<void> removeContact(int contactId) async {
-    await ref.read(localDataSourceProvider).deleteContact(contactId);
     state.whenData((map) {
       final updated = Map<int, ChatContactVO>.from(map)..remove(contactId);
       state = AsyncData(updated);
     });
+    await ref.read(localDataSourceProvider).deleteContact(contactId);
   }
 }
 

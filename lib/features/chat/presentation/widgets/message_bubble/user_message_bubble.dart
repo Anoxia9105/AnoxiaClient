@@ -20,6 +20,7 @@ import 'package:anoxia/features/chat/presentation/widgets/message_bubble/message
 import 'package:anoxia/features/chat/presentation/widgets/message_menu/chat_message_context_menu.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_strategy.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/provider/chat/message/chat_reaction_service.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/message/chat_content_density_controller.dart';
@@ -227,14 +228,25 @@ class MessageContentFrame extends ConsumerWidget {
       strategy: strategy,
       textColor: view.textColor,
     );
-    final content = canReactToMessage(message)
+    final hasReactions =
+        canReactToMessage(message) &&
+        ref.watch(
+          roomChatReactionsProvider.select(
+            (rooms) =>
+                rooms[message.roomId]?.byMessage[message.messageId]?.values.any(
+                  (reaction) => reaction.count > 0 || reaction.mine,
+                ) ??
+                false,
+          ),
+        );
+    final reactions = hasReactions
+        ? MessageReactionBar(message: message)
+        : null;
+    final content = reactions != null
         ? Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              body,
-              MessageReactionBar(message: message),
-            ],
+            children: [body, reactions],
           )
         : body;
 
@@ -253,7 +265,8 @@ class MessageContentFrame extends ConsumerWidget {
                 isCurrentUser: view.isCurrentUser,
                 placeOnLeft: placeOnLeft,
                 backgroundColor: view.bubbleColor,
-                child: content,
+                child: body,
+                footer: reactions,
               )
             : content,
       ),

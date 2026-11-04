@@ -15,6 +15,7 @@ part 'note_tree_provider.g.dart';
 class NoteTreeService extends _$NoteTreeService {
   /// 正在进行的树请求，防止并发重复拉取
   Future<NoteTree>? _fetchInflight;
+  DateTime? _loadedAt;
 
   @override
   FutureOr<NoteTree> build() {
@@ -25,13 +26,24 @@ class NoteTreeService extends _$NoteTreeService {
     return _fetchInflight ??= ref
         .read(noteRepositoryProvider)
         .getTree()
+        .then((tree) {
+          _loadedAt = DateTime.now();
+          return tree;
+        })
         .whenComplete(() => _fetchInflight = null);
   }
 
   /// 手动刷新树
   ///
   /// [quiet] 为 true 时静默刷新，不触发 loading 状态
-  Future<void> refresh({bool quiet = false}) async {
+  Future<void> refresh({bool quiet = false, bool reuseRecent = false}) async {
+    final loadedAt = _loadedAt;
+    if (reuseRecent &&
+        state.hasValue &&
+        loadedAt != null &&
+        DateTime.now().difference(loadedAt) < const Duration(seconds: 30)) {
+      return;
+    }
     if (!quiet) {
       state = const AsyncValue.loading();
     }

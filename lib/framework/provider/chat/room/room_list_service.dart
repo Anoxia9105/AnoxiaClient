@@ -47,11 +47,13 @@ class RoomListRefreshFailed extends _$RoomListRefreshFailed {
   void setFailed(bool failed) => state = failed;
 }
 
+Duration? _noRoomListRetry(int retryCount, Object error) => null;
+
 /// 聊天室列表服务
 ///
 /// 负责管理聊天室列表的获取、刷新、排序和本地状态维护。
 /// 采用 keepAlive 模式，确保列表数据全局共享。
-@Riverpod(keepAlive: true)
+@Riverpod(keepAlive: true, retry: _noRoomListRetry)
 class RoomListService extends _$RoomListService {
   static const Duration _startupFetchTimeout = Duration(seconds: 12);
 
@@ -135,9 +137,17 @@ class RoomListService extends _$RoomListService {
       return state.value ?? const <ChatRoomVO>[];
     }
 
-    final rooms = await _fetchRoomListForStartup();
-    _initialFetchDone = true;
-    return rooms;
+    try {
+      final rooms = await _fetchRoomListForStartup();
+      _initialFetchDone = true;
+      return rooms;
+    } catch (_) {
+      if (!ref.mounted) rethrow;
+      final cached = state.value;
+      if (cached == null || cached.isEmpty) rethrow;
+      ref.read(roomListRefreshFailedProvider.notifier).setFailed(true);
+      return cached;
+    }
   }
 
   /// 切换当前房间的搜索栏展开状态
@@ -188,7 +198,10 @@ class RoomListService extends _$RoomListService {
         .read(roomListRefreshFailedProvider.notifier)
         .setFailed(newState.hasError);
 
-    state = newState.hasError && previous.hasValue ? previous : newState;
+    final cached = state.value ?? previous.value;
+    state = newState.hasError && cached != null && cached.isNotEmpty
+        ? AsyncData(cached)
+        : newState;
     final viewedId = ref.read(activelyViewedRoomIdProvider);
     if (viewedId != null) markAsRead(viewedId);
   }
@@ -571,10 +584,13 @@ class RoomInitialLoads extends _$RoomInitialLoads {
 @riverpod
 Future<void> roomEntryTask(Ref ref, String roomId) async {
   ref.watch(tokenCacheProvider);
-  final room = ref.watch(currentRoomProvider(roomId));
+  final isOfficial = ref.watch(
+    currentRoomProvider(roomId).select((room) => room?.isOfficial),
+  );
 
   // 官方虚拟房间无需同步消息 / 成员
-  if (room?.isOfficial ?? false) return;
+  if (isOfficial == null || isOfficial) return;
+  final room = ref.read(currentRoomProvider(roomId));
 
   await Future.wait([
     ref

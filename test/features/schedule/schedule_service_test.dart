@@ -6,6 +6,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('reuses the current range and still honors explicit refresh', () async {
+    final repository = _FakeScheduleRepository([const [], const []]);
+    final container = ProviderContainer(
+      overrides: [scheduleRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    final service = container.read(scheduleServiceProvider.notifier);
+    final range = ScheduleRange(
+      from: DateTime.utc(2026, 9, 1),
+      to: DateTime.utc(2026, 10, 1),
+    );
+    final first = service.load(range);
+    expect(service.load(range), same(first));
+    await first;
+    await service.load(range);
+    expect(repository.listCalls, 1);
+    await service.refresh();
+    expect(repository.listCalls, 2);
+  });
+
   test(
     'merges the calendar and quick-list windows without duplicates',
     () async {

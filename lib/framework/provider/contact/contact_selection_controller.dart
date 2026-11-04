@@ -13,6 +13,9 @@ enum ContactViewType {
   /// 新的朋友页面
   newFriends,
 
+  /// 黑名单页面
+  blockedContacts,
+
   /// 群聊列表页面
   groups,
 
@@ -48,6 +51,10 @@ class ContactSelection extends _$ContactSelection {
   /// 选中"新的朋友"视图
   void selectNewFriends() {
     state = ContactSelectionState(viewType: ContactViewType.newFriends);
+  }
+
+  void selectBlockedContacts() {
+    state = ContactSelectionState(viewType: ContactViewType.blockedContacts);
   }
 
   /// 选中指定联系人，进入详情视图

@@ -2,6 +2,7 @@ import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/contact/private_contact_access.dart';
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,15 +78,28 @@ Future<void> changeContactBlock(
   }
   try {
     await setContactBlocked(contactId, blocked: blocked);
-    if (!context.mounted) return;
-    ref.invalidate(privateContactAccessProvider(contactId));
-    ref.invalidate(blockedContactsProvider);
-    Toast.showToast(
-      (blocked ? 'contact_blocked_success' : 'contact_unblocked_success').tr(),
-      type: ToastType.success,
-    );
   } catch (_) {
     if (!context.mounted) return;
     Toast.showToast('chat_operation_retry_failed'.tr(), type: ToastType.error);
+    return;
   }
+
+  if (!context.mounted) return;
+  ref.invalidate(privateContactAccessProvider(contactId));
+  ref.invalidate(blockedContactsProvider);
+  final contacts = ref.read(contactListServiceProvider.notifier);
+  if (blocked) {
+    try {
+      await contacts.removeContact(contactId);
+    } catch (_) {
+      await contacts.refresh(quiet: true);
+    }
+  } else {
+    await contacts.refresh(quiet: true);
+  }
+  if (!context.mounted) return;
+  Toast.showToast(
+    (blocked ? 'contact_blocked_success' : 'contact_unblocked_success').tr(),
+    type: ToastType.success,
+  );
 }

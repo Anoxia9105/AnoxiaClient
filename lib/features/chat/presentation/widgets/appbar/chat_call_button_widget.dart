@@ -30,7 +30,7 @@ class ChatCallButtonWidget extends ConsumerWidget {
     final mobileCallSession = ref.watch(mobileCallSessionControllerProvider);
     final callStatus = ref.watch(roomCallStatusProvider(roomId));
 
-    ref.read(callStatusControllerProvider.notifier).ensureLoaded(roomId);
+    ref.watch(roomCallStatusLoadProvider(roomId));
 
     if (room == null) return const SizedBox.shrink();
 

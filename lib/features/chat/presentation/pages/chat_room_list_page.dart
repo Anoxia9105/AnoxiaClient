@@ -1,5 +1,4 @@
 import 'package:anoxia/common/utils/device_util.dart';
-import 'package:anoxia/common/widgets/list_retry_banner.dart';
 import 'package:anoxia/common/widgets/list_refresh.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_dialog_menus.dart';
@@ -174,9 +173,6 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     return Column(
       children: [
         if (showSearch) _buildSearchBar(context, ref),
-        if (ref.watch(roomListRefreshFailedProvider) &&
-            ref.watch(roomListServiceProvider).hasValue)
-          ListRetryBanner(onRetry: _refresh),
         Expanded(child: _buildRoomList(context, ref)),
       ],
     );
@@ -248,6 +244,9 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
 
   /// 构建房间列表
   Widget _buildRoomList(BuildContext context, WidgetRef ref) {
+    if (ref.watch(roomListRefreshFailedProvider)) {
+      return _buildErrorState(context);
+    }
     final filteredRooms = ref.watch(filteredSortedRoomListAsyncProvider);
     final query = ref.watch(roomSearchQueryProvider);
 
@@ -263,7 +262,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
       skipLoadingOnReload: true,
       skipError: true,
       loading: () => const ChatRoomListSkeleton(),
-      error: (error, _) => _buildErrorState(context, ref, error),
+      error: (_, _) => _buildErrorState(context),
       data: (rooms) {
         if (rooms.isEmpty) {
           return _buildEmptyState(context, ref, query);
@@ -335,7 +334,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   }
 
   /// 构建错误状态视图
-  Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error) {
+  Widget _buildErrorState(BuildContext context) {
     final theme = Theme.of(context);
     return ListRefreshIndicator(
       onRefresh: _refresh,
@@ -363,14 +362,9 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    FilledButton.tonalIcon(
+                    FilledButton.tonal(
                       onPressed: _refresh,
-                      icon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedReload,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                      label: Text('call_window_retry'.tr()),
+                      child: Text('call_window_retry'.tr()),
                     ),
                   ],
                 ),

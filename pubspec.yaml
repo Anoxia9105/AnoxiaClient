@@ -4,7 +4,7 @@ homepage: https://www.anoxia.cn/
 repository: https://github.com/Anoxia9105/AnoxiaClient
 issue_tracker: https://github.com/Anoxia9105/AnoxiaClient/issues
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 2.5.1+56
+version: 2.5.2+57
 
 environment:
   sdk: ^3.10.1

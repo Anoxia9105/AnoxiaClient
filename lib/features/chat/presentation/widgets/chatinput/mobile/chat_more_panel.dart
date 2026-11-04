@@ -191,7 +191,7 @@ class ChatMorePanel extends ConsumerWidget {
     final mobileCallSession = ref.watch(mobileCallSessionControllerProvider);
     final callStatus = ref.watch(roomCallStatusProvider(roomId));
 
-    ref.read(callStatusControllerProvider.notifier).ensureLoaded(roomId);
+    ref.watch(roomCallStatusLoadProvider(roomId));
 
     final hasActiveCall =
         callWindow != null ||

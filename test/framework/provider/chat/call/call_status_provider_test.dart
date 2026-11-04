@@ -33,8 +33,7 @@ class _PendingCallRepository implements CallRepository {
     required int pageSize,
     required String orderBy,
     String? roomId,
-  }) =>
-      throw UnimplementedError();
+  }) => throw UnimplementedError();
 }
 
 void main() {
@@ -50,6 +49,16 @@ void main() {
     );
     controller = container.read(callStatusControllerProvider.notifier);
     addTearDown(container.dispose);
+  });
+
+  test('房间通话状态请求失败后短时间内不会因重建重复查询', () async {
+    final first = controller.ensureLoaded('group');
+    await controller.ensureLoaded('group');
+    expect(repository.requests, hasLength(1));
+    repository.requests.single.completeError(StateError('offline'));
+    await first;
+    await controller.ensureLoaded('group');
+    expect(repository.requests, hasLength(1));
   });
 
   test('通话结束事件发生后，较早请求的通话中响应不能恢复加入通话状态', () async {

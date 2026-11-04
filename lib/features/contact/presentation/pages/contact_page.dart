@@ -1,5 +1,6 @@
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/app/presentation/widgets/welcome.dart';
+import 'package:anoxia/features/contact/presentation/pages/blocked_contacts_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/group_room_list_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/new_friends_page.dart';
@@ -54,6 +55,8 @@ class ContactPage extends ConsumerWidget {
     switch (viewType) {
       case ContactViewType.newFriends:
         return const ContactDetailPanel(child: NewFriendsPage());
+      case ContactViewType.blockedContacts:
+        return const ContactDetailPanel(child: BlockedContactsPage());
       case ContactViewType.contactDetail:
         return const ContactDetailPanel(child: ContactDetail());
       case ContactViewType.groups:

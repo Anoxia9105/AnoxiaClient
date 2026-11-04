@@ -33,7 +33,7 @@ final class ScheduleServiceProvider
   ScheduleService create() => ScheduleService();
 }
 
-String _$scheduleServiceHash() => r'149f288cc97e3eac5b2a2b18130053de7c239b0c';
+String _$scheduleServiceHash() => r'7c2e2e2c41b3dd5dac968b928f8af3f6a08025dc';
 
 abstract class _$ScheduleService extends $AsyncNotifier<List<ScheduleEvent>> {
   FutureOr<List<ScheduleEvent>> build();

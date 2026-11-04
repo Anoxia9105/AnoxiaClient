@@ -63,6 +63,8 @@ class SystemEventService extends _$SystemEventService {
   ///
   /// 断线期间可能丢失事件推送，需要重新拉取各模块数据
   Future<void> _onReconnected() async {
+    ref.invalidate(privateContactAccessProvider);
+    ref.invalidate(blockedContactsProvider);
     // REST 补偿公告状态，失败由控制器承接，不阻塞其它重连恢复。
     ref.read(announcementControllerProvider.notifier).refresh();
     // 刷新房间列表（补偿新房间、删除、禁言、未读数等）
@@ -303,7 +305,6 @@ class SystemEventService extends _$SystemEventService {
             .read(roomListServiceProvider.notifier)
             .updateRoomAnnouncementLocally(roomId, announcement);
       }
-      ref.read(callStatusControllerProvider.notifier).refresh(roomId);
     }
 
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);

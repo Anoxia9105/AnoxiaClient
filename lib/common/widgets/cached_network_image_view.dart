@@ -108,6 +108,8 @@ class CachedNetworkImageView extends StatelessWidget {
     )) {
       return Image.network(
         imageUrl,
+        // The HTML platform view only reads its src when it is created.
+        key: ValueKey(imageUrl),
         width: width,
         height: height,
         fit: fit,

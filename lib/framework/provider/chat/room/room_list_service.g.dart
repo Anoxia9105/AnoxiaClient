@@ -84,7 +84,7 @@ final class RoomListServiceProvider
     : super(
         from: null,
         argument: null,
-        retry: null,
+        retry: _noRoomListRetry,
         name: r'roomListServiceProvider',
         isAutoDispose: false,
         dependencies: null,
@@ -99,7 +99,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'81628fdbf9a36d2627fea8ef4e6f0c93b482d390';
+String _$roomListServiceHash() => r'4fe3198157d5cdf80a17007992b94ac4470a9a76';
 
 /// 聊天室列表服务
 ///
@@ -301,7 +301,7 @@ final class RoomEntryTaskProvider
   }
 }
 
-String _$roomEntryTaskHash() => r'8c0f3e10a365ed23b2e300f5eb307c2d7cc456de';
+String _$roomEntryTaskHash() => r'4113b4feb951b09e304aa6e14ac9ddb773a7fe05';
 
 /// 进入房间时的初始化任务
 ///
