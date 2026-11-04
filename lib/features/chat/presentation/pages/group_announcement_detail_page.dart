@@ -29,13 +29,17 @@ class GroupAnnouncementDetailPage extends ConsumerWidget {
         title: Text('chat_group_announcement_detail'.tr()),
         centerTitle: DeviceUtil.isRealMobile(),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: SelectableText(
-          content.isEmpty ? 'chat_group_announcement_empty'.tr() : content,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.65),
-        ),
-      ),
+      body: content.isEmpty
+          ? Center(child: Text('chat_group_announcement_empty'.tr()))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: SelectableText(
+                content,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  height: 1.65,
+                ),
+              ),
+            ),
     );
   }
 }

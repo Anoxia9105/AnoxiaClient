@@ -402,7 +402,9 @@ class RoomListService extends _$RoomListService {
       targetUserId,
     );
 
-    if (existingRoom != null && existingRoom.roomId != null) {
+    if (existingRoom != null &&
+        existingRoom.roomId != null &&
+        !existingRoom.isHidden) {
       return existingRoom.roomId;
     }
 
@@ -423,6 +425,15 @@ class RoomListService extends _$RoomListService {
       debugLog('❌ 获取/创建房间接口调用失败', e);
       return null;
     }
+  }
+
+  Future<void> hideConversation(String roomId) async {
+    await ref.read(roomRepositoryProvider).hideRoom(roomId);
+    if (!ref.mounted) return;
+    if (ref.read(activeRoomIdProvider) == roomId) {
+      ref.read(activeRoomIdProvider.notifier).setActive(null);
+    }
+    await refresh(silent: true);
   }
 
   /// 退出聊天室

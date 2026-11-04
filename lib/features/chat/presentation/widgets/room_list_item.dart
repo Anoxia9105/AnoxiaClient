@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/date_util.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
@@ -149,6 +150,7 @@ class RoomListItem extends ConsumerWidget {
         }
         if (isSingle) {
           return AvatarWidget(
+            size: 40,
             url: room.roomAvatar,
             name: displayRoomName,
             status: isOnline ? AvatarStatus.online : AvatarStatus.offline,
@@ -366,7 +368,7 @@ class RoomListItem extends ConsumerWidget {
       else
         _buildMenuItem(
           icon: HugeIcons.strokeRoundedDelete02,
-          label: 'chat_delete_conversation'.tr(),
+          label: 'chat_hide_conversation'.tr(),
           value: 'hide',
           color: Theme.of(context).colorScheme.error,
         ),
@@ -400,9 +402,17 @@ class RoomListItem extends ConsumerWidget {
       case 'hide':
         final confirmed = await _showDeleteConversationConfirm(context);
         if (!confirmed) return;
-        await roomList.leaveRoom(roomId);
-        if (activeRoomId == roomId) {
-          ref.read(activeRoomIdProvider.notifier).setActive(null);
+        if (!context.mounted) return;
+        try {
+          await roomList.hideConversation(roomId);
+        } catch (_) {
+          if (context.mounted) {
+            Toast.showToast(
+              'chat_operation_retry_failed'.tr(),
+              type: ToastType.error,
+            );
+          }
+          return;
         }
         break;
       case 'dissolve':
@@ -418,9 +428,9 @@ class RoomListItem extends ConsumerWidget {
     return showDangerConfirmDialog(
       context,
       icon: HugeIcons.strokeRoundedDelete02,
-      title: 'chat_delete_conversation'.tr(),
-      content: 'chat_delete_conversation_confirm_hint'.tr(),
-      confirmLabel: 'chat_delete_conversation'.tr(),
+      title: 'chat_hide_conversation'.tr(),
+      content: 'chat_hide_conversation_hint'.tr(),
+      confirmLabel: 'chat_hide_conversation'.tr(),
     );
   }
 

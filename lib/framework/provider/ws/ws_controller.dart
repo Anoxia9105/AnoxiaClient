@@ -597,7 +597,11 @@ class WsController extends _$WsController {
         _removePendingOutbound(seq);
         ref
             .read(chatMessagesProvider.notifier)
-            .markFailedByClientMsgId(seq, retryable: false);
+            .markFailedByClientMsgId(
+              seq,
+              retryable: false,
+              rejectedMessageId: ack.meta?.messageId,
+            );
       }
     }
     final code = ack.code;

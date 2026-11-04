@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/contact/private_contact_access.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
@@ -40,6 +41,11 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     // 用新的 Provider：只有当前房间成员变化才重建，不受其他房间影响
     final members = ref.watch(roomMembersProvider(roomId));
     final contactMap = ref.watch(contactListServiceProvider).value;
+    final peerId = room?.peerId;
+    final canCall =
+        room?.roomType != 0 ||
+        (peerId != null &&
+            ref.watch(privateContactAccessProvider(peerId)).value == true);
 
     /// 是否有人正在输入（通过高优消息监听）
     final isTyping = ref.watch(
@@ -80,12 +86,11 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           // 单栏（手机/平板竖屏）标题保持简洁：隐藏头像、只居中显示名字；
           // 群聊标题聚合人数（群名 · N），对方输入时用输入状态替换名字，与手机端保持一致。
           if (isSingleColumn) {
-            final singleColumnTitle =
-                room.roomType == 0 && isTyping
-                    ? 'appbar_user_typing'.tr()
-                    : room.roomType == 1
-                    ? '$displayTitle · ${members.length}'
-                    : displayTitle;
+            final singleColumnTitle = room.roomType == 0 && isTyping
+                ? 'appbar_user_typing'.tr()
+                : room.roomType == 1
+                ? '$displayTitle · ${members.length}'
+                : displayTitle;
             return Text(
               singleColumnTitle,
               maxLines: 1,
@@ -191,8 +196,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
             onPressed: ref.read(chatFocusModeProvider.notifier).toggle,
           ),
+
           /// 通话按钮（房间正常状态才显示，官方虚拟房间 / 禁言 / 封禁不显示）
-          if (room.roomStatus == 0 && !room.isOfficial) ...[
+          if (room.roomStatus == 0 && !room.isOfficial && canCall) ...[
             ChatCallButtonWidget(roomId: roomId), // 通话按钮组件化
           ],
 
@@ -240,7 +246,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         alignment: Alignment.centerLeft,
         child: Text(
           'appbar_user_typing'.tr(),
-          style: Theme.of(context).textTheme.bodySmall!.copyWith( color: Theme.of(context).colorScheme.onSurfaceVariant),
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -256,9 +264,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             OnlineStatusPill(
-              text: 'common_online_count'.tr(
-                args: [onlineCount.toString()],
-              ),
+              text: 'common_online_count'.tr(args: [onlineCount.toString()]),
             ),
             const SizedBox(width: 8),
             Flexible(

@@ -1,4 +1,7 @@
+import 'package:anoxia/features/contact/presentation/pages/blocked_contacts_page.dart';
+import 'package:anoxia/framework/provider/contact/private_contact_access.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/core/room_repository_provider.dart';
 import 'package:anoxia/features/chat/presentation/pages/call_history_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/media_timeline_page.dart';
@@ -51,10 +54,12 @@ import 'package:easy_localization/easy_localization.dart';
 class RoomDetailSettingsBody extends ConsumerWidget {
   final String roomId;
   final EdgeInsetsGeometry padding;
+  final Future<void> Function() onReturnToChat;
 
   const RoomDetailSettingsBody({
     super.key,
     required this.roomId,
+    required this.onReturnToChat,
     this.padding = const EdgeInsets.symmetric(vertical: 8),
   });
 
@@ -71,6 +76,17 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     }
 
     final isGroup = currentRoom.roomType == 1;
+    final peerId = currentRoom.peerId;
+    final canCall =
+        peerId != null &&
+        ref.watch(privateContactAccessProvider(peerId)).value == true;
+    final blocked =
+        peerId != null &&
+        (ref
+                .watch(blockedContactsProvider)
+                .value
+                ?.any((contact) => contact.contactId == peerId) ??
+            false);
     final currentUser = ref.watch(authControllerProvider).value;
     final isAdmin = ref.watch(
       isRoomAdminProvider((roomId, currentUser?.userId ?? 0)),
@@ -166,7 +182,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 icon: HugeIcons.strokeRoundedSearch01,
                 tint: SettingIconTint.blue,
                 label: 'chat_detail_search'.tr(),
-                onTap: () => _openSearch(context, currentRoom),
+                onTap: () => _openSearch(context, ref, currentRoom),
               ),
               _QuickToolData(
                 icon: HugeIcons.strokeRoundedMegaphone01,
@@ -198,7 +214,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 icon: HugeIcons.strokeRoundedSearch01,
                 tint: SettingIconTint.blue,
                 label: 'chat_detail_search'.tr(),
-                onTap: () => _openSearch(context, currentRoom),
+                onTap: () => _openSearch(context, ref, currentRoom),
               ),
               _QuickToolData(
                 icon: HugeIcons.strokeRoundedUserMultiple02,
@@ -206,29 +222,39 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 label: 'chat_contact_info'.tr(),
                 onTap: () => _openPeerContact(context, ref, currentRoom),
               ),
-              _QuickToolData(
-                icon: HugeIcons.strokeRoundedCall02,
-                tint: SettingIconTint.green,
-                label: 'call_audio_call'.tr(),
-                onTap: () => ChatBarHandlers.onCallPressed(
-                  context,
-                  ref,
-                  currentRoom,
-                  initialMedia: CallInitialMedia.audio,
+              if (canCall)
+                _QuickToolData(
+                  icon: HugeIcons.strokeRoundedCall02,
+                  tint: SettingIconTint.green,
+                  label: 'call_audio_call'.tr(),
+                  onTap: () => ChatBarHandlers.onCallPressed(
+                    context,
+                    ref,
+                    currentRoom,
+                    initialMedia: CallInitialMedia.audio,
+                  ),
                 ),
-              ),
-              _QuickToolData(
-                icon: HugeIcons.strokeRoundedVideo01,
-                tint: SettingIconTint.violet,
-                label: 'call_video_call'.tr(),
-                onTap: () => ChatBarHandlers.onCallPressed(
-                  context,
-                  ref,
-                  currentRoom,
-                  initialMedia: CallInitialMedia.video,
+              if (canCall)
+                _QuickToolData(
+                  icon: HugeIcons.strokeRoundedVideo01,
+                  tint: SettingIconTint.violet,
+                  label: 'call_video_call'.tr(),
+                  onTap: () => ChatBarHandlers.onCallPressed(
+                    context,
+                    ref,
+                    currentRoom,
+                    initialMedia: CallInitialMedia.video,
+                  ),
                 ),
-              ),
             ],
+          ),
+
+        if (!isGroup && peerId != null)
+          ListTile(
+            leading: const Icon(Icons.block),
+            title: Text((blocked ? 'contact_unblock' : 'contact_block').tr()),
+            onTap: () =>
+                changeContactBlock(context, ref, peerId, blocked: !blocked),
           ),
 
         if (isGroup) ...[
@@ -510,12 +536,20 @@ class RoomDetailSettingsBody extends ConsumerWidget {
 
   // ---------- 二级页直达（行为与原来完全一致） ----------
 
-  void _openSearch(BuildContext context, ChatRoomVO room) {
-    presentAdaptivePage(
+  Future<void> _openSearch(
+    BuildContext context,
+    WidgetRef ref,
+    ChatRoomVO room,
+  ) async {
+    final messageId = await presentAdaptivePage<String>(
       context,
       builder: (_) =>
           SearchContextPage(roomId: roomId, roomName: room.roomName ?? ''),
     );
+    if (!context.mounted || messageId == null) return;
+    final jump = ref.read(replyJumpControllerProvider.notifier);
+    await onReturnToChat();
+    jump.jumpTo(roomId: roomId, messageId: messageId, highlight: true);
   }
 
   void _openAnnouncement(BuildContext context, ChatRoomVO room, bool isAdmin) {

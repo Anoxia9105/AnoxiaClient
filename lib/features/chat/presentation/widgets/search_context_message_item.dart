@@ -3,7 +3,6 @@ import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:anoxia/framework/provider/chat/message/search_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -13,21 +12,21 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 单条搜索结果的渲染（头像 + 发送者 + 时间 + 高亮文本/图片缩略图）。
 ///
-/// 从 [SearchContextPage] 拆出，仅依赖传入的 [message]/[index]/[roomId] 与
-/// 各 provider，便于独立复用与测试。
+/// 匹配状态与关键词由搜索页面传入。
 class SearchContextMessageItem extends ConsumerWidget {
   const SearchContextMessageItem({
     super.key,
     required this.message,
-    required this.index,
+    required this.isHighlighted,
+    required this.keyword,
     required this.roomId,
   });
 
   /// 搜索结果消息
   final ChatMessage message;
 
-  /// 在结果列表中的下标（用于判断是否为高亮匹配区间）
-  final int index;
+  final bool isHighlighted;
+  final String keyword;
 
   /// 所属房间 ID（用于拉取成员以解析昵称/头像）
   final String roomId;
@@ -46,22 +45,13 @@ class SearchContextMessageItem extends ConsumerWidget {
     final String displayName = isCurrentUser
         ? (currentUser?.nickName.trim().isNotEmpty == true
               ? currentUser!.nickName.trim()
-              : (message.senderId?.toString() ?? 'search_unknown'.tr()))
+              : ('search_unknown'.tr()))
         : ((senderMember?.nickName?.trim().isNotEmpty == true)
               ? senderMember!.nickName!.trim()
-              : (message.senderId?.toString() ?? 'search_unknown'.tr()));
+              : ('search_unknown'.tr()));
     final String? avatarUrl = isCurrentUser
         ? currentUser?.avatar
         : senderMember?.avatar;
-    final String? senderMeta = message.senderId != null
-        ? 'ID: ${message.senderId}'
-        : null;
-
-    // 判断是否在高亮范围内
-    final searchState = ref.read(searchMessageServiceProvider);
-    bool isHighlighted =
-        index >= searchState.firstMatchIndex &&
-        index <= searchState.lastMatchIndex;
 
     return Container(
       margin: EdgeInsets.symmetric(
@@ -130,24 +120,13 @@ class SearchContextMessageItem extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  if (senderMeta != null) ...[
-                    Text(
-                      senderMeta,
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.outline.withValues(alpha: 0.75),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                  ],
                   // 消息内容（根据消息类型显示）
                   _buildMessageContent(
                     context,
                     message,
                     colorScheme,
                     textTheme,
-                    ref.read(searchMessageServiceProvider).keyword,
+                    keyword,
                   ),
                 ],
               ),

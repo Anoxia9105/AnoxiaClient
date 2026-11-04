@@ -15,11 +15,13 @@ class ReplyJumpRequest {
 
   /// 请求唯一标识，用于区分不同的跳转请求
   final int nonce;
+  final bool highlight;
 
   const ReplyJumpRequest({
     required this.roomId,
     required this.messageId,
     required this.nonce,
+    this.highlight = false,
   });
 }
 
@@ -36,12 +38,17 @@ class ReplyJumpController extends Notifier<ReplyJumpRequest?> {
   ///
   /// [roomId] 目标房间 ID，不能为空
   /// [messageId] 目标消息 ID，不能为空
-  void jumpTo({required String roomId, required String messageId}) {
+  void jumpTo({
+    required String roomId,
+    required String messageId,
+    bool highlight = false,
+  }) {
     if (roomId.isEmpty || messageId.isEmpty) return;
     state = ReplyJumpRequest(
       roomId: roomId,
       messageId: messageId,
       nonce: ++_nonce,
+      highlight: highlight,
     );
   }
 }

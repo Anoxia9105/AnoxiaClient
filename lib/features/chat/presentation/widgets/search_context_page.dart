@@ -44,6 +44,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
   /// 边界触发锁，避免停留在顶部/底部时重复触发 loadMore
   bool _topLoadLatched = false;
   bool _bottomLoadLatched = false;
+  String? _selectedMatchId;
 
   @override
   void initState() {
@@ -52,6 +53,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     _itemPositionsListener.itemPositions.addListener(_onScroll);
     // 页面加载时清空上次的搜索结果
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(searchMessageServiceProvider.notifier).reset();
       _searchController.clear();
     });
@@ -67,7 +69,9 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
   /// 滚动到指定索引
   void _scrollToIndex(int index) {
     final searchState = ref.read(searchMessageServiceProvider);
-    if (index >= 0 && index < searchState.messages.length) {
+    if (_itemScrollController.isAttached &&
+        index >= 0 &&
+        index < searchState.messages.length) {
       _itemScrollController.scrollTo(
         index: index,
         duration: const Duration(milliseconds: 500),
@@ -124,7 +128,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     final searchState = ref.read(searchMessageServiceProvider);
     if (searchState.isLoading || !searchState.hasMoreBefore) return;
 
-    final keyword = _searchController.text.trim();
+    final keyword = searchState.keyword;
     if (keyword.isEmpty) return;
 
     await ref
@@ -137,7 +141,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     final searchState = ref.read(searchMessageServiceProvider);
     if (searchState.isLoading || !searchState.hasMoreAfter) return;
 
-    final keyword = _searchController.text.trim();
+    final keyword = searchState.keyword;
     if (keyword.isEmpty) return;
 
     await ref
@@ -150,8 +154,10 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     final keyword = _searchController.text.trim();
     if (keyword.isEmpty) return;
 
+    if (ref.read(searchMessageServiceProvider).isLoading) return;
     _topLoadLatched = false;
     _bottomLoadLatched = false;
+    _selectedMatchId = null;
 
     await ref
         .read(searchMessageServiceProvider.notifier)
@@ -159,16 +165,29 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
 
     if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final searchState = ref.read(searchMessageServiceProvider);
-      if (searchState.firstMatchIndex >= 0) {
-        _scrollToIndex(searchState.firstMatchIndex);
+      if (searchState.matchIndices.isNotEmpty) {
+        _selectMatch(searchState, 0);
       }
     });
+  }
+
+  void _selectMatch(SearchState state, int position) {
+    final index = state.matchIndices[position];
+    setState(() => _selectedMatchId = state.messages[index].messageId);
+    _scrollToIndex(index);
   }
 
   @override
   Widget build(BuildContext context) {
     final searchState = ref.watch(searchMessageServiceProvider);
+    final matches = searchState.matchIndices;
+    final selected = matches.indexWhere(
+      (i) =>
+          _selectedMatchId != null &&
+          searchState.messages[i].messageId == _selectedMatchId,
+    );
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final bool isDesktop = DeviceUtil.isRealDesktop();
@@ -273,7 +292,9 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: 0.08),
               borderRadius: isDesktop
-                  ? const BorderRadius.vertical(top: Radius.circular(RadiusToken.lg))
+                  ? const BorderRadius.vertical(
+                      top: Radius.circular(RadiusToken.lg),
+                    )
                   : BorderRadius.zero,
               border: Border(
                 bottom: BorderSide(
@@ -292,12 +313,28 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '${'search_context_matches'.tr()}: ${searchState.totalMatches} / ${searchState.messages.length}',
+                    '${'search_context_matches'.tr()}: ${searchState.totalMatches}',
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.primary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+                ),
+                if (selected >= 0) Text('${selected + 1}/${matches.length}'),
+                IconButton(
+                  tooltip: 'search_context_previous_match'.tr(),
+                  icon: const Icon(Icons.keyboard_arrow_up),
+                  onPressed: !searchState.isLoading && selected > 0
+                      ? () => _selectMatch(searchState, selected - 1)
+                      : null,
+                ),
+                IconButton(
+                  tooltip: 'search_context_next_match'.tr(),
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  onPressed:
+                      !searchState.isLoading && selected + 1 < matches.length
+                      ? () => _selectMatch(searchState, selected + 1)
+                      : null,
                 ),
               ],
             ),
@@ -316,16 +353,23 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemBuilder: (context, index) {
                     final message = searchState.messages[index];
+                    final messageId = message.messageId;
                     return AnimationConfiguration.staggeredList(
                       position: index,
                       duration: const Duration(milliseconds: 220),
                       child: SlideAnimation(
                         verticalOffset: 18,
                         child: FadeInAnimation(
-                          child: SearchContextMessageItem(
-                            message: message,
-                            index: index,
-                            roomId: widget.roomId,
+                          child: InkWell(
+                            onTap: messageId == null || messageId.isEmpty
+                                ? null
+                                : () => Navigator.of(context).pop(messageId),
+                            child: SearchContextMessageItem(
+                              message: message,
+                              isHighlighted: matches.contains(index),
+                              keyword: searchState.keyword,
+                              roomId: widget.roomId,
+                            ),
                           ),
                         ),
                       ),

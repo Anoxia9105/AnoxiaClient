@@ -95,11 +95,9 @@ class _CardMessage extends StatelessWidget {
                   return;
                 }
                 if (isGroupCard) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          GroupCardPreviewPage(roomId: card.entityId!),
-                    ),
+                  presentAdaptivePage<void>(
+                    context,
+                    builder: (_) => GroupCardPreviewPage(roomId: card.entityId!),
                   );
                   return;
                 }

@@ -137,6 +137,7 @@ class API {
 
   /// 离开聊天室
   static const String chatRoomLeave = '/chat/room/leave';
+  static const String chatRoomHide = '/chat/room/hide';
 
   /// 解散群聊
   static const String chatRoomDisband = '/chat/room/disband';

@@ -33,6 +33,7 @@ class Conversations extends Table {
   TextColumn get lastMessagePreview => text().nullable()();
   IntColumn get lastMessageType => integer().nullable()();
   IntColumn get lastMessageSeq => integer().nullable()();
+  IntColumn get hiddenAtSeq => integer().nullable()();
   DateTimeColumn get lastMessageAt => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().nullable()();
   DateTimeColumn get updatedAt => dateTime()();

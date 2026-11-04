@@ -1,7 +1,7 @@
 // drift 迁移回归测试。
 //
 // 策略（「先真实建库、再手工降级、最后跑迁移」）：
-// 1. 用 AppDatabase 在文件库上写入 v4 真实 schema 与种子数据；
+// 1. 用 AppDatabase 在文件库上写入 v5 真实 schema 与种子数据；
 // 2. 用原生 sqlite3 手工把库降级到旧版本结构（v1：无 cached_contacts、
 //    conversations 无 last_message_type；v3：无 input_drafts），
 //    并把 user_version 重置；
@@ -76,6 +76,7 @@ void _degradeToV1(String path) {
   final sqlite = sqlite3.open(path);
   sqlite.execute('DROP TABLE cached_contacts');
   sqlite.execute('ALTER TABLE conversations DROP COLUMN last_message_type');
+  sqlite.execute('ALTER TABLE conversations DROP COLUMN hidden_at_seq');
   sqlite.execute('PRAGMA user_version = 1');
   sqlite.close();
 }
@@ -84,6 +85,7 @@ void _degradeToV1(String path) {
 void _degradeToV3(String path) {
   final sqlite = sqlite3.open(path);
   sqlite.execute('DROP TABLE input_drafts');
+  sqlite.execute('ALTER TABLE conversations DROP COLUMN hidden_at_seq');
   sqlite.execute('PRAGMA user_version = 3');
   sqlite.close();
 }
@@ -109,9 +111,9 @@ void main() {
 
   String dbPath(String name) => '${tempDir.path}/$name.db';
 
-  test('新版 schemaVersion 仍为 4：改表必须同步迁移策略', () async {
+  test('新版 schemaVersion 为 5：改表必须同步迁移策略', () async {
     final db = AppDatabase(NativeDatabase.memory());
-    expect(db.schemaVersion, 4);
+    expect(db.schemaVersion, 5);
     await db.close();
   });
 
@@ -137,7 +139,7 @@ void main() {
     await db.close();
   });
 
-  test('v1 → v4：旧会话/消息保留，联系人表、last_message_type、草稿表补齐', () async {
+  test('v1 → v5：旧会话/消息保留，联系人表、last_message_type、草稿表补齐', () async {
     final path = dbPath('v1.db');
     await _seedFreshDatabase(path);
     _degradeToV1(path);
@@ -167,11 +169,11 @@ void main() {
 
     final version =
         (await db.customSelect('PRAGMA user_version').get()).first.data;
-    expect(version['user_version'], 4);
+    expect(version['user_version'], 5);
     await db.close();
   });
 
-  test('v3 → v4：input_drafts 表补齐，旧会话/消息不受影响', () async {
+  test('v3 → v5：input_drafts 表补齐，旧会话/消息不受影响', () async {
     final path = dbPath('v3_to_v4.db');
     await _seedFreshDatabase(path);
     _degradeToV3(path);
@@ -189,11 +191,26 @@ void main() {
 
     final version =
         (await db.customSelect('PRAGMA user_version').get()).first.data;
-    expect(version['user_version'], 4);
+    expect(version['user_version'], 5);
     await db.close();
   });
 
-  test('v4：输入草稿跨重启保留，clearSessionCache 时一并清除', () async {
+  test('v4 → v5：保留历史并新增会话隐藏水位', () async {
+    final path = dbPath('v4.db');
+    await _seedFreshDatabase(path);
+    final sqlite = sqlite3.open(path);
+    sqlite.execute('ALTER TABLE conversations DROP COLUMN hidden_at_seq');
+    sqlite.execute('PRAGMA user_version = 4');
+    sqlite.close();
+    final db = AppDatabase(NativeDatabase(File(path)));
+    addTearDown(db.close);
+    final room = await db.conversationDao.getConversation('room-seed');
+    expect(room, isNotNull);
+    expect(room!.hiddenAtSeq, isNull);
+    expect(await db.select(db.messages).get(), hasLength(1));
+  });
+
+  test('v5：输入草稿跨重启保留，clearSessionCache 时一并清除', () async {
     final path = dbPath('draft.db');
     // 第一段：真实建库并写一份草稿
     final first = AppDatabase(NativeDatabase(File(path)));

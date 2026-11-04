@@ -34,6 +34,14 @@ class RoomRepositoryImpl implements RoomRepository {
   }
 
   @override
+  Future<void> hideRoom(String roomId) async {
+    final res = await DioClient().post(
+      '${API.chatRoomHide}?roomId=${Uri.encodeQueryComponent(roomId)}',
+    );
+    if (res.data['code'] != 200) throw StateError('Hide room failed');
+  }
+
+  @override
   Future<void> disbandRoom(String roomId) async {
     await DioClient().get(
       API.chatRoomDisband,

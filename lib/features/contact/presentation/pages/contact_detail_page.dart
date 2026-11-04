@@ -1,3 +1,5 @@
+import 'package:anoxia/features/contact/presentation/pages/blocked_contacts_page.dart';
+import 'package:anoxia/framework/provider/contact/private_contact_access.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_delete_confirm_dialog.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_actions.dart';
@@ -47,6 +49,16 @@ class ContactDetail extends ConsumerWidget {
       appBar: AppBar(
         actionsPadding: const EdgeInsets.symmetric(horizontal: 8),
         actions: [
+          IconButton(
+            tooltip: 'contact_block'.tr(),
+            icon: const Icon(Icons.block),
+            onPressed: () => changeContactBlock(
+              context,
+              ref,
+              contact.contactId!,
+              blocked: true,
+            ),
+          ),
           ContactDetailPopupMenuButton(
             onEditRemark: () => _handleEditRemark(
               context,
@@ -102,7 +114,8 @@ class ContactDetail extends ConsumerWidget {
       contactId,
       initialRemark,
     );
-    if (!success) return;
+    if (!success || !context.mounted) return;
+    ref.invalidate(privateContactAccessProvider(contactId));
 
     ref.invalidate(contactDetailDataProvider(contactId));
     await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);

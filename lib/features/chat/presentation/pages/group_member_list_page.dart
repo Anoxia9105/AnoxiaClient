@@ -87,13 +87,6 @@ class _GroupMemberListPageState extends ConsumerState<GroupMemberListPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  subtitle: Text(
-                    member.userId != null
-                        ? 'ID: ${member.userId}'
-                        : 'chat_unknown_user'.tr(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                   trailing: isAdmin
                       ? Container(
                           padding: const EdgeInsets.symmetric(

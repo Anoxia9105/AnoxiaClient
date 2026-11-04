@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/contact/private_contact_access.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/announcement/announcement_controller.dart';
@@ -140,6 +141,8 @@ class SystemEventService extends _$SystemEventService {
         _handleCallEnded(event);
         break;
       case SystemEventType.contactUpdated:
+        ref.invalidate(privateContactAccessProvider);
+        ref.invalidate(blockedContactsProvider);
         ref.read(contactListServiceProvider.notifier).refresh();
         ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
         break;

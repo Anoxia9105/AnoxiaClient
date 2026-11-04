@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/domain/message_search_result.dart';
 import 'package:anoxia/framework/provider/core/message_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -26,6 +27,7 @@ class SearchMessageService extends _$SearchMessageService {
       minSeq: 0,
       maxSeq: 0,
       firstMatchIndex: -1,
+      matchIndices: const [],
       lastMatchIndex: -1,
       totalMatches: 0,
     );
@@ -53,20 +55,26 @@ class SearchMessageService extends _$SearchMessageService {
 
     final effectiveContextSize = contextSize.clamp(5, _maxContextSize);
 
-    state = state.copyWith(isLoading: true, keyword: normalizedKeyword);
+    final previous = state;
+    final loading = previous.copyWith(isLoading: true);
+    state = loading;
 
     try {
-      final result = await ref.read(messageRepositoryProvider).searchMessages(
+      final result = await ref
+          .read(messageRepositoryProvider)
+          .searchMessages(
             roomId,
             normalizedKeyword,
             contextSize: effectiveContextSize,
           );
 
-      state = state.copyWith(
+      if (!identical(state, loading)) return;
+      state = loading.copyWith(
         isLoading: false,
         keyword: normalizedKeyword,
         messages: result.messages,
         firstMatchIndex: result.firstMatchIndex,
+        matchIndices: _resolveMatchIndices(result, normalizedKeyword),
         lastMatchIndex: result.lastMatchIndex,
         hasMoreBefore: result.hasMoreBefore,
         hasMoreAfter: result.hasMoreAfter,
@@ -77,8 +85,29 @@ class SearchMessageService extends _$SearchMessageService {
       );
     } catch (e) {
       debugLog('搜索消息失败: $e');
-      state = state.copyWith(isLoading: false);
+      if (identical(state, loading)) state = previous;
     }
+  }
+
+  List<int> _resolveMatchIndices(MessageSearchResult result, String keyword) {
+    final indices = result.matchIndices;
+    if (indices != null) {
+      return indices
+          .where((i) => i >= 0 && i < result.messages.length)
+          .toList();
+    }
+
+    // 兼容只返回首尾命中位置的旧服务端。
+    final query = keyword.toLowerCase();
+    return [
+      for (var i = 0; i < result.messages.length; i++)
+        if (i == result.firstMatchIndex ||
+            i == result.lastMatchIndex ||
+            (i > result.firstMatchIndex &&
+                i < result.lastMatchIndex &&
+                result.messages[i].content.toLowerCase().contains(query)))
+          i,
+    ];
   }
 
   /// 加载更多历史搜索结果
@@ -119,6 +148,7 @@ class SearchMessageService extends _$SearchMessageService {
       minSeq: 0,
       maxSeq: 0,
       firstMatchIndex: -1,
+      matchIndices: const [],
       lastMatchIndex: -1,
       totalMatches: 0,
     );
@@ -136,6 +166,7 @@ class SearchState {
   final int minSeq;
   final int maxSeq;
   final int firstMatchIndex;
+  final List<int> matchIndices;
   final int lastMatchIndex;
   final int totalMatches;
 
@@ -149,6 +180,7 @@ class SearchState {
     required this.minSeq,
     required this.maxSeq,
     required this.firstMatchIndex,
+    this.matchIndices = const [],
     required this.lastMatchIndex,
     required this.totalMatches,
   });
@@ -163,6 +195,7 @@ class SearchState {
     int? minSeq,
     int? maxSeq,
     int? firstMatchIndex,
+    List<int>? matchIndices,
     int? lastMatchIndex,
     int? totalMatches,
   }) {
@@ -176,6 +209,7 @@ class SearchState {
       minSeq: minSeq ?? this.minSeq,
       maxSeq: maxSeq ?? this.maxSeq,
       firstMatchIndex: firstMatchIndex ?? this.firstMatchIndex,
+      matchIndices: matchIndices ?? this.matchIndices,
       lastMatchIndex: lastMatchIndex ?? this.lastMatchIndex,
       totalMatches: totalMatches ?? this.totalMatches,
     );

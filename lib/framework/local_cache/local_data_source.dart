@@ -479,6 +479,22 @@ class LocalDataSource {
     return row == null ? null : _messageFromRow(row);
   }
 
+  Future<ChatMessage?> getMessageForAck(
+    String clientMsgId, {
+    required String? messageId,
+    required int? seq,
+  }) async {
+    final row = await db.messageDao.getMessageByClientMsgId(clientMsgId);
+    if (row == null) return null;
+    // 已拒绝的投递不能被同一次入队的迟到 ACK 改回成功。
+    if (row.deliveryStatus == 'FAILED_PERMANENT' &&
+        (seq ?? 0) <= 0 &&
+        (messageId == null || row.id == messageId)) {
+      return null;
+    }
+    return _messageFromRow(row);
+  }
+
   /// 业务永久拒绝仍显示失败，但不再随重连自动发送；用户手动重试可重置。
   Future<void> markOutgoingTerminal(String messageId) {
     return _write(
@@ -699,9 +715,9 @@ class LocalDataSource {
         } catch (_) {
           continue;
         }
-        await (db.update(db.messages)..where(
-              (t) => t.id.equals(edit.messageId),
-            )).write(
+        await (db.update(
+          db.messages,
+        )..where((t) => t.id.equals(edit.messageId))).write(
           MessagesCompanion(
             payloadJson: Value(edit.payloadJson),
             content: Value(payload.content ?? ''),
@@ -922,6 +938,7 @@ class LocalDataSource {
       type: Value(room.roomType ?? 0),
       status: Value(room.roomStatus ?? 0),
       peerId: Value(room.peerId),
+      hiddenAtSeq: Value(room.hiddenAtSeq),
       unreadCount: Value(room.unreadCount ?? 0),
       lastReadSeq: Value(room.lastReadSeq ?? 0),
       lastMessageId: Value(lastMessage?.messageId ?? lastMessage?.clientMsgId),
@@ -1009,6 +1026,7 @@ class LocalDataSource {
       createdAt: row.createdAt,
       lastReadSeq: row.lastReadSeq,
       peerId: row.peerId,
+      hiddenAtSeq: row.hiddenAtSeq,
       unreadCount: row.unreadCount,
       lastMessage: lastMessage,
     );

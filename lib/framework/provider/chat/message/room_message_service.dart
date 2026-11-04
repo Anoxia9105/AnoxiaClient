@@ -456,7 +456,11 @@ class ChatMessages extends _$ChatMessages {
     ChatMessage? effectMessage;
     await _enqueueMessageWrite(() async {
       final local = ref.read(localDataSourceProvider);
-      final message = await local.getMessageByClientMsgId(clientMsgId);
+      final message = await local.getMessageForAck(
+        clientMsgId,
+        messageId: messageId,
+        seq: seq,
+      );
       if (message == null) return;
 
       await local.upsertMessage(
@@ -484,17 +488,24 @@ class ChatMessages extends _$ChatMessages {
   Future<void> markFailedByClientMsgId(
     String clientMsgId, {
     bool retryable = true,
+    String? rejectedMessageId,
   }) async {
     await _enqueueMessageWrite(() async {
       final local = ref.read(localDataSourceProvider);
       final message = await local.getMessageByClientMsgId(clientMsgId);
-      if (message == null || message.deliveryStatus == DeliveryStatus.sent) {
+      if (message == null || (message.seq ?? 0) > 0) return;
+      if (rejectedMessageId == null) {
+        if (message.deliveryStatus == DeliveryStatus.sent) return;
+      } else if (message.deliveryStatus == DeliveryStatus.sent &&
+          message.messageId != rejectedMessageId) {
         return;
       }
-      await local.upsertMessage(
-        message.copyWith(deliveryStatus: DeliveryStatus.failed),
+      final failed = message.copyWith(
+        messageId: rejectedMessageId,
+        deliveryStatus: DeliveryStatus.failed,
       );
-      if (!retryable) await local.markOutgoingTerminal(message.messageId!);
+      await local.upsertMessage(failed);
+      if (!retryable) await local.markOutgoingTerminal(failed.messageId!);
     });
   }
 

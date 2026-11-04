@@ -55,6 +55,7 @@ class ChatRoomDetailPanel extends StatelessWidget {
         Expanded(
           child: RoomDetailSettingsBody(
             roomId: roomId,
+            onReturnToChat: () async => onClose(),
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           ),
         ),

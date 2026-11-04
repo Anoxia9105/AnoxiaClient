@@ -1,3 +1,8 @@
+import 'package:anoxia/framework/provider/contact/private_contact_access.dart';
+import 'package:anoxia/framework/domain/user_vo.dart';
+import 'package:anoxia/features/contact/presentation/widgets/add_friend/add_friend_dialog.dart';
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
 import 'dart:async';
 import '../widgets/message_bubble/message_selection_scope.dart';
 
@@ -56,6 +61,8 @@ class ChatRoomDetail extends ConsumerStatefulWidget {
 class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   String? _jumpedInitialMessageId;
   int? _jumpedForwardNonce;
+  ReplyJumpRequest? _highlightedJump;
+  Timer? _highlightTimer;
 
   /// flutter_list_view 的滚动控制器，支持按索引精确定位（Web 与原生一致）。
   late final ScrollController _listViewController;
@@ -86,6 +93,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     if (oldWidget.roomId != widget.roomId) {
       _jumpedInitialMessageId = null;
       _jumpedForwardNonce = null;
+      _highlightedJump = null;
+      _highlightTimer?.cancel();
       _scrollController.dispose();
       _scrollController = ChatScrollController(
         listViewController: _listViewController,
@@ -99,6 +108,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
   @override
   void dispose() {
+    _highlightTimer?.cancel();
     _scrollController.dispose();
     _listViewController.dispose();
     super.dispose();
@@ -181,7 +191,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       next,
     ) {
       if (next == null || next.roomId != widget.roomId) return;
-      unawaited(_scrollController.jumpToMessage(next.messageId));
+      unawaited(_handleMessageJump(next));
     });
 
     return MessageSelectionScope(
@@ -249,15 +259,123 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                 : null,
             bottomNavigationBar: selection.active
                 ? ForwardSelectionBar(roomId: widget.roomId)
-                : ChatRoomDetailBottomBar(
-                    showSkeleton: showInitialSkeleton,
-                    roomStatus: currentRoom.roomStatus,
-                    onFieldTap: () =>
-                        _scrollController.scrollToBottom(animated: true),
-                  ),
+                : _privateChatNotice(currentRoom, showInitialSkeleton) ??
+                      ChatRoomDetailBottomBar(
+                        showSkeleton: showInitialSkeleton,
+                        roomStatus: currentRoom.roomStatus,
+                        onFieldTap: () =>
+                            _scrollController.scrollToBottom(animated: true),
+                      ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget? _privateChatNotice(ChatRoomVO room, bool loading) {
+    final peerId = room.peerId;
+    if (loading ||
+        room.isOfficial ||
+        room.roomType != 0 ||
+        peerId == null ||
+        room.roomStatus != 0) {
+      return null;
+    }
+    final access = ref.watch(privateContactAccessProvider(peerId));
+    if (access.value == true) return null;
+    final contacts = ref.watch(contactListServiceProvider).value;
+    final blocked = ref.watch(blockedContactsProvider).value;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              (access.isLoading
+                      ? 'contact_access_loading'
+                      : 'contact_chat_read_only')
+                  .tr(),
+            ),
+            if (access.hasError)
+              TextButton(
+                onPressed: () =>
+                    ref.invalidate(privateContactAccessProvider(peerId)),
+                child: Text('retry'.tr()),
+              )
+            else if (!access.isLoading &&
+                contacts != null &&
+                !contacts.containsKey(peerId) &&
+                blocked != null &&
+                !blocked.any((contact) => contact.contactId == peerId))
+              TextButton(
+                onPressed: () => AddFriendDialog.show(
+                  context,
+                  UserVO(
+                    userId: peerId,
+                    userName: '',
+                    nickName: room.roomName ?? '',
+                    avatar: room.roomAvatar,
+                  ),
+                ),
+                child: Text('contact_add_again'.tr()),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleMessageJump(ReplyJumpRequest request) async {
+    final controller = _scrollController;
+    final found = await controller.jumpToMessage(request.messageId);
+    if (!found ||
+        !mounted ||
+        controller != _scrollController ||
+        !request.highlight) {
+      return;
+    }
+
+    _highlightTimer?.cancel();
+    setState(() => _highlightedJump = request);
+    _highlightTimer = Timer(const Duration(milliseconds: 1100), () {
+      setState(() => _highlightedJump = null);
+    });
+  }
+
+  Widget _buildMessageRow(ChatMessage message, bool isGroup) {
+    final row = ForwardSelectionRow(
+      message: message,
+      child: ChatMessageBubble(message: message, isGroup: isGroup),
+    );
+    final target = _highlightedJump;
+    if (target == null ||
+        (message.messageId != target.messageId &&
+            message.clientMsgId != target.messageId)) {
+      return row;
+    }
+
+    final color = Theme.of(context).colorScheme.primary.withValues(alpha: 0.15);
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return ColoredBox(color: color, child: row);
+    }
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(target.nonce),
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 1000),
+      child: row,
+      builder: (context, progress, child) {
+        final opacity = switch (progress) {
+          < 0.18 => progress / 0.18,
+          < 0.42 => 1.0,
+          _ => (1 - progress) / 0.58,
+        };
+        return ColoredBox(
+          color: color.withValues(alpha: color.a * opacity),
+          child: child,
+        );
+      },
     );
   }
 
@@ -313,10 +431,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           timestamp,
           context,
         ),
-        MessageItem(:final message) => ForwardSelectionRow(
-          message: message,
-          child: ChatMessageBubble(message: message, isGroup: isGroup),
-        ),
+        MessageItem(:final message) => _buildMessageRow(message, isGroup),
       };
     }
 

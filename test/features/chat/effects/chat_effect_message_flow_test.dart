@@ -134,6 +134,34 @@ void main() {
     });
   }
 
+  for (final rejectionFirst in [false, true]) {
+    test('投递拒绝覆盖入队回执，拒绝先到=$rejectionFirst', () async {
+      await local.upsertMessage(
+        ChatMessage(
+          messageId: 'client1',
+          clientMsgId: 'client1',
+          roomId: 'room',
+          deliveryStatus: DeliveryStatus.sending,
+        ),
+      );
+      Future<void> ack() =>
+          messages.markAcked(clientMsgId: 'client1', messageId: 'server1');
+      if (!rejectionFirst) await ack();
+      await messages.markFailedByClientMsgId(
+        'client1',
+        retryable: false,
+        rejectedMessageId: 'server1',
+      );
+      if (rejectionFirst) await ack();
+      final row = await database.messageDao.getMessageByClientMsgId('client1');
+      expect(row?.deliveryStatus, 'FAILED_PERMANENT');
+      expect(
+        (await local.getMessageByClientMsgId('client1'))?.deliveryStatus,
+        DeliveryStatus.failed,
+      );
+    });
+  }
+
   test('对方实时消息播放一次，重复推送不重播', () async {
     await receive(incoming(senderId: 2));
     await receive(incoming(senderId: 2));

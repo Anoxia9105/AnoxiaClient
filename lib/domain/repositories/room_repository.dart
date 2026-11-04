@@ -20,6 +20,8 @@ abstract interface class RoomRepository {
   /// 操作失败时抛出异常。
   Future<void> leaveRoom(String roomId);
 
+  Future<void> hideRoom(String roomId);
+
   /// 解散群聊
   ///
   /// [roomId] 目标房间 ID

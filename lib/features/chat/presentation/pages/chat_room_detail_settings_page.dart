@@ -18,7 +18,14 @@ class ChatRoomDetailSettingsPage extends StatelessWidget {
         title: Text('chat_conversation_detail'.tr()),
         centerTitle: DeviceUtil.isRealMobile(),
       ),
-      body: RoomDetailSettingsBody(roomId: roomId),
+      body: RoomDetailSettingsBody(
+        roomId: roomId,
+        onReturnToChat: () async {
+          final route = ModalRoute.of(context);
+          Navigator.of(context).pop();
+          await route?.completed;
+        },
+      ),
     );
   }
 }

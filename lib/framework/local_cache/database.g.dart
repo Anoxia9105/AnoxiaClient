@@ -733,6 +733,17 @@ class $ConversationsTable extends Conversations
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _hiddenAtSeqMeta = const VerificationMeta(
+    'hiddenAtSeq',
+  );
+  @override
+  late final GeneratedColumn<int> hiddenAtSeq = GeneratedColumn<int>(
+    'hidden_at_seq',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _lastMessageAtMeta = const VerificationMeta(
     'lastMessageAt',
   );
@@ -808,6 +819,7 @@ class $ConversationsTable extends Conversations
     lastMessagePreview,
     lastMessageType,
     lastMessageSeq,
+    hiddenAtSeq,
     lastMessageAt,
     createdAt,
     updatedAt,
@@ -924,6 +936,15 @@ class $ConversationsTable extends Conversations
         ),
       );
     }
+    if (data.containsKey('hidden_at_seq')) {
+      context.handle(
+        _hiddenAtSeqMeta,
+        hiddenAtSeq.isAcceptableOrUnknown(
+          data['hidden_at_seq']!,
+          _hiddenAtSeqMeta,
+        ),
+      );
+    }
     if (data.containsKey('last_message_at')) {
       context.handle(
         _lastMessageAtMeta,
@@ -1022,6 +1043,10 @@ class $ConversationsTable extends Conversations
         DriftSqlType.int,
         data['${effectivePrefix}last_message_seq'],
       ),
+      hiddenAtSeq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hidden_at_seq'],
+      ),
       lastMessageAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_message_at'],
@@ -1066,6 +1091,7 @@ class CachedConversation extends DataClass
   final String? lastMessagePreview;
   final int? lastMessageType;
   final int? lastMessageSeq;
+  final int? hiddenAtSeq;
   final DateTime? lastMessageAt;
   final DateTime? createdAt;
   final DateTime updatedAt;
@@ -1085,6 +1111,7 @@ class CachedConversation extends DataClass
     this.lastMessagePreview,
     this.lastMessageType,
     this.lastMessageSeq,
+    this.hiddenAtSeq,
     this.lastMessageAt,
     this.createdAt,
     required this.updatedAt,
@@ -1122,6 +1149,9 @@ class CachedConversation extends DataClass
     }
     if (!nullToAbsent || lastMessageSeq != null) {
       map['last_message_seq'] = Variable<int>(lastMessageSeq);
+    }
+    if (!nullToAbsent || hiddenAtSeq != null) {
+      map['hidden_at_seq'] = Variable<int>(hiddenAtSeq);
     }
     if (!nullToAbsent || lastMessageAt != null) {
       map['last_message_at'] = Variable<DateTime>(lastMessageAt);
@@ -1164,6 +1194,9 @@ class CachedConversation extends DataClass
       lastMessageSeq: lastMessageSeq == null && nullToAbsent
           ? const Value.absent()
           : Value(lastMessageSeq),
+      hiddenAtSeq: hiddenAtSeq == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hiddenAtSeq),
       lastMessageAt: lastMessageAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastMessageAt),
@@ -1197,6 +1230,7 @@ class CachedConversation extends DataClass
       ),
       lastMessageType: serializer.fromJson<int?>(json['lastMessageType']),
       lastMessageSeq: serializer.fromJson<int?>(json['lastMessageSeq']),
+      hiddenAtSeq: serializer.fromJson<int?>(json['hiddenAtSeq']),
       lastMessageAt: serializer.fromJson<DateTime?>(json['lastMessageAt']),
       createdAt: serializer.fromJson<DateTime?>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1221,6 +1255,7 @@ class CachedConversation extends DataClass
       'lastMessagePreview': serializer.toJson<String?>(lastMessagePreview),
       'lastMessageType': serializer.toJson<int?>(lastMessageType),
       'lastMessageSeq': serializer.toJson<int?>(lastMessageSeq),
+      'hiddenAtSeq': serializer.toJson<int?>(hiddenAtSeq),
       'lastMessageAt': serializer.toJson<DateTime?>(lastMessageAt),
       'createdAt': serializer.toJson<DateTime?>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -1243,6 +1278,7 @@ class CachedConversation extends DataClass
     Value<String?> lastMessagePreview = const Value.absent(),
     Value<int?> lastMessageType = const Value.absent(),
     Value<int?> lastMessageSeq = const Value.absent(),
+    Value<int?> hiddenAtSeq = const Value.absent(),
     Value<DateTime?> lastMessageAt = const Value.absent(),
     Value<DateTime?> createdAt = const Value.absent(),
     DateTime? updatedAt,
@@ -1270,6 +1306,7 @@ class CachedConversation extends DataClass
     lastMessageSeq: lastMessageSeq.present
         ? lastMessageSeq.value
         : this.lastMessageSeq,
+    hiddenAtSeq: hiddenAtSeq.present ? hiddenAtSeq.value : this.hiddenAtSeq,
     lastMessageAt: lastMessageAt.present
         ? lastMessageAt.value
         : this.lastMessageAt,
@@ -1307,6 +1344,9 @@ class CachedConversation extends DataClass
       lastMessageSeq: data.lastMessageSeq.present
           ? data.lastMessageSeq.value
           : this.lastMessageSeq,
+      hiddenAtSeq: data.hiddenAtSeq.present
+          ? data.hiddenAtSeq.value
+          : this.hiddenAtSeq,
       lastMessageAt: data.lastMessageAt.present
           ? data.lastMessageAt.value
           : this.lastMessageAt,
@@ -1333,6 +1373,7 @@ class CachedConversation extends DataClass
           ..write('lastMessagePreview: $lastMessagePreview, ')
           ..write('lastMessageType: $lastMessageType, ')
           ..write('lastMessageSeq: $lastMessageSeq, ')
+          ..write('hiddenAtSeq: $hiddenAtSeq, ')
           ..write('lastMessageAt: $lastMessageAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1357,6 +1398,7 @@ class CachedConversation extends DataClass
     lastMessagePreview,
     lastMessageType,
     lastMessageSeq,
+    hiddenAtSeq,
     lastMessageAt,
     createdAt,
     updatedAt,
@@ -1380,6 +1422,7 @@ class CachedConversation extends DataClass
           other.lastMessagePreview == this.lastMessagePreview &&
           other.lastMessageType == this.lastMessageType &&
           other.lastMessageSeq == this.lastMessageSeq &&
+          other.hiddenAtSeq == this.hiddenAtSeq &&
           other.lastMessageAt == this.lastMessageAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -1401,6 +1444,7 @@ class ConversationsCompanion extends UpdateCompanion<CachedConversation> {
   final Value<String?> lastMessagePreview;
   final Value<int?> lastMessageType;
   final Value<int?> lastMessageSeq;
+  final Value<int?> hiddenAtSeq;
   final Value<DateTime?> lastMessageAt;
   final Value<DateTime?> createdAt;
   final Value<DateTime> updatedAt;
@@ -1421,6 +1465,7 @@ class ConversationsCompanion extends UpdateCompanion<CachedConversation> {
     this.lastMessagePreview = const Value.absent(),
     this.lastMessageType = const Value.absent(),
     this.lastMessageSeq = const Value.absent(),
+    this.hiddenAtSeq = const Value.absent(),
     this.lastMessageAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1442,6 +1487,7 @@ class ConversationsCompanion extends UpdateCompanion<CachedConversation> {
     this.lastMessagePreview = const Value.absent(),
     this.lastMessageType = const Value.absent(),
     this.lastMessageSeq = const Value.absent(),
+    this.hiddenAtSeq = const Value.absent(),
     this.lastMessageAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     required DateTime updatedAt,
@@ -1465,6 +1511,7 @@ class ConversationsCompanion extends UpdateCompanion<CachedConversation> {
     Expression<String>? lastMessagePreview,
     Expression<int>? lastMessageType,
     Expression<int>? lastMessageSeq,
+    Expression<int>? hiddenAtSeq,
     Expression<DateTime>? lastMessageAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -1487,6 +1534,7 @@ class ConversationsCompanion extends UpdateCompanion<CachedConversation> {
         'last_message_preview': lastMessagePreview,
       if (lastMessageType != null) 'last_message_type': lastMessageType,
       if (lastMessageSeq != null) 'last_message_seq': lastMessageSeq,
+      if (hiddenAtSeq != null) 'hidden_at_seq': hiddenAtSeq,
       if (lastMessageAt != null) 'last_message_at': lastMessageAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1510,6 +1558,7 @@ class ConversationsCompanion extends UpdateCompanion<CachedConversation> {
     Value<String?>? lastMessagePreview,
     Value<int?>? lastMessageType,
     Value<int?>? lastMessageSeq,
+    Value<int?>? hiddenAtSeq,
     Value<DateTime?>? lastMessageAt,
     Value<DateTime?>? createdAt,
     Value<DateTime>? updatedAt,
@@ -1531,6 +1580,7 @@ class ConversationsCompanion extends UpdateCompanion<CachedConversation> {
       lastMessagePreview: lastMessagePreview ?? this.lastMessagePreview,
       lastMessageType: lastMessageType ?? this.lastMessageType,
       lastMessageSeq: lastMessageSeq ?? this.lastMessageSeq,
+      hiddenAtSeq: hiddenAtSeq ?? this.hiddenAtSeq,
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1582,6 +1632,9 @@ class ConversationsCompanion extends UpdateCompanion<CachedConversation> {
     if (lastMessageSeq.present) {
       map['last_message_seq'] = Variable<int>(lastMessageSeq.value);
     }
+    if (hiddenAtSeq.present) {
+      map['hidden_at_seq'] = Variable<int>(hiddenAtSeq.value);
+    }
     if (lastMessageAt.present) {
       map['last_message_at'] = Variable<DateTime>(lastMessageAt.value);
     }
@@ -1619,6 +1672,7 @@ class ConversationsCompanion extends UpdateCompanion<CachedConversation> {
           ..write('lastMessagePreview: $lastMessagePreview, ')
           ..write('lastMessageType: $lastMessageType, ')
           ..write('lastMessageSeq: $lastMessageSeq, ')
+          ..write('hiddenAtSeq: $hiddenAtSeq, ')
           ..write('lastMessageAt: $lastMessageAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -4764,6 +4818,7 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       Value<String?> lastMessagePreview,
       Value<int?> lastMessageType,
       Value<int?> lastMessageSeq,
+      Value<int?> hiddenAtSeq,
       Value<DateTime?> lastMessageAt,
       Value<DateTime?> createdAt,
       required DateTime updatedAt,
@@ -4786,6 +4841,7 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String?> lastMessagePreview,
       Value<int?> lastMessageType,
       Value<int?> lastMessageSeq,
+      Value<int?> hiddenAtSeq,
       Value<DateTime?> lastMessageAt,
       Value<DateTime?> createdAt,
       Value<DateTime> updatedAt,
@@ -4905,6 +4961,11 @@ class $$ConversationsTableFilterComposer
 
   ColumnFilters<int> get lastMessageSeq => $composableBuilder(
     column: $table.lastMessageSeq,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hiddenAtSeq => $composableBuilder(
+    column: $table.hiddenAtSeq,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5051,6 +5112,11 @@ class $$ConversationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get hiddenAtSeq => $composableBuilder(
+    column: $table.hiddenAtSeq,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get lastMessageAt => $composableBuilder(
     column: $table.lastMessageAt,
     builder: (column) => ColumnOrderings(column),
@@ -5156,6 +5222,11 @@ class $$ConversationsTableAnnotationComposer
 
   GeneratedColumn<int> get lastMessageSeq => $composableBuilder(
     column: $table.lastMessageSeq,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get hiddenAtSeq => $composableBuilder(
+    column: $table.hiddenAtSeq,
     builder: (column) => column,
   );
 
@@ -5266,6 +5337,7 @@ class $$ConversationsTableTableManager
                 Value<String?> lastMessagePreview = const Value.absent(),
                 Value<int?> lastMessageType = const Value.absent(),
                 Value<int?> lastMessageSeq = const Value.absent(),
+                Value<int?> hiddenAtSeq = const Value.absent(),
                 Value<DateTime?> lastMessageAt = const Value.absent(),
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -5286,6 +5358,7 @@ class $$ConversationsTableTableManager
                 lastMessagePreview: lastMessagePreview,
                 lastMessageType: lastMessageType,
                 lastMessageSeq: lastMessageSeq,
+                hiddenAtSeq: hiddenAtSeq,
                 lastMessageAt: lastMessageAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -5308,6 +5381,7 @@ class $$ConversationsTableTableManager
                 Value<String?> lastMessagePreview = const Value.absent(),
                 Value<int?> lastMessageType = const Value.absent(),
                 Value<int?> lastMessageSeq = const Value.absent(),
+                Value<int?> hiddenAtSeq = const Value.absent(),
                 Value<DateTime?> lastMessageAt = const Value.absent(),
                 Value<DateTime?> createdAt = const Value.absent(),
                 required DateTime updatedAt,
@@ -5328,6 +5402,7 @@ class $$ConversationsTableTableManager
                 lastMessagePreview: lastMessagePreview,
                 lastMessageType: lastMessageType,
                 lastMessageSeq: lastMessageSeq,
+                hiddenAtSeq: hiddenAtSeq,
                 lastMessageAt: lastMessageAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

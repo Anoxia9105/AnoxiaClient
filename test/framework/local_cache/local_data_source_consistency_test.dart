@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/domain/chat_contact_vo.dart';
 import 'package:anoxia/framework/local_cache/database.dart';
@@ -32,6 +33,21 @@ void main() {
     content: id,
     deliveryStatus: status,
   );
+
+  test('隐藏会话保留历史，新消息到达后重新显示', () async {
+    await source.applyIncomingMessage(message('old', 2), incrementUnread: true);
+    await source.upsertConversations([
+      ChatRoomVO(
+        roomId: 'room',
+        hiddenAtSeq: 2,
+        lastMessage: message('old', 2),
+      ),
+    ]);
+    expect((await source.getConversations()).single.isHidden, isTrue);
+    expect(await source.getMessageById('old'), isNotNull);
+    await source.applyIncomingMessage(message('new', 3), incrementUnread: true);
+    expect((await source.getConversations()).single.isHidden, isFalse);
+  });
 
   test('旧入站消息落库后保留最新会话摘要', () async {
     await source.applyIncomingMessage(message('new', 2), incrementUnread: true);

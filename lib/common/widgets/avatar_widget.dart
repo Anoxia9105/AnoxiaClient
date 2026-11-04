@@ -90,7 +90,8 @@ class AvatarWidget extends StatelessWidget {
             child: CachedNetworkImageView(
               maxWidthDiskCache: (size * 3).toInt(),
               maxHeightDiskCache: (size * 3).toInt(),
-              filterQuality: FilterQuality.low,
+              filterQuality: FilterQuality.medium,
+              preferWebHtmlElement: true,
               imageUrl: url!,
               width: size,
               height: size,

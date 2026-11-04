@@ -31,6 +31,7 @@ class ChatScrollController {
   bool _showScrollDownButton = false;
   bool get showScrollDownButton => _showScrollDownButton;
 
+  int _jumpGeneration = 0;
   bool _historyEdgeArmed = true;
   bool _historyLoadScheduled = false;
 
@@ -60,6 +61,7 @@ class ChatScrollController {
   }
 
   void dispose() {
+    _jumpGeneration++;
     listViewController.removeListener(_onScrollOffsetChanged);
   }
 
@@ -151,11 +153,11 @@ class ChatScrollController {
   ///
   /// 目标消息不在当前加载窗口时，先循环补拉历史直到目标出现；
   /// 补拉结束仍找不到（消息已撤回/删除或超出窗口上限）则 Toast 提示。
-  Future<void> jumpToMessage(String messageId) async {
+  Future<bool> jumpToMessage(String messageId) async {
+    final generation = ++_jumpGeneration;
     var items = ref.read(chatUiListProvider(roomId)).items;
     if (_indexOfMessage(items, messageId) >= 0) {
-      scrollToMessage(messageId, items);
-      return;
+      return _scrollToMessage(messageId, items, generation);
     }
 
     for (var page = 0; page < _maxHistoryLoadPages; page++) {
@@ -167,6 +169,7 @@ class ChatScrollController {
       var windowGrew = false;
       for (var i = 0; i < _windowPollRetries; i++) {
         await Future<void>.delayed(const Duration(milliseconds: 50));
+        if (generation != _jumpGeneration) return false;
         items = ref.read(chatUiListProvider(roomId)).items;
         if (items.length != prevLength) {
           windowGrew = true;
@@ -176,27 +179,32 @@ class ChatScrollController {
 
       final index = _indexOfMessage(items, messageId);
       if (index >= 0) {
-        scrollToMessage(messageId, items);
-        return;
+        return _scrollToMessage(messageId, items, generation);
       }
       if (!windowGrew) break;
     }
 
     Toast.showToast('chat_jump_message_not_found'.tr(), type: ToastType.error);
+    return false;
   }
 
   /// 滚动到指定消息（按索引精确跳转，Web 与原生一致）
-  void scrollToMessage(String messageId, List<ChatListItem> flatItems) {
-    if (!listViewController.hasClients) return;
+  Future<bool> _scrollToMessage(
+    String messageId,
+    List<ChatListItem> flatItems,
+    int generation,
+  ) async {
+    if (!listViewController.hasClients) return false;
 
     final index = _indexOfMessage(flatItems, messageId);
-    if (index < 0) return;
+    if (index < 0) return false;
     final indexedController = listViewController as FlutterListViewController;
-    indexedController.sliverController.animateToIndex(
+    await indexedController.sliverController.animateToIndex(
       index,
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
     );
+    return generation == _jumpGeneration && listViewController.hasClients;
   }
 
   int _indexOfMessage(List<ChatListItem> flatItems, String messageId) {

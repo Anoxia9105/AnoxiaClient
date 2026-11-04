@@ -58,6 +58,10 @@ class ChatRoomVO {
   ///
   /// null 表示服务端未提供该字段（旧部署/未查询），客户端应回落本地缓存行为。
   final bool? isPinned;
+  final int? hiddenAtSeq;
+
+  bool get isHidden =>
+      hiddenAtSeq != null && (lastMessage?.seq ?? 0) <= hiddenAtSeq!;
 
   /// 是否为官方虚拟房间（纯前端展示，不支持聊天/通话/成员管理）
   bool get isOfficial => roomType == RoomType.official.index;
@@ -78,6 +82,7 @@ class ChatRoomVO {
     this.isOpenSearch,
     this.isMuted,
     this.isPinned,
+    this.hiddenAtSeq,
   });
 
   /// 创建当前实例的变体副本
@@ -97,6 +102,7 @@ class ChatRoomVO {
     bool? isOpenSearch,
     bool? isMuted,
     bool? isPinned,
+    int? hiddenAtSeq,
   }) {
     return ChatRoomVO(
       roomId: roomId ?? this.roomId,
@@ -114,6 +120,7 @@ class ChatRoomVO {
       isOpenSearch: isOpenSearch ?? this.isOpenSearch,
       isMuted: isMuted ?? this.isMuted,
       isPinned: isPinned ?? this.isPinned,
+      hiddenAtSeq: hiddenAtSeq ?? this.hiddenAtSeq,
     );
   }
 
@@ -152,6 +159,7 @@ class ChatRoomVO {
           : null,
       isMuted: _parseFlag(json['isMuted']),
       isPinned: _parseFlag(json['isPinned']),
+      hiddenAtSeq: int.tryParse(json['hiddenAtSeq']?.toString() ?? ''),
     );
   }
 

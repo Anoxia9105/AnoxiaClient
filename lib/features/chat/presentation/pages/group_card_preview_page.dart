@@ -37,6 +37,7 @@ class _GroupCardPreviewPageState extends ConsumerState<GroupCardPreviewPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Theme.of(context).colorScheme.surface,
     appBar: AppBar(title: Text('group_card_preview_title'.tr())),
     body: FutureBuilder<GroupPreview>(
       future: _future,
@@ -189,7 +190,12 @@ class _GroupCardPreviewPageState extends ConsumerState<GroupCardPreviewPage> {
   void _openRoom(String roomId) {
     ref.read(activeRoomIdProvider.notifier).setActive(roomId);
     ref.read(layoutControllerProvider.notifier).setIndex(0);
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    final navigator = Navigator.of(context);
+    if (ModalRoute.of(context) is PopupRoute) {
+      navigator.pop();
+    } else {
+      navigator.popUntil((route) => route.isFirst);
+    }
   }
 }
 

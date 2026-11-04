@@ -13,6 +13,7 @@ class MessageSearchResult {
 
   /// 末次匹配消息在列表中的索引
   final int lastMatchIndex;
+  final List<int>? matchIndices;
 
   /// 是否还有更早的匹配
   final bool hasMoreBefore;
@@ -33,6 +34,7 @@ class MessageSearchResult {
     required this.messages,
     required this.firstMatchIndex,
     required this.lastMatchIndex,
+    this.matchIndices,
     required this.hasMoreBefore,
     required this.hasMoreAfter,
     required this.minSeq,
@@ -59,6 +61,7 @@ class MessageSearchResult {
       messages: messages,
       firstMatchIndex: json['firstMatchIndex'] ?? -1,
       lastMatchIndex: json['lastMatchIndex'] ?? -1,
+      matchIndices: (json['matchIndices'] as List?)?.whereType<int>().toList(),
       hasMoreBefore: json['hasMoreBefore'] ?? false,
       hasMoreAfter: json['hasMoreAfter'] ?? false,
       minSeq: json['minSeq'] ?? 0,
