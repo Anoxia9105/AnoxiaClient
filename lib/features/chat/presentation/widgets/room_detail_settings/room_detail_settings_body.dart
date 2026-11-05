@@ -725,8 +725,9 @@ class RoomDetailSettingsBody extends ConsumerWidget {
         title: 'chat_delete_conversation'.tr(),
         content: 'chat_delete_conversation_confirm_hint'.tr(),
         confirmLabel: 'chat_delete_conversation'.tr(),
-        action: () =>
-            ref.read(roomListServiceProvider.notifier).leaveRoom(roomId),
+        action: () => ref
+            .read(roomListServiceProvider.notifier)
+            .deletePrivateConversation(roomId),
       );
     }
 

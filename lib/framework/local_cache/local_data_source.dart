@@ -16,11 +16,13 @@ import 'session_epoch.dart';
 class LocalDataSource {
   static const roomRecallSyncScope = 'room_recalls';
   static const roomEditSyncScope = 'room_edits';
+  static const _privateHistoryScope = 'private_history_cutoff';
   static const _roomSyncScopes = [
     'messages',
     'read_cursor_pending',
     roomRecallSyncScope,
     roomEditSyncScope,
+    _privateHistoryScope,
   ];
   LocalDataSource(this.db, {SessionEpoch? sessionEpoch})
     : _sessionEpoch = sessionEpoch,
@@ -167,6 +169,10 @@ class LocalDataSource {
       );
 
       return db.transaction(() async {
+        if (row.seq > 0 &&
+            row.seq <= await _privateHistoryCutoff(row.conversationId)) {
+          return false;
+        }
         final existing = await db.messageDao.getMessageById(messageId);
         final previous =
             existing ??
@@ -309,6 +315,34 @@ class LocalDataSource {
     });
   }
 
+  Future<int> _privateHistoryCutoff(String roomId) async {
+    return (await db.syncStateDao.getState(
+          _privateHistoryScope,
+          roomId,
+        ))?.lastSeq ??
+        0;
+  }
+
+  Future<int> _reconcilePrivateHistory(ChatRoomVO room) async {
+    final roomId = room.roomId ?? '';
+    final previous = await _privateHistoryCutoff(roomId);
+    final cutoff = room.minVisibleSeq ?? 0;
+    if (cutoff <= previous) return previous;
+
+    await db.syncStateDao.upsertState(
+      scope: _privateHistoryScope,
+      scopeId: roomId,
+      lastSeq: cutoff,
+    );
+    await (db.delete(db.messages)..where(
+          (row) =>
+              row.conversationId.equals(roomId) &
+              row.seq.isBetweenValues(1, cutoff),
+        ))
+        .go();
+    return cutoff;
+  }
+
   /// 确保 [rooms] 中所有 [ChatRoomVO.peerId] 在 cached_users 表中存在占位记录，
   /// 以满足 conversations.peer_id 的外键约束。
   Future<void> _ensurePeerUsersExist(Iterable<ChatRoomVO> rooms) async {
@@ -333,6 +367,10 @@ class LocalDataSource {
     return _write(() async {
       final row = _messageToRow(message);
       await db.transaction(() async {
+        if (row.seq > 0 &&
+            row.seq <= await _privateHistoryCutoff(row.conversationId)) {
+          return;
+        }
         await _ensureConversationExists(row.conversationId);
         await _ensureMessageSendersExist([row]);
         await db.messageDao.insertOrUpdateMessage(row);
@@ -358,7 +396,15 @@ class LocalDataSource {
 
   Future<void> upsertMessages(Iterable<ChatMessage> messages) async {
     return _write(() async {
-      final rows = messages.map(_messageToRow).toList();
+      final cutoffs = <String, int>{};
+      final rows = <CachedMessage>[];
+      for (final message in messages) {
+        final row = _messageToRow(message);
+        final roomId = row.conversationId;
+        final cutoff = cutoffs[roomId] ?? await _privateHistoryCutoff(roomId);
+        cutoffs[roomId] = cutoff;
+        if (row.seq == 0 || row.seq > cutoff) rows.add(row);
+      }
       if (rows.isEmpty) return;
 
       for (final conversationId
@@ -864,18 +910,20 @@ class LocalDataSource {
   Future<ConversationsCompanion> _mergeConversationProjection(
     ChatRoomVO room,
   ) async {
-    final incoming = _conversationToCompanion(room);
+    final cutoff = await _reconcilePrivateHistory(room);
+    final incoming = _conversationToCompanion(room, cutoff: cutoff);
     final existing = await db.conversationDao.getConversation(
       room.roomId ?? '',
     );
-    final messageId =
-        room.lastMessage?.messageId ?? room.lastMessage?.clientMsgId;
+    final messageId = incoming.lastMessageId.value;
     final deleted =
         messageId != null &&
         (await db.syncStateDao.getState('message_deleted', messageId)) != null;
     final newerLocal =
         existing != null &&
-        ((existing.lastMessageSeq ?? 0) > (room.lastMessage?.seq ?? 0) ||
+        (cutoff == 0 || (existing.lastMessageSeq ?? 0) > cutoff) &&
+        ((existing.lastMessageSeq ?? 0) >
+                (incoming.lastMessageSeq.value ?? 0) ||
             ((existing.lastMessageSeq ?? 0) == 0 &&
                 existing.lastMessageAt != null &&
                 existing.lastMessageAt!.isAfter(
@@ -936,9 +984,14 @@ class LocalDataSource {
     );
   }
 
-  ConversationsCompanion _conversationToCompanion(ChatRoomVO room) {
+  ConversationsCompanion _conversationToCompanion(
+    ChatRoomVO room, {
+    required int cutoff,
+  }) {
     final now = DateTime.now();
-    final lastMessage = room.lastMessage;
+    final lastMessage = cutoff > 0 && (room.lastMessage?.seq ?? 0) <= cutoff
+        ? null
+        : room.lastMessage;
     final lastAt = _dateTimeFromMillis(lastMessage?.timestamp);
     return ConversationsCompanion(
       id: Value(room.roomId ?? ''),

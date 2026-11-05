@@ -59,6 +59,7 @@ class ChatRoomVO {
   /// null 表示服务端未提供该字段（旧部署/未查询），客户端应回落本地缓存行为。
   final bool? isPinned;
   final int? hiddenAtSeq;
+  final int? minVisibleSeq;
 
   bool get isHidden =>
       hiddenAtSeq != null && (lastMessage?.seq ?? 0) <= hiddenAtSeq!;
@@ -83,6 +84,7 @@ class ChatRoomVO {
     this.isMuted,
     this.isPinned,
     this.hiddenAtSeq,
+    this.minVisibleSeq,
   });
 
   /// 创建当前实例的变体副本
@@ -121,6 +123,7 @@ class ChatRoomVO {
       isMuted: isMuted ?? this.isMuted,
       isPinned: isPinned ?? this.isPinned,
       hiddenAtSeq: hiddenAtSeq ?? this.hiddenAtSeq,
+      minVisibleSeq: minVisibleSeq,
     );
   }
 
@@ -160,6 +163,7 @@ class ChatRoomVO {
       isMuted: _parseFlag(json['isMuted']),
       isPinned: _parseFlag(json['isPinned']),
       hiddenAtSeq: int.tryParse(json['hiddenAtSeq']?.toString() ?? ''),
+      minVisibleSeq: int.tryParse(json['minVisibleSeq']?.toString() ?? ''),
     );
   }
 

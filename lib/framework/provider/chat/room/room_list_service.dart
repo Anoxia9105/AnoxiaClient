@@ -449,6 +449,13 @@ class RoomListService extends _$RoomListService {
     await refresh(silent: true);
   }
 
+  Future<void> deletePrivateConversation(String roomId) async {
+    await ref.read(roomRepositoryProvider).leaveRoom(roomId);
+    if (!ref.mounted) return;
+    ref.read(chatMessagesProvider.notifier).markNeedResync(roomId);
+    await refresh(silent: true);
+  }
+
   /// 退出聊天室
   Future<void> leaveRoom(String roomId) async {
     try {
@@ -633,17 +640,18 @@ class RoomSearchQuery extends _$RoomSearchQuery {
   void update(String query) => state = query;
 }
 
-/// 在房间列表中注入虚拟官方房间（受显隐开关控制）。
-List<ChatRoomVO> _injectOfficialRoom(
+/// 过滤隐藏会话，并按设置注入虚拟官方房间。
+List<ChatRoomVO> _visibleRooms(
   List<ChatRoomVO> rooms,
-  bool hidden,
+  bool hideOfficial,
   ChatRoomVO official,
 ) {
-  if (hidden) return rooms;
-  if (rooms.any((r) => r.roomId == OfficialRoomConfig.virtualRoomId)) {
-    return rooms;
+  final visible = rooms.where((room) => !room.isHidden).toList();
+  if (hideOfficial ||
+      visible.any((r) => r.roomId == OfficialRoomConfig.virtualRoomId)) {
+    return visible;
   }
-  return [official, ...rooms];
+  return [official, ...visible];
 }
 
 /// 根据关键词过滤后的聊天室列表
@@ -658,7 +666,7 @@ List<ChatRoomVO> filteredRoomList(Ref ref) {
 
   return roomListAsync.maybeWhen(
     data: (rooms) {
-      final base = _injectOfficialRoom(
+      final base = _visibleRooms(
         rooms,
         ref.watch(hideOfficialRoomProvider),
         ref.watch(officialRoomProvider),
@@ -691,7 +699,7 @@ final filteredSortedRoomListAsyncProvider =
       final pinnedIds = ref.watch(pinnedRoomsProvider);
 
       return roomListAsync.whenData((rooms) {
-        final base = _injectOfficialRoom(
+        final base = _visibleRooms(
           rooms,
           ref.watch(hideOfficialRoomProvider),
           ref.watch(officialRoomProvider),

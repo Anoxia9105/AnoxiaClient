@@ -11,8 +11,10 @@ import 'package:anoxia/common/utils/sp_util.dart';
 import 'package:anoxia/domain/repositories/room_repository.dart';
 import 'package:anoxia/framework/core/toast_service.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/core/room_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:dio/dio.dart';
@@ -22,6 +24,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 typedef _UpdateHandler = Future<bool> Function(String roomId, bool value);
+
+class _RoomList extends RoomListService {
+  @override
+  Future<List<ChatRoomVO>> build() async => [
+    ChatRoomVO(roomId: 'hidden', hiddenAtSeq: 2),
+    ChatRoomVO(
+      roomId: 'restored',
+      hiddenAtSeq: 2,
+      lastMessage: ChatMessage(seq: 3),
+    ),
+  ];
+}
 
 /// 可变行为的假仓库：用例中直接修改 onPinned/onDnd 切换成功/失败场景。
 class _FakeRoomRepository implements RoomRepository {
@@ -82,6 +96,7 @@ void main() {
     toasts = _ToastRecorder();
     container = ProviderContainer(
       overrides: [
+        roomListServiceProvider.overrideWith(_RoomList.new),
         roomRepositoryProvider.overrideWithValue(repository),
         toastServiceProvider.overrideWithValue(toasts),
       ],
@@ -99,6 +114,13 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
   }
+
+  test('聊天列表隐藏已移除会话并显示收到新消息的会话', () async {
+    await container.read(roomListServiceProvider.future);
+    final rooms = container.read(filteredSortedRoomListAsyncProvider).value!;
+    expect(rooms.map((room) => room.roomId), contains('restored'));
+    expect(rooms.map((room) => room.roomId), isNot(contains('hidden')));
+  });
 
   group('ChatRoomVO 兼容字段解析', () {
     test('bool / 数字 / 字符串 均可解析，缺省为 null（旧部署回落）', () {

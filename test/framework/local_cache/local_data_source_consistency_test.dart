@@ -59,6 +59,25 @@ void main() {
     expect(await source.getMessageById('old'), isNotNull);
   });
 
+  test('私聊清理边界移除旧历史并保留并发到达的新消息', () async {
+    await source.applyIncomingMessage(message('old', 2), incrementUnread: true);
+    await source.applyIncomingMessage(message('new', 3), incrementUnread: true);
+    await source.upsertConversations([
+      ChatRoomVO.fromJson({
+        'roomId': 'room',
+        'hiddenAtSeq': 2,
+        'minVisibleSeq': 2,
+      }),
+    ]);
+    await source.upsertMessages([message('late-history', 1)]);
+    expect(await source.getMessageById('late-history'), isNull);
+    expect(await source.getMessageById('old'), isNull);
+    expect(await source.getMessageById('new'), isNotNull);
+    final room = (await source.getConversations()).single;
+    expect(room.lastMessage?.seq, 3);
+    expect(room.isHidden, isFalse);
+  });
+
   test('旧 ACK 或失败状态更新不能覆盖最新会话摘要', () async {
     await source.upsertMessage(
       message('old', 1, status: DeliveryStatus.sending),

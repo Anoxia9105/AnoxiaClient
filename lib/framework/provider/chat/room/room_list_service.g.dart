@@ -99,7 +99,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'4fe3198157d5cdf80a17007992b94ac4470a9a76';
+String _$roomListServiceHash() => r'd9b1e321d14f4b53138975eb77ab753907fcaa2f';
 
 /// 聊天室列表服务
 ///
@@ -546,7 +546,7 @@ final class FilteredRoomListProvider
   }
 }
 
-String _$filteredRoomListHash() => r'd453141813eb632dbee0545b42fb9ddd93ae1949';
+String _$filteredRoomListHash() => r'88805b5d148709ed7852b149b1ee3ac7e4f070bb';
 
 /// 总未读消息数
 ///
