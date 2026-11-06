@@ -287,6 +287,12 @@ class AboutVersionRow extends StatelessWidget {
             spacing: SpacingToken.sm,
             runSpacing: SpacingToken.xs,
             children: [
+              if (!compact)
+                HugeIcon(
+                  icon: HugeIcons.strokeRoundedTag01,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               Text(versions.first, style: theme.textTheme.titleSmall),
               if (versions.length > 1)
                 Text(

@@ -161,14 +161,17 @@ class _SettingsAboutSupportSectionState
         final legal = resources('about_app_information'.tr(), [
           AboutResourceRow(
             title: 'settings_about_privacy_policy'.tr(),
+            icon: HugeIcons.strokeRoundedShield01,
             onTap: () => _launchUrl(context, _privacyPolicyUrl),
           ),
           AboutResourceRow(
             title: 'settings_about_terms'.tr(),
+            icon: HugeIcons.strokeRoundedLegal01,
             onTap: () => _launchUrl(context, _termsUrl),
           ),
           AboutResourceRow(
             title: 'settings_open_source_title'.tr(),
+            icon: HugeIcons.strokeRoundedCode,
             onTap: widget.onOpenOpenSourceLicenses,
           ),
         ]);
