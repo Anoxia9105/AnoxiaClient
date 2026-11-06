@@ -1,15 +1,11 @@
-import 'dart:math' as math;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
+
 import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/framework/theme/spacing_token.dart';
 
-/// 开发者致敬 / 彩蛋页面
-///
-/// 通过连续点击版本号触发。目标是“真诚而克制”——不煽情、不浮夸，
-/// 用具体的细节与稳定的视觉，让用户感受到“有人在认真做这件事”。
+/// 藏在版本号后的短信。页面主题只用于阅读预览，不修改应用外观设置。
 class DeveloperTributePage extends StatefulWidget {
   const DeveloperTributePage({super.key});
 
@@ -17,474 +13,520 @@ class DeveloperTributePage extends StatefulWidget {
   State<DeveloperTributePage> createState() => _DeveloperTributePageState();
 }
 
-class _DeveloperTributePageState extends State<DeveloperTributePage>
-    with TickerProviderStateMixin {
-  late final AnimationController _bgController;
-  late final AnimationController _heartController;
-  late final AnimationController _enterController;
+class _DeveloperTributePageState extends State<DeveloperTributePage> {
+  final _scroll = ScrollController();
+  final _acceptFocus = FocusNode();
+  final _reopenFocus = FocusNode();
+  Brightness? _brightness;
+  bool _received = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _bgController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 8000),
-    )..repeat();
-    _heartController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1100),
-    )..repeat(reverse: true);
-    _enterController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..forward();
+  void _showReceived(bool value) {
+    setState(() => _received = value);
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      (value ? _reopenFocus : _acceptFocus).requestFocus();
+    });
+  }
+
+  Future<void> _copyQuote() async {
+    var message = 'settings_easter_copy_success'.tr();
+    try {
+      await Clipboard.setData(
+        ClipboardData(text: 'settings_easter_quote'.tr()),
+      );
+    } catch (_) {
+      message = 'settings_easter_copy_failure'.tr();
+    }
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   void dispose() {
-    _bgController.dispose();
-    _heartController.dispose();
-    _enterController.dispose();
+    _scroll.dispose();
+    _acceptFocus.dispose();
+    _reopenFocus.dispose();
     super.dispose();
   }
 
-  Future<void> _share() async {
-    try {
-      await SharePlus.instance.share(
-        ShareParams(
-          text: '${'settings_easter_title'.tr()}\n\n${'settings_easter_body'.tr()}\n\n— ${'settings_easter_signature'.tr()}',
-          title: 'Anoxia',
-        ),
-      );
-    } catch (_) {}
-  }
-
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final brightness = _brightness ?? Theme.of(context).brightness;
+    final dark = brightness == Brightness.dark;
+    final colors = _LetterColors(dark);
     return Scaffold(
-      body: Stack(
-        children: [
-          // 渐变背景
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _bgController,
-              builder: (_, _) {
-                final t = _bgController.value * math.pi * 2;
-                return DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment(math.sin(t) * 0.45, -1),
-                      end: Alignment(-math.sin(t) * 0.45, 1),
-                      colors: isDark
-                          ? [
-                              scheme.primary.withValues(alpha: 0.18),
-                              const Color(0xFF0F1220),
-                              scheme.tertiary.withValues(alpha: 0.14),
-                            ]
-                          : [
-                              scheme.primary.withValues(alpha: 0.16),
-                              scheme.surface,
-                              scheme.tertiary.withValues(alpha: 0.12),
-                            ],
+      backgroundColor: colors.background,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 640;
+            final horizontal = compact
+                ? SpacingToken.xl
+                : SpacingToken.xxl + SpacingToken.lg;
+            return SingleChildScrollView(
+              controller: _scroll,
+              child: Column(
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1440),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontal,
+                        vertical: SpacingToken.md,
+                      ),
+                      child: Row(
+                        children: [
+                          TextButton.icon(
+                            key: const Key('easter-back'),
+                            onPressed: () => Navigator.of(context).maybePop(),
+                            style: TextButton.styleFrom(
+                              foregroundColor: colors.body,
+                            ),
+                            icon: const Icon(Icons.chevron_left, size: 18),
+                            label: Text('common_back'.tr()),
+                          ),
+                          const SizedBox(width: SpacingToken.lg),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Flexible(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      'Anoxia.',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontSize: 19,
+                                            fontWeight: FontWeight.w500,
+                                            color: colors.ink,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: SpacingToken.xl),
+                                IconButton.outlined(
+                                  key: const Key('easter-theme'),
+                                  tooltip:
+                                      (dark
+                                              ? 'settings_easter_theme_light'
+                                              : 'settings_easter_theme_dark')
+                                          .tr(),
+                                  isSelected: dark,
+                                  onPressed: () => setState(
+                                    () => _brightness = dark
+                                        ? Brightness.light
+                                        : Brightness.dark,
+                                  ),
+                                  style: IconButton.styleFrom(
+                                    foregroundColor: colors.body,
+                                    backgroundColor: Colors.transparent,
+                                    shape: const CircleBorder(),
+                                    side: BorderSide(color: colors.line),
+                                  ),
+                                  icon: Icon(
+                                    dark
+                                        ? Icons.light_mode_outlined
+                                        : Icons.dark_mode_outlined,
+                                    size: 18,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-          // 模糊光斑
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _bgController,
-              builder: (_, _) {
-                final p = _bgController.value;
-                return CustomPaint(
-                  painter: _GlowPainter(progress: p, isDark: isDark, primary: scheme.primary, tertiary: scheme.tertiary),
-                );
-              },
-            ),
-          ),
-          // 粒子
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _bgController,
-              builder: (_, _) => CustomPaint(
-                painter: _SparklePainter(progress: _bgController.value, color: scheme.primary),
+                  SizedBox(
+                    height: compact ? SpacingToken.lg : SpacingToken.xxl,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: SpacingToken.lg,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 760),
+                      child: Container(
+                        key: const Key('easter-letter'),
+                        width: double.infinity,
+                        padding: EdgeInsets.fromLTRB(
+                          compact
+                              ? SpacingToken.xl
+                              : SpacingToken.xxl * 2 + SpacingToken.md,
+                          compact
+                              ? SpacingToken.xxl
+                              : SpacingToken.xxl + SpacingToken.xl,
+                          compact
+                              ? SpacingToken.xl
+                              : SpacingToken.xxl * 2 + SpacingToken.md,
+                          compact
+                              ? SpacingToken.xl
+                              : SpacingToken.xxl + SpacingToken.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.paper,
+                          border: Border.all(color: colors.line),
+                          borderRadius: BorderRadius.circular(RadiusToken.sm),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                alpha: dark ? 0.1 : 0.035,
+                              ),
+                              blurRadius: 40,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: _received
+                            ? _receipt(colors, compact)
+                            : _letter(colors, compact),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      SpacingToken.xl,
+                      SpacingToken.xl,
+                      SpacingToken.xl,
+                      SpacingToken.xxl,
+                    ),
+                    child: Text(
+                      'settings_easter_footer'.tr(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: colors.muted,
+                        height: 1.8,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _letter(_LetterColors colors, bool compact) {
+    final bodyStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      fontSize: compact ? 13 : 14,
+      height: 2.15,
+      color: colors.body,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 80),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: SpacingToken.sm),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: colors.accent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const SizedBox.square(dimension: 4),
+                    ),
+                  ),
+                  const SizedBox(width: SpacingToken.md),
+                  Expanded(
+                    child: Text(
+                      'settings_easter_eyebrow'.tr(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        height: 1.8,
+                        color: colors.muted,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: scheme.surface.withValues(alpha: 0.72),
-                            borderRadius: BorderRadius.circular(RadiusToken.pill),
-                            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 14, color: scheme.primary),
-                              const SizedBox(width: 6),
-                              Text('EASTER EGG · 07 TAPS', style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1.2, fontWeight: FontWeight.w800, color: scheme.onSurfaceVariant)),
-                            ],
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton.filledTonal(
-                          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
-                        ),
-                      ],
+            Positioned(
+              top: -SpacingToken.md,
+              right: 0,
+              child: ExcludeSemantics(
+                child: Transform.rotate(
+                  angle: -0.14,
+                  child: CustomPaint(
+                    size: Size(compact ? 56 : 78, compact ? 50 : 70),
+                    painter: _EnvelopePainter(
+                      colors.accent,
+                      colors.paper,
+                      colors.soft,
                     ),
                   ),
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-                  sliver: SliverList.list(
-                    children: [
-                      // 心跳图标
-                      FadeTransition(
-                        opacity: CurvedAnimation(parent: _enterController, curve: const Interval(0, 0.6, curve: Curves.easeOut)),
-                        child: SlideTransition(
-                          position: Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(CurvedAnimation(parent: _enterController, curve: Curves.easeOutCubic)),
-                          child: Center(
-                            child: AnimatedBuilder(
-                              animation: _heartController,
-                              builder: (_, child) {
-                                final scale = 1 + _heartController.value * 0.07;
-                                final dy = math.sin(_bgController.value * math.pi * 2) * 6;
-                                return Transform.translate(
-                                  offset: Offset(0, dy),
-                                  child: Transform.scale(scale: scale, child: child),
-                                );
-                              },
-                              child: Container(
-                                width: 88,
-                                height: 88,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: scheme.primary.withValues(alpha: 0.12),
-                                  border: Border.all(color: scheme.primary.withValues(alpha: 0.18)),
-                                  boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: 0.18), blurRadius: 24, offset: const Offset(0, 8))],
-                                ),
-                                alignment: Alignment.center,
-                                child: HugeIcon(icon: HugeIcons.strokeRoundedFavourite, size: 42, color: scheme.primary),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      FadeTransition(
-                        opacity: CurvedAnimation(parent: _enterController, curve: const Interval(0.15, 0.85, curve: Curves.easeOut)),
-                        child: Column(
-                          children: [
-                            Text(
-                              'settings_easter_title'.tr(),
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900, height: 1.2, color: scheme.onSurface),
-                            ),
-                            const SizedBox(height: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(color: scheme.secondaryContainer.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(RadiusToken.pill)),
-                              child: Text('你连续点击了 7 次才来到这里 · 谢谢你的好奇心', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: scheme.onSecondaryContainer, fontWeight: FontWeight.w600)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      // 主信件卡片
-                      _EntranceCard(
-                        delay: 120,
-                        controller: _enterController,
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-                          decoration: BoxDecoration(
-                            color: scheme.surface.withValues(alpha: isDark ? 0.72 : 0.88),
-                            borderRadius: BorderRadius.circular(RadiusToken.xl),
-                            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
-                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.06), blurRadius: 24, offset: const Offset(0, 12))],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(width: 3, height: 18, decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(RadiusToken.pill))),
-                                  const SizedBox(width: 10),
-                                  Text('一封小小的信', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                                  const Spacer(),
-                                  HugeIcon(icon: HugeIcons.strokeRoundedMail01, size: 18, color: scheme.onSurfaceVariant),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              Text(
-                                'settings_easter_body'.tr(),
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.85, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500),
-                              ),
-                              const SizedBox(height: SpacingToken.lg),
-                              Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(RadiusToken.xl)),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('那些没有说出口的细节', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800, color: scheme.onSurface)),
-                                    const SizedBox(height: SpacingToken.sm),
-                                    const _Bullet(text: '凌晨两点还在对齐一条消息的 seq 与时间戳，只为不丢一条“在吗”。'),
-                                    const _Bullet(text: '把“发送失败”改成能看懂的原因，而不是冷冰冰的 code。'),
-                                    const _Bullet(text: '在弱网、息屏、来回切换时，依然把未读数算对。'),
-                                    const _Bullet(text: '为每一个头像、气泡、动效，调过十几遍圆角与阴影。'),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: SpacingToken.lg),
-                              Text(
-                                'Anoxia 还不完美，也永远不会“做完”。但每一次修复、每一次为 0.1 秒的跟手度较真，都是想让你在重要的对话里，更安心一点。\n\n如果你愿意，留下一句反馈，或把 Anoxia 推荐给在乎的人——那就是对这份坚持最好的回应。',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.75, color: scheme.onSurfaceVariant),
-                              ),
-                              const SizedBox(height: SpacingToken.lg),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text('settings_easter_signature'.tr(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.primary, fontWeight: FontWeight.w900)),
-                                    const SizedBox(height: 2),
-                                    Text('Anoxia · 2024 — 至今', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant, letterSpacing: 0.4)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: SpacingToken.lg),
-                      // 三个价值观
-                      _EntranceCard(
-                        delay: 220,
-                        controller: _enterController,
-                        child: const Row(
-                          children: [
-                            Expanded(child: _ValueCard(icon: HugeIcons.strokeRoundedShield01, title: '稳定', desc: '消息不丢\n未读算对')),
-                            SizedBox(width: 10),
-                            Expanded(child: _ValueCard(icon: HugeIcons.strokeRoundedHeartCheck, title: '真诚', desc: '说人话\n不打扰')),
-                            SizedBox(width: 10),
-                            Expanded(child: _ValueCard(icon: HugeIcons.strokeRoundedSparkles, title: '陪伴', desc: '轻一点\n久一点')),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: SpacingToken.lg),
-                      // 语录
-                      _EntranceCard(
-                        delay: 320,
-                        controller: _enterController,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-                          decoration: BoxDecoration(
-                            color: scheme.primaryContainer.withValues(alpha: isDark ? 0.22 : 0.42),
-                            borderRadius: BorderRadius.circular(RadiusToken.xl),
-                            border: Border.all(color: scheme.primary.withValues(alpha: 0.14)),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              HugeIcon(icon: HugeIcons.strokeRoundedQuoteDown, size: 20, color: scheme.primary),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  '“把重要的事，说清楚；把普通的日子，过轻盈。”',
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(height: 1.6, fontWeight: FontWeight.w700, color: scheme.onPrimaryContainer),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      // 操作
-                      _EntranceCard(
-                        delay: 420,
-                        controller: _enterController,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: _share,
-                                icon: const HugeIcon(icon: HugeIcons.strokeRoundedShare01, size: 18),
-                                label: Text('分享这份心意'.tr()),
-                                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.pill))),
-                              ),
-                            ),
-                            const SizedBox(width: SpacingToken.md),
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: () => Navigator.of(context).pop(),
-                                icon: const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, size: 18),
-                                label: const Text('收下了'),
-                                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.pill))),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: SpacingToken.md),
-                      Center(
-                        child: Text('彩蛋会在下次点击版本号时再次出现', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant.withValues(alpha: 0.7))),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: SpacingToken.xxl),
+        Semantics(
+          header: true,
+          child: Text(
+            'settings_easter_title'.tr(),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontSize: compact ? 28 : 36,
+              height: 1.65,
+              fontWeight: FontWeight.w500,
+              color: colors.ink,
+              letterSpacing: 0.2,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EntranceCard extends StatelessWidget {
-  final Widget child;
-  final AnimationController controller;
-  final int delay;
-  const _EntranceCard({required this.child, required this.controller, this.delay = 0});
-
-  @override
-  Widget build(BuildContext context) {
-    final intervalStart = (delay / 700).clamp(0.0, 0.9);
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (_, _) {
-        final t = CurvedAnimation(parent: controller, curve: Interval(intervalStart, 1, curve: Curves.easeOutCubic)).value;
-        return Opacity(
-          opacity: t,
-          child: Transform.translate(offset: Offset(0, (1 - t) * 16), child: child),
-        );
-      },
-    );
-  }
-}
-
-class _Bullet extends StatelessWidget {
-  final String text;
-  const _Bullet({required this.text});
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(top: 7),
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+        ),
+        const SizedBox(height: SpacingToken.xl),
+        Text('settings_easter_opening'.tr(), style: bodyStyle),
+        const SizedBox(height: SpacingToken.lg),
+        Text('settings_easter_reflection'.tr(), style: bodyStyle),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: SpacingToken.xl),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: compact ? SpacingToken.lg : SpacingToken.xl,
+                child: Divider(
+                  color: colors.accent.withValues(alpha: 0.5),
+                  thickness: 1,
+                ),
+              ),
+              const SizedBox(width: SpacingToken.lg),
+              Expanded(
+                child: Text(
+                  'settings_easter_quote'.tr(),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontSize: compact ? 18 : 21,
+                    height: 1.75,
+                    color: colors.accent,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.6, color: scheme.onSurfaceVariant))),
-        ],
-      ),
-    );
-  }
-}
-
-class _ValueCard extends StatelessWidget {
-  final List<List<dynamic>> icon;
-  final String title;
-  final String desc;
-  const _ValueCard({required this.icon, required this.title, required this.desc});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: scheme.surface.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(RadiusToken.xl),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(RadiusToken.lg)),
-            alignment: Alignment.center,
-            child: HugeIcon(icon: icon, size: 18, color: scheme.primary),
+        ),
+        Text('settings_easter_closing'.tr(), style: bodyStyle),
+        const SizedBox(height: SpacingToken.xl),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: Text(
+            '— ${'settings_easter_signature'.tr()}',
+            style: TextStyle(color: colors.body, fontSize: 12, height: 1.8),
           ),
-          const SizedBox(height: SpacingToken.sm),
-          Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: SpacingToken.xs),
-          Text(desc, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall?.copyWith(height: 1.4, color: scheme.onSurfaceVariant)),
-        ],
-      ),
+        ),
+        const SizedBox(height: SpacingToken.xxl),
+        Divider(color: colors.line, height: 1),
+        const SizedBox(height: SpacingToken.lg),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final stacked =
+                constraints.maxWidth < 300 ||
+                MediaQuery.textScalerOf(context).scale(13) > 19;
+            final copy = TextButton.icon(
+              key: const Key('easter-copy'),
+              onPressed: _copyQuote,
+              style: TextButton.styleFrom(
+                foregroundColor: colors.body,
+                textStyle: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(fontSize: 12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: SpacingToken.md,
+                  horizontal: SpacingToken.xs,
+                ),
+              ),
+              icon: const Icon(Icons.content_copy_outlined, size: 15),
+              label: Text('settings_easter_copy'.tr()),
+            );
+            final accept = FilledButton(
+              key: const Key('easter-accept'),
+              focusNode: _acceptFocus,
+              onPressed: () => _showReceived(true),
+              style: FilledButton.styleFrom(
+                elevation: 0,
+                backgroundColor: colors.button,
+                foregroundColor: colors.buttonInk,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingToken.xl,
+                  vertical: SpacingToken.lg,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(RadiusToken.sm),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(child: Text('settings_easter_accept'.tr())),
+                  const SizedBox(width: SpacingToken.xl),
+                  const Icon(Icons.arrow_forward, size: 17),
+                ],
+              ),
+            );
+            if (stacked) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  accept,
+                  const SizedBox(height: SpacingToken.sm),
+                  Align(child: copy),
+                ],
+              );
+            }
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(child: copy),
+                const SizedBox(width: SpacingToken.lg),
+                Flexible(child: accept),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
+
+  Widget _receipt(_LetterColors colors, bool compact) => ConstrainedBox(
+    constraints: BoxConstraints(minHeight: compact ? 500 : 580),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(color: colors.soft, shape: BoxShape.circle),
+          child: Icon(Icons.favorite_border, color: colors.accent, size: 28),
+        ),
+        const SizedBox(height: SpacingToken.xxl),
+        Semantics(
+          header: true,
+          child: Text(
+            'settings_easter_received_title'.tr(),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontSize: compact ? 24 : 28,
+              fontWeight: FontWeight.w500,
+              height: 1.75,
+              color: colors.ink,
+            ),
+          ),
+        ),
+        const SizedBox(height: SpacingToken.lg),
+        Text(
+          'settings_easter_received_body'.tr(),
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, height: 2, color: colors.body),
+        ),
+        const SizedBox(height: SpacingToken.xxl),
+        TextButton(
+          key: const Key('easter-reopen'),
+          focusNode: _reopenFocus,
+          onPressed: () => _showReceived(false),
+          style: TextButton.styleFrom(foregroundColor: colors.accent),
+          child: Text('settings_easter_reopen'.tr()),
+        ),
+      ],
+    ),
+  );
 }
 
-class _GlowPainter extends CustomPainter {
-  final double progress;
-  final bool isDark;
-  final Color primary;
-  final Color tertiary;
-  const _GlowPainter({required this.progress, required this.isDark, required this.primary, required this.tertiary});
+/// 信纸配色与已确认的设计稿一致；不覆盖应用其余页面的主题。
+class _LetterColors {
+  const _LetterColors(this.dark);
+  final bool dark;
+  Color get background => Color(dark ? 0xFF19181E : 0xFFF4F3F8);
+  Color get paper => Color(dark ? 0xFF222128 : 0xFFFFFEFA);
+  Color get ink => Color(dark ? 0xFFEEE9E4 : 0xFF343143);
+  Color get body => Color(dark ? 0xFFC1BAC7 : 0xFF656171);
+  Color get muted => Color(dark ? 0xFFA39AAA : 0xFF726C7C);
+  Color get line => Color(dark ? 0xFF3C3744 : 0xFFE7E3ED);
+  Color get accent => Color(dark ? 0xFFC8B9DD : 0xFF696080);
+  Color get soft => Color(dark ? 0xFF302B38 : 0xFFF0EDF5);
+  Color get button => Color(dark ? 0xFFCABDDD : 0xFF625876);
+  Color get buttonInk => Color(dark ? 0xFF28222F : 0xFFFFFEFA);
+}
+
+class _EnvelopePainter extends CustomPainter {
+  const _EnvelopePainter(this.ink, this.paper, this.soft);
+  final Color ink;
+  final Color paper;
+  final Color soft;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p1 = Offset(size.width * (0.22 + math.sin(progress * math.pi * 2) * 0.08), size.height * 0.18);
-    final p2 = Offset(size.width * (0.78 + math.cos(progress * math.pi * 2 * 0.9) * 0.06), size.height * 0.72);
-    final paint = Paint()..maskFilter = const MaskFilter.blur(BlurStyle.normal, 36);
-    paint.color = primary.withValues(alpha: isDark ? 0.10 : 0.09);
-    canvas.drawCircle(p1, size.width * 0.28, paint);
-    paint.color = tertiary.withValues(alpha: isDark ? 0.09 : 0.07);
-    canvas.drawCircle(p2, size.width * 0.32, paint);
+    canvas.save();
+    canvas.scale(size.width / 90, size.height / 80);
+    final outline = Paint()
+      ..color = ink.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeJoin = StrokeJoin.round;
+    final envelope = Path()
+      ..moveTo(13, 32)
+      ..lineTo(44, 11)
+      ..lineTo(76, 32)
+      ..lineTo(76, 65)
+      ..lineTo(13, 65)
+      ..close();
+    canvas.drawPath(envelope, Paint()..color = soft);
+    canvas.drawPath(envelope, outline);
+    final letter = Path()
+      ..moveTo(25, 40)
+      ..lineTo(25, 20)
+      ..lineTo(64, 20)
+      ..lineTo(64, 42);
+    canvas.drawPath(letter, Paint()..color = paper);
+    canvas.drawPath(letter, outline);
+    canvas.drawPath(
+      Path()
+        ..moveTo(34, 28)
+        ..lineTo(55, 28)
+        ..moveTo(34, 35)
+        ..lineTo(50, 35),
+      Paint()
+        ..color = ink.withValues(alpha: 0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(13, 32)
+        ..lineTo(44, 54)
+        ..lineTo(76, 32)
+        ..moveTo(13, 65)
+        ..lineTo(36, 47)
+        ..moveTo(76, 65)
+        ..lineTo(53, 47),
+      outline,
+    );
+    final heart = Path()
+      ..moveTo(44, 44)
+      ..cubicTo(38, 36, 34, 44, 44, 50)
+      ..cubicTo(54, 44, 50, 36, 44, 44)
+      ..close();
+    canvas.drawPath(heart, Paint()..color = ink);
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant _GlowPainter oldDelegate) => oldDelegate.progress != progress;
-}
-
-class _SparklePainter extends CustomPainter {
-  final double progress;
-  final Color color;
-  const _SparklePainter({required this.progress, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-    final points = List.generate(20, (index) {
-      final seed = index * 41.0;
-      final x = (math.sin(seed) * 0.5 + 0.5) * size.width;
-      final baseY = (math.cos(seed * 1.6) * 0.5 + 0.5) * size.height;
-      final y = (baseY + progress * size.height * 0.18) % size.height;
-      final radius = 1.8 + (index % 4) * 1.1;
-      final alpha = 0.08 + (math.sin(progress * math.pi * 2 + index) + 1) * 0.07;
-      return (Offset(x, y), radius, alpha);
-    });
-    for (final point in points) {
-      paint.color = color.withValues(alpha: point.$3);
-      canvas.drawCircle(point.$1, point.$2, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SparklePainter oldDelegate) => oldDelegate.progress != progress || oldDelegate.color != color;
+  bool shouldRepaint(covariant _EnvelopePainter oldDelegate) =>
+      oldDelegate.ink != ink ||
+      oldDelegate.paper != paper ||
+      oldDelegate.soft != soft;
 }

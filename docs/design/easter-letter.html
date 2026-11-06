@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>一封藏在这里的短信 · Anoxia</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg:#f4f3f8; --paper:#fffefa; --ink:#343143; --body:#656171;
+      --quiet:#726c7c; --line:#e7e3ed; --accent:#696080; --soft:#f0edf5;
+      --button:#625876; --button-ink:#fffefa; --shadow:rgba(55,43,78,.045);
+    }
+    :root[data-theme="dark"] {
+      color-scheme:dark;
+      --bg:#19181e; --paper:#222128; --ink:#eee9e4; --body:#c1bac7;
+      --quiet:#a39aaa; --line:#3c3744; --accent:#c8b9dd; --soft:#302b38;
+      --button:#cabddd; --button-ink:#28222f; --shadow:rgba(0,0,0,.12);
+    }
+    * {box-sizing:border-box}
+    body {margin:0; min-width:280px; background:var(--bg); color:var(--ink); font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif; -webkit-font-smoothing:antialiased; transition:background .25s,color .25s}
+    button {font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent}
+    button:focus-visible {outline:2px solid var(--accent); outline-offset:5px}
+    button:disabled {cursor:default}
+    svg {display:block; flex-shrink:0}
+    .topbar {height:88px; padding:0 48px; display:flex; align-items:center; justify-content:space-between; max-width:1440px; margin:auto}
+    .back {border:0; background:none; display:flex; align-items:center; gap:9px; color:var(--body); font-size:13px; padding:12px 0; min-height:44px}
+    .brand-tools {display:flex; align-items:center; gap:28px}
+    .brand {font-family:Georgia,serif; font-size:19px; letter-spacing:-.5px; color:var(--ink)}
+    .theme {width:40px; height:40px; display:grid; place-items:center; background:none; border:1px solid var(--line); border-radius:50%; color:var(--body); transition:background .2s}
+    .theme:hover {background:var(--soft)}
+    main {padding:30px 24px 36px}
+    .letter {width:min(100%,760px); margin:auto; position:relative; background:var(--paper); border:1px solid var(--line); border-radius:6px; box-shadow:0 12px 48px var(--shadow); padding:53px 74px 40px; animation:arrive .65s ease-out both}
+    .letter::after {content:""; position:absolute; left:7px; right:7px; height:6px; bottom:-7px; background:var(--paper); border:1px solid var(--line); border-top:0; border-radius:0 0 5px 5px; z-index:-1}
+    .eyebrow {font-size:12px; letter-spacing:1.1px; color:var(--quiet); margin:0; display:flex; align-items:center; gap:10px}
+    .eyebrow::before {content:""; height:5px; width:5px; border-radius:50%; background:var(--accent); opacity:.7}
+    .envelope {position:absolute; right:65px; top:46px; width:78px; height:70px; color:var(--accent); transform:rotate(-8deg); opacity:.85}
+    h1 {font-weight:500; letter-spacing:.025em; font-size:36px; line-height:1.65; margin:29px 0 25px; font-family:"Noto Serif SC","Songti SC","SimSun",serif}
+    .copy {font-size:14px; line-height:2.15; letter-spacing:.02em; color:var(--body); max-width:100%}
+    .copy p {margin:0 0 17px}
+    .pause {margin:26px 0 26px; display:flex; align-items:center; gap:17px; color:var(--accent)}
+    .pause-line {width:24px; height:1px; background:var(--accent); opacity:.5}
+    blockquote {font-family:"Noto Serif SC","Songti SC","SimSun",serif; font-size:21px; font-weight:500; letter-spacing:.04em; line-height:1.75; margin:0}
+    .closing {margin-bottom:0!important}
+    .signature {display:flex; justify-content:flex-end; margin-top:23px; gap:10px; align-items:center; color:var(--body); font-size:12px; letter-spacing:.03em}
+    .signature::before {content:""; width:16px; height:1px; background:var(--quiet); opacity:.6}
+    .actions {border-top:1px solid var(--line); margin-top:34px; padding-top:25px; display:flex; justify-content:space-between; align-items:center; gap:16px}
+    .copy-button {padding:10px 0; border:0; background:none; font-size:12px; display:flex; gap:8px; align-items:center; color:var(--body); min-height:44px}
+    .copy-button:hover {color:var(--accent)}
+    .accept {padding:12px 22px; border:1px solid transparent; border-radius:5px; background:var(--button); color:var(--button-ink); display:flex; align-items:center; gap:30px; min-height:44px; font-size:13px; transition:transform .2s,filter .2s}
+    .accept:hover {filter:brightness(1.08); transform:translateY(-1px)}
+    .accept:active {transform:translateY(0)}
+    .under-note {margin:25px auto 0; text-align:center; color:var(--quiet); font-size:11px; letter-spacing:.075em; line-height:1.8}
+    .toast {position:fixed; bottom:26px; left:50%; transform:translate(-50%,14px); border:1px solid var(--line); border-radius:6px; background:var(--paper); color:var(--ink); padding:12px 18px; box-shadow:0 5px 30px var(--shadow); opacity:0; pointer-events:none; transition:opacity .2s,transform .2s; font-size:13px; white-space:nowrap; z-index:5}
+    .toast.show {opacity:1; transform:translate(-50%,0)}
+    [hidden] {display:none!important}
+    .received {min-height:690px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:70px 0}
+    .received-mark {color:var(--accent); width:70px; height:70px; display:grid; place-items:center; background:var(--soft); border-radius:50%; margin-bottom:30px}
+    .received h2 {font-family:"Noto Serif SC","Songti SC","SimSun",serif; font-weight:500; font-size:28px; line-height:1.75; margin:0 0 15px; letter-spacing:.04em}
+    .received p {font-size:13px; color:var(--body); line-height:2; margin:0}
+    .reopen {margin-top:35px; min-height:44px; background:none; color:var(--accent); font-size:12px; border:0; border-bottom:1px solid var(--line); padding:10px 2px}
+    .sun {display:none}
+    [data-theme="dark"] .moon {display:none}
+    [data-theme="dark"] .sun {display:block}
+    @keyframes arrive {from {opacity:0;transform:translateY(8px)} to {opacity:1;transform:translateY(0)}}
+    @media(min-width:1500px) {main {padding-top:55px}}
+    @media(max-width:640px) {
+      .topbar {height:72px;padding:0 23px}
+      .brand-tools {gap:19px}
+      .brand {font-size:18px}
+      main {padding:16px 16px 30px}
+      .letter {padding:34px 26px 26px; border-radius:5px}
+      .eyebrow {font-size:11px; letter-spacing:.05em}
+      .envelope {right:23px; top:24px; width:56px; height:56px}
+      h1 {font-size:28px; margin:32px 0 24px; line-height:1.65; letter-spacing:0}
+      .copy {font-size:13px; line-height:2.1; letter-spacing:.01em}
+      .copy p {margin-bottom:19px}
+      .desktop-break {display:none}
+      .pause {gap:11px; margin:24px 0}
+      .pause-line {width:16px}
+      blockquote {font-size:18px; letter-spacing:0}
+      .signature {font-size:11px; margin-top:26px}
+      .actions {margin-top:28px; padding-top:20px}
+      .accept {padding:11px 16px; gap:23px}
+      .copy-button {font-size:11px; gap:6px}
+      .under-note {font-size:10px;margin-top:23px}
+      .received {min-height:620px}
+      .received h2 {font-size:24px}
+    }
+    @media(max-width:340px) {.letter{padding:30px 20px 24px} h1{font-size:25px} blockquote{font-size:16px}.accept{gap:12px}}
+    @media(prefers-reduced-motion:reduce) {*,*::before,*::after {animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <button class="back" id="back" type="button" aria-label="返回">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+      返回
+    </button>
+    <div class="brand-tools">
+      <span class="brand" aria-label="Anoxia">Anoxia.</span>
+      <button class="theme" id="theme" type="button" aria-label="切换深色模式" aria-pressed="false">
+        <svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M20 15.2A8.7 8.7 0 0 1 8.8 4 8.7 8.7 0 1 0 20 15.2Z"/></svg>
+        <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg>
+      </button>
+    </div>
+  </header>
+  <main>
+    <article class="letter" aria-labelledby="letter-title">
+      <div id="letter-content">
+        <p class="eyebrow">给偶然来到这里的你</p>
+        <svg class="envelope" viewBox="0 0 90 80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M13 32 44 11l32 21v33H13V32Z" fill="var(--soft)" stroke-width="1.1"/>
+          <path d="M25 40V20h39v22" fill="var(--paper)" stroke-width="1.1"/>
+          <path d="M34 28h21m-21 7h16" stroke-width="1" opacity=".45"/>
+          <path d="m13 32 31 22 32-22M13 65l23-18m40 18L53 47" stroke-width="1.1"/>
+          <path d="M43 43c-4-5-8 1 1 6 9-5 5-11 1-6l-1 1-1-1Z" fill="currentColor" stroke="none"/>
+        </svg>
+        <h1 id="letter-title">谢谢你，<br>愿意多停留一会儿。</h1>
+        <div class="copy">
+          <p>做 Anoxia 的时候，也有过想放弃的日子。<br class="desktop-break">修好一个问题，又遇到下一个。忙了很久，好像只往前走了一点。</p>
+          <p>你大概也有过这样的时刻。<br class="desktop-break">认真做的事，暂时没有回音；想说的话，打好又删掉。</p>
+          <div class="pause">
+            <span class="pause-line" aria-hidden="true"></span>
+            <blockquote id="quote">没被看见的努力，也算数。</blockquote>
+          </div>
+          <p class="closing">这个小小的地方，会继续慢慢变好。<br class="desktop-break">愿你在这里，能把想说的话说出来，也被好好听见。</p>
+        </div>
+        <div class="signature">Anoxia 的开发者</div>
+        <div class="actions">
+          <button class="copy-button" id="copy" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M15 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+            留住这句话
+          </button>
+          <button class="accept" id="accept" type="button">收下了
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m-5-5 5 5-5 5"/></svg>
+          </button>
+        </div>
+      </div>
+      <section class="received" id="received" aria-labelledby="received-title" hidden>
+        <div class="received-mark" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20S3 14.8 3 8.8a4.8 4.8 0 0 1 9-2.1 4.8 4.8 0 0 1 9 2.1C21 14.8 12 20 12 20Z"/></svg></div>
+        <h2 id="received-title" tabindex="-1">愿重要的话，<br>都有回音。</h2>
+        <p>谢谢你的停留。<br>我们，下次见。</p>
+        <button class="reopen" id="reopen" type="button">再读一遍</button>
+      </section>
+    </article>
+    <p class="under-note">藏在第七次点击之后的一点心意。</p>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const root = document.documentElement;
+    const theme = document.getElementById('theme');
+    const content = document.getElementById('letter-content');
+    const received = document.getElementById('received');
+    const toast = document.getElementById('toast');
+    let toastTimer;
+    function setTheme(dark) {
+      root.dataset.theme = dark ? 'dark' : 'light';
+      theme.setAttribute('aria-pressed', String(dark));
+      theme.setAttribute('aria-label', dark ? '切换浅色模式' : '切换深色模式');
+    }
+    setTheme(matchMedia('(prefers-color-scheme: dark)').matches);
+    theme.addEventListener('click', () => setTheme(root.dataset.theme !== 'dark'));
+    function closeLetter() {
+      content.hidden = true;
+      received.hidden = false;
+      document.querySelector('.letter').setAttribute('aria-labelledby','received-title');
+      document.getElementById('received-title').focus({preventScroll:true});
+      window.scrollTo({top:0, behavior:'auto'});
+    }
+    document.getElementById('accept').addEventListener('click', closeLetter);
+    document.getElementById('back').addEventListener('click', closeLetter);
+    document.getElementById('reopen').addEventListener('click', () => {
+      received.hidden = true;
+      content.hidden = false;
+      document.querySelector('.letter').setAttribute('aria-labelledby','letter-title');
+      document.getElementById('accept').focus({preventScroll:true});
+      window.scrollTo({top:0, behavior:'auto'});
+    });
+    document.getElementById('copy').addEventListener('click', async () => {
+      let message;
+      try {
+        await navigator.clipboard.writeText(document.getElementById('quote').textContent);
+        message = '已复制，留给需要的时候。';
+      } catch {
+        message = '可以选中这句话，手动复制。';
+      }
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.classList.add('show');
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+    });
+  </script>
+</body>
+</html>
