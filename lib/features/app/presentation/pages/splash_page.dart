@@ -168,7 +168,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'ANOXIA IM',
+                                'Anoxia',
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 6.0,

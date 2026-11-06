@@ -12,7 +12,7 @@ namespace {
 
 constexpr wchar_t kSingleInstanceMutexName[] =
   L"Anoxia.Client.SingleInstance";
-constexpr wchar_t kMainWindowTitle[] = L"anoxia Im";
+constexpr wchar_t kMainWindowTitle[] = L"Anoxia";
 HWND FindExistingMainWindow() {
   return FindWindowW(nullptr, kMainWindowTitle);
 }

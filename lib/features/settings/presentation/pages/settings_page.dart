@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
+import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'package:anoxia/features/me/presentation/pages/change_password_page.dart';
 import 'package:anoxia/features/me/presentation/pages/personal_qr_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/account_switch_page.dart';
@@ -49,6 +50,8 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
+  final _splitViewKey = GlobalKey<SettingsSplitViewState>();
+
   /// 反馈表单 Key
   final _feedbackFormKey = GlobalKey<FormState>();
 
@@ -75,14 +78,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _navigateToUpdatePage(AppUpdateInfo info) {
-    UpdateRoute(
-      hasUpdate: info.hasUpdate,
-      latestVersion: info.latestVersion,
-      downloadUrl: info.downloadUrl,
-      releaseNotes: info.releaseNotes,
-      forceUpdate: info.forceUpdate,
-      minSupportVersion: info.minSupportVersion,
-    ).push(context);
+    // 直接保留完整更新信息（包括大小与哈希），避免路由参数丢失校验字段。
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => UpdatePage(updateInfo: info)),
+    );
   }
 
   void _navigateToOpenSourceLicenses() {
@@ -270,6 +269,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         title: Text('settings_page_title'.tr()),
       ),
       body: SettingsSplitView(
+        key: _splitViewKey,
         joinedPanels: flat,
         destinations: [
           SettingsDestination(
@@ -421,11 +421,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           SettingsDestination(
             title: 'settings_page_about_title'.tr(),
+            showHeader: false,
             subtitle: 'settings_page_about_subtitle'.tr(),
             icon: HugeIcons.strokeRoundedInformationCircle,
             // 有新版本时在导航项上同步小红点，与侧边栏设置图标保持一致。
             showBadge: hasUpdateBadge,
-            builder: (_) => SettingsAboutSupportSection(
+            builder: (detailContext) => SettingsAboutSupportSection(
               appVersionText: appVersionText,
               hasAppUpdate: hasUpdateBadge,
               pageState: pageState,
@@ -433,6 +434,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               onNavigateToUpdatePage: _navigateToUpdatePage,
               onOpenOpenSourceLicenses: _navigateToOpenSourceLicenses,
               onOpenDeveloperTribute: _openDeveloperTribute,
+              onOpenFeedback: () {
+                final splitView = _splitViewKey.currentState;
+                if (splitView == null) return;
+                if (splitView.isCompact &&
+                    Navigator.of(detailContext).canPop()) {
+                  Navigator.of(detailContext).pop();
+                }
+                splitView.openDestination('settings_feedback_title'.tr());
+              },
             ),
           ),
         ],

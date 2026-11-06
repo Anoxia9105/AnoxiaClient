@@ -470,6 +470,11 @@ class _NoteLinkBubbleState extends State<NoteLinkBubble> {
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(RadiusToken.sm),
+                    ),
+                  ),
                   onPressed: widget.onApply,
                   child: Text('note_link_apply'.tr()),
                 ),

@@ -76,9 +76,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     // 标题由左栏列表面板的 AppBar 提供（与聊天/人员页一致）：
     // 桌面端靠左显示在面板栏内，移动端整页居中显示。
     return Scaffold(
-      backgroundColor: DeviceUtil.useSingleColumnPush(context)
-          ? Theme.of(context).colorScheme.surface
-          : Colors.transparent,
+      backgroundColor: Colors.transparent,
       body: body,
     );
   }
@@ -352,9 +350,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
 /// 与聊天 / 人员页保持一致：桌面端标题靠左，移动端居中。
 Widget favoritesTitleScaffold(BuildContext context, {required Widget child}) {
   return Scaffold(
-    backgroundColor: DeviceUtil.useSingleColumnPush(context)
-        ? Theme.of(context).colorScheme.surface
-        : Colors.transparent,
+    backgroundColor: Colors.transparent,
     appBar: AppBar(
       centerTitle: DeviceUtil.isMobile(context),
       titleSpacing: 16,

@@ -52,7 +52,7 @@ Future<void> _pumpBar(
 
 void main() {
   group('平面贴底底部导航', () {
-    testWidgets('无滑块无胶囊：贴底平面 + 顶部细线分隔', (tester) async {
+    testWidgets('无滑块无胶囊：贴底平面且无顶部边框', (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(() {
@@ -72,12 +72,8 @@ void main() {
       expect(barFinder, findsOneWidget);
       final container = tester.widget<Container>(barFinder);
       final decoration = container.decoration as BoxDecoration?;
-      expect(decoration, isNotNull);
-      // 平面：无圆角、无阴影。
-      expect(decoration!.borderRadius, isNull);
-      expect(decoration.boxShadow, isNull);
-      // 顶部细线分隔内容区。
-      expect(decoration.border?.top, isNotNull);
+      // 平面：无边框、圆角或阴影装饰。
+      expect(decoration, isNull);
 
       // 贴底：底栏底边与屏幕底边对齐（允许 SafeArea 1px 误差）。
       final screenHeight =

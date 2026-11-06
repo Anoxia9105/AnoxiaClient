@@ -12,6 +12,7 @@ class SettingsDestination {
     required this.icon,
     required this.builder,
     this.showBadge = false,
+    this.showHeader = true,
   });
 
   final String title;
@@ -21,6 +22,7 @@ class SettingsDestination {
 
   /// 是否在导航项上显示小红点（如「关于与支持」有新版本时）
   final bool showBadge;
+  final bool showHeader;
 }
 
 /// 与聊天页一致的主从式布局：宽屏左侧列表、右侧详情，窄屏进入详情页。
@@ -37,10 +39,22 @@ class SettingsSplitView extends StatefulWidget {
   final bool joinedPanels;
 
   @override
-  State<SettingsSplitView> createState() => _SettingsSplitViewState();
+  State<SettingsSplitView> createState() => SettingsSplitViewState();
 }
 
-class _SettingsSplitViewState extends State<SettingsSplitView> {
+class SettingsSplitViewState extends State<SettingsSplitView> {
+  bool isCompact = true;
+
+  void openDestination(String title) {
+    final index = widget.destinations.indexWhere((item) => item.title == title);
+    if (index < 0) return;
+    if (isCompact) {
+      _openCompactDetail(context, index);
+    } else {
+      setState(() => _selectedIndex = index);
+    }
+  }
+
   int _selectedIndex = 0;
 
   @override
@@ -55,7 +69,8 @@ class _SettingsSplitViewState extends State<SettingsSplitView> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < widget.compactBreakpoint) {
+        isCompact = constraints.maxWidth < widget.compactBreakpoint;
+        if (isCompact) {
           return _SettingsNavigationList(
             destinations: widget.destinations,
             onSelected: (index) => _openCompactDetail(context, index),
@@ -228,7 +243,9 @@ class _SettingsDetailPanel extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: joined
+        color: !destination.showHeader
+            ? colorScheme.surface
+            : joined
             ? Colors.transparent
             : compact
             ? colorScheme.surface
@@ -244,54 +261,55 @@ class _SettingsDetailPanel extends StatelessWidget {
       ),
       child: CustomScrollView(
         slivers: [
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              compact ? 16 : 24,
-              compact ? 20 : 24,
-              compact ? 16 : 24,
-              8,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      HugeIcon(
-                        icon: destination.icon,
-                        size: 30,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: SpacingToken.md),
-                      Expanded(
-                        child: Text(
-                          destination.title,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
+          if (destination.showHeader)
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                compact ? 16 : 24,
+                compact ? 20 : 24,
+                compact ? 16 : 24,
+                8,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        HugeIcon(
+                          icon: destination.icon,
+                          size: 30,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: SpacingToken.md),
+                        Expanded(
+                          child: Text(
+                            destination.title,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    destination.subtitle,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      height: 1.45,
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: SpacingToken.lg),
-                  Divider(
-                    height: 1,
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.55),
-                  ),
-                  const SizedBox(height: SpacingToken.sm),
-                ],
+                    const SizedBox(height: 6),
+                    Text(
+                      destination.subtitle,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: SpacingToken.lg),
+                    Divider(
+                      height: 1,
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.55),
+                    ),
+                    const SizedBox(height: SpacingToken.sm),
+                  ],
+                ),
               ),
             ),
-          ),
           SliverPadding(
             padding: EdgeInsets.fromLTRB(
               compact ? 12 : 20,

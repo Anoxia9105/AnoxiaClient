@@ -199,7 +199,7 @@ class _WelcomeState extends State<Welcome> with TickerProviderStateMixin {
                       ),
                       const SizedBox(width: 7),
                       Text(
-                        'ANOXIA IM',
+                        'Anoxia',
                         style: theme.textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           letterSpacing: 2.4,

@@ -133,6 +133,14 @@ class QuillStyleConfig {
         header2: codeTextStyle,
         header3: codeTextStyle,
       ),
+      // 列表标记与正文共用字号、字体，避免 Quill 默认 leading 样式偏大。
+      leading: DefaultTextBlockStyle(
+        baseTextStyle,
+        baseHorizontalSpacing,
+        baseVerticalSpacing,
+        VerticalSpacing.zero,
+        null,
+      ),
       // 列表样式
       lists: DefaultListBlockStyle(
         baseTextStyle,

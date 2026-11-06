@@ -11,8 +11,7 @@ import '../vibrating_badge.dart';
 
 /// 移动端底部导航栏（平面贴底版）
 ///
-/// - 无悬浮胶囊、无毛玻璃、无滑块动画：[Container] 直接贴底，
-///   顶部一条 [Divider] 细线分隔内容区。
+/// - 无悬浮胶囊、无毛玻璃、无滑块动画：[Container] 直接贴底。
 /// - 选中态只加粗：图标描线加粗 + 文字 [FontWeight.w700]，
 ///   颜色跟随主题 [ColorScheme.primary]；未选中用
 ///   [ColorScheme.onSurfaceVariant] 弱化。
@@ -35,8 +34,6 @@ class MobileBottomBar extends ConsumerWidget {
     final pendingRequests = ref.watch(pendingRequestCountProvider).value ?? 0;
     final totalUnread = ref.watch(totalUnreadCountProvider);
     final currentItem = layout.items[layout.currentIndex];
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     const chatIndex = 0;
     const contactsIndex = 1;
 
@@ -50,16 +47,6 @@ class MobileBottomBar extends ConsumerWidget {
       top: false,
       child: Container(
         key: const Key('mobile-bottom-bar'),
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: colorScheme.outlineVariant.withValues(
-                alpha: isDark ? 0.24 : 0.5,
-              ),
-              width: 0.5,
-            ),
-          ),
-        ),
         padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
         child: Row(
           children: visibleEntries.map((entry) {

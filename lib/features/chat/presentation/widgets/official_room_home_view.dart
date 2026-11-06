@@ -183,7 +183,7 @@ class _OfficialRoomHomeViewState extends ConsumerState<OfficialRoomHomeView>
   Future<void> _shareApp() async {
     try {
       await SharePlus.instance.share(
-        ShareParams(title: 'Anoxia IM Client', text: _officialHomePageUrl),
+        ShareParams(title: 'Anoxia', text: _officialHomePageUrl),
       );
     } catch (_) {
       if (!mounted) return;

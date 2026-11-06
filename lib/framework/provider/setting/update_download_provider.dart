@@ -5,7 +5,7 @@ import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/update/domain/update_download_target.dart';
 import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/network/update_package_downloader.dart';
 import 'package:anoxia/platform/shims/app_exit_shim.dart';
 // Windows 桌面安装前需隐藏主窗口（shim 条件导出，Web 编译安全）
 import 'package:anoxia/platform/shims/window_manager_shim.dart' as desktop;
@@ -27,7 +27,7 @@ import 'update_package_file_helper.dart';
 const int kUpdateReadyNotificationId = 990001;
 
 /// 下载阶段
-enum UpdateDownloadPhase { idle, downloading, ready, failed }
+enum UpdateDownloadPhase { idle, downloading, paused, ready, failed }
 
 /// 更新下载状态（不可变快照，UI 直接 watch）
 @immutable
@@ -66,7 +66,9 @@ class UpdateDownloadState {
     this.bannerDismissed = false,
   });
 
-  bool get isBusy => phase == UpdateDownloadPhase.downloading;
+  bool get isBusy =>
+      phase == UpdateDownloadPhase.downloading ||
+      phase == UpdateDownloadPhase.paused;
 
   UpdateDownloadState copyWith({
     UpdateDownloadPhase? phase,
@@ -109,7 +111,14 @@ class UpdateDownloadState {
 /// - iOS：不能旁加载安装包，不自动下载，仍走应用商店/浏览器路径；
 /// - Android / Windows / macOS / Linux：支持静默下载 + 就绪安装。
 class UpdateDownloadController extends Notifier<UpdateDownloadState> {
+  UpdateDownloadController({Future<String> Function()? resolveSaveDir})
+    : _resolveSaveDir = resolveSaveDir ?? resolveUpdateSaveDir;
+
+  final Future<String> Function() _resolveSaveDir;
   CancelToken? _cancelToken;
+  UpdatePackageDownloader? _downloader;
+  Future<void>? _downloadTask;
+  bool _userPaused = false;
 
   /// 当前任务标识（"version|url"），用于幂等去重
   String _activeKey = '';
@@ -122,6 +131,7 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
     ref.onDispose(() {
       _cancelToken?.cancel('provider disposed');
       _cancelToken = null;
+      _downloader?.dispose();
     });
 
     // 监听版本检查结果：发现新版本 → 按策略自动后台下载
@@ -155,9 +165,9 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
     // 用户允许流量下载时不再探测网络类型
     if (ref.read(updateCellularDownloadProvider)) return true;
     try {
-      final results = await Connectivity()
-          .checkConnectivity()
-          .timeout(const Duration(seconds: 3));
+      final results = await Connectivity().checkConnectivity().timeout(
+        const Duration(seconds: 3),
+      );
       return results.contains(ConnectivityResult.wifi) ||
           results.contains(ConnectivityResult.ethernet);
     } catch (_) {
@@ -176,10 +186,60 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
     if (state.isBusy && _activeKey == key) return; // 同目标正在下载
     if (state.phase == UpdateDownloadPhase.ready &&
         state.version == info.latestVersion &&
+        state.url == info.downloadUrl &&
         state.filePath.isNotEmpty) {
       return; // 同版本已就绪
     }
 
+    // 先同步占有任务，目录解析、旧连接关闭期间也不能重复启动。
+    final previousTask = _downloadTask;
+    _cancelInflight();
+    _userPaused = false;
+    _downloader?.resume();
+    if (!ref.mounted) return;
+    final token = CancelToken();
+    _cancelToken = token;
+    _activeKey = key;
+    _lastNotifiedBytes = 0;
+    state = UpdateDownloadState(
+      phase: UpdateDownloadPhase.downloading,
+      version: info.latestVersion,
+      url: info.downloadUrl,
+      totalBytes: info.fileSize,
+    );
+    final task = _downloadAfterPrevious(info, token, previousTask);
+    _downloadTask = task;
+    await task;
+    if (identical(_downloadTask, task)) _downloadTask = null;
+  }
+
+  bool _isCurrent(CancelToken token) =>
+      ref.mounted && identical(_cancelToken, token) && !token.isCancelled;
+
+  Future<void> _downloadAfterPrevious(
+    AppUpdateInfo info,
+    CancelToken token,
+    Future<void>? previous,
+  ) async {
+    try {
+      // 等旧任务关闭文件句柄，防止快速重试时两个任务同时写同一路径。
+      await previous;
+      if (!_isCurrent(token)) return;
+      await _downloadPackage(info, token);
+    } catch (error) {
+      if (!_isCurrent(token)) return;
+      debugLog('更新安装包处理失败: $error');
+      _activeKey = '';
+      state = UpdateDownloadState(
+        phase: UpdateDownloadPhase.failed,
+        version: info.latestVersion,
+        url: info.downloadUrl,
+        errorMessage: 'update_error_generic_safe',
+      );
+    }
+  }
+
+  Future<void> _downloadPackage(AppUpdateInfo info, CancelToken token) async {
     UpdateDownloadTarget target;
     try {
       target = UpdateDownloadTarget.parse(info.downloadUrl);
@@ -194,8 +254,10 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
 
     final String dir;
     try {
-      dir = await resolveUpdateSaveDir();
+      dir = await _resolveSaveDir();
+      if (!_isCurrent(token)) return;
     } catch (e) {
+      if (!_isCurrent(token)) return;
       debugLog('解析更新保存目录失败: $e');
       state = UpdateDownloadState(
         phase: UpdateDownloadPhase.failed,
@@ -208,41 +270,29 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
     final fileName = _targetFileName(target.fileName, info.latestVersion);
     final savePath = p.join(dir, fileName);
 
-    // 版本切换或重下：先取消在途任务
-    await _cancelInflight();
-
-    // 清理旧版本残留（保留本次目标文件）
+    // 清理旧版本残留（保留本次目标文件）。
     unawaited(cleanupUpdateFiles(dir, keepName: fileName));
 
-    _activeKey = key;
-    _lastNotifiedBytes = 0;
-    final token = CancelToken();
-    _cancelToken = token;
-
-    state = UpdateDownloadState(
-      phase: UpdateDownloadPhase.downloading,
-      version: info.latestVersion,
-      url: info.downloadUrl,
-      totalBytes: info.fileSize,
-    );
-
+    final downloader = _downloader ??= UpdatePackageDownloader();
+    if (_userPaused) downloader.pause();
     try {
-      await DioClient().download(
+      await downloader.download(
         info.downloadUrl,
         savePath,
         cancelToken: token,
-        deleteOnError: true,
+        onPauseChanged: (paused) {
+          if (!_isCurrent(token) || !state.isBusy) return;
+          final phase = paused
+              ? UpdateDownloadPhase.paused
+              : UpdateDownloadPhase.downloading;
+          if (state.phase != phase) state = state.copyWith(phase: phase);
+        },
         onReceiveProgress: (received, total) {
-          _emitProgress(received, total);
+          if (_isCurrent(token)) _emitProgress(received, total);
         },
       );
     } on DioException catch (e) {
-      if (CancelToken.isCancel(e)) {
-        // 主动取消：回到 idle，等新版本任务接管
-        _activeKey = '';
-        state = const UpdateDownloadState();
-        return;
-      }
+      if (!_isCurrent(token)) return;
       debugLog('更新安装包下载失败: $e');
       _activeKey = '';
       state = UpdateDownloadState(
@@ -252,6 +302,7 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
       );
       return;
     } catch (e) {
+      if (!_isCurrent(token)) return;
       debugLog('更新安装包下载异常: $e');
       _activeKey = '';
       state = UpdateDownloadState(
@@ -262,8 +313,11 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
       return;
     }
 
+    if (!_isCurrent(token)) return;
+
     // —— 完整性校验 ——
     final actualLength = await updateFileLength(savePath);
+    if (!_isCurrent(token)) return;
     if (actualLength <= 0) {
       _activeKey = '';
       state = UpdateDownloadState(
@@ -276,6 +330,7 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
     if (info.fileSize > 0 && actualLength != info.fileSize) {
       debugLog('安装包大小校验失败: 期望 ${info.fileSize}，实际 $actualLength');
       await _deleteQuietly(savePath);
+      if (!_isCurrent(token)) return;
       _activeKey = '';
       state = UpdateDownloadState(
         phase: UpdateDownloadPhase.failed,
@@ -286,10 +341,12 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
     }
     if (info.fileHash.isNotEmpty) {
       final actualHash = await updateFileSha256Hex(savePath);
+      if (!_isCurrent(token)) return;
       if (actualHash.isEmpty ||
-          !actualHash.toLowerCase().endsWith(info.fileHash.toLowerCase())) {
+          actualHash.toLowerCase() != info.fileHash.toLowerCase()) {
         debugLog('安装包 SHA-256 校验失败: 期望 ${info.fileHash}，实际 $actualHash');
         await _deleteQuietly(savePath);
+        if (!_isCurrent(token)) return;
         _activeKey = '';
         state = UpdateDownloadState(
           phase: UpdateDownloadPhase.failed,
@@ -313,10 +370,22 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
 
     unawaited(_notifyReady(info));
 
-    // 强制更新：下载完成直接拉起安装器，不留「稍后」
-    if (info.forceUpdate) {
-      unawaited(installReadyUpdate());
-    }
+    // 即使强制更新，也由用户在更新页确认安装；强制状态只限制跳过。
+  }
+
+  /// 手动暂停保留同一下载任务与文件句柄关闭顺序，不重新创建下载。
+  void pauseDownload() {
+    if (!state.isBusy) return;
+    _userPaused = true;
+    _downloader?.pause();
+    state = state.copyWith(phase: UpdateDownloadPhase.paused);
+  }
+
+  void resumeDownload() {
+    if (state.phase != UpdateDownloadPhase.paused) return;
+    _userPaused = false;
+    state = state.copyWith(phase: UpdateDownloadPhase.downloading);
+    _downloader?.resume();
   }
 
   /// 安装已就绪的更新包
@@ -369,7 +438,8 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
 
   /// 清空状态（版本切换/测试用）
   void reset() {
-    unawaited(_cancelInflight());
+    _cancelInflight();
+    _activeKey = '';
     state = const UpdateDownloadState();
   }
 
@@ -384,21 +454,26 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
 
   /// 进度上报（节流：字节增量 >= 256KB 或首次回调时才更新 state）
   void _emitProgress(int received, int total) {
-    if (total <= 0) return;
-    if (_lastNotifiedBytes != 0 && received - _lastNotifiedBytes < 256 * 1024) {
+    final effectiveTotal = total > 0 ? total : state.totalBytes;
+    if (_lastNotifiedBytes != 0 &&
+        received >= _lastNotifiedBytes &&
+        received - _lastNotifiedBytes < 256 * 1024 &&
+        (effectiveTotal <= 0 || received < effectiveTotal)) {
       return;
     }
     _lastNotifiedBytes = received;
     if (!state.isBusy) return;
     state = state.copyWith(
-      progress: (received / total).clamp(0.0, 1.0),
+      progress: effectiveTotal > 0
+          ? (received / effectiveTotal).clamp(0.0, 1.0)
+          : 0,
       receivedBytes: received,
-      totalBytes: total,
+      totalBytes: effectiveTotal,
     );
   }
 
   /// 取消在途下载任务
-  Future<void> _cancelInflight() async {
+  void _cancelInflight() {
     final token = _cancelToken;
     _cancelToken = null;
     if (token == null) return;

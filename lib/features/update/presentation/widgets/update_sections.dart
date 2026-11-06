@@ -1,389 +1,178 @@
+import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
+import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import 'package:anoxia/framework/theme/radius_token.dart';
-import 'package:anoxia/framework/theme/spacing_token.dart';
-import 'package:anoxia/gen/assets.gen.dart';
-
-/// 更新页面相关组件集合
-///
-/// 统一约定：
-/// - 配色全部取自 [ColorScheme]，不写死颜色，保证与用户主题（16 套强调色 + 亮/暗）一致
-/// - 圆角/间距全部取自 [RadiusToken] / [SpacingToken]
-/// - 文案全部走 easy_localization
-
-/// 更新页卡片通用装饰
-BoxDecoration updateCardDecoration(ColorScheme cs) => BoxDecoration(
-  color: cs.surfaceContainerLow,
-  borderRadius: BorderRadius.circular(RadiusToken.xl),
-  border: Border.all(color: cs.outlineVariant.withValues(alpha: .6)),
-);
-
-/// 版本号显示：已带 v 前缀时不再重复添加
-String _versionLabel(String version) {
-  final v = version.trim();
-  if (v.isEmpty) return '-';
-  return v.startsWith('v') ? v : 'v$v';
-}
-
-/// 更新头部卡片
-///
-/// 展示品牌 Logo、版本对比（当前 → 最新）以及强制更新提示
+/// 更新页品牌与版本直接平铺，配色沿用用户主题。
 class UpdateHeroCard extends StatelessWidget {
-  final String currentVersion;
-  final String latestVersion;
-  final bool isForceUpdate;
-
   const UpdateHeroCard({
     super.key,
     required this.currentVersion,
     required this.latestVersion,
     required this.isForceUpdate,
   });
-
+  final String currentVersion;
+  final String latestVersion;
+  final bool isForceUpdate;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        SpacingToken.xl,
-        SpacingToken.xl,
-        SpacingToken.xl,
-        SpacingToken.lg,
-      ),
-      decoration: updateCardDecoration(cs),
-      child: Column(
-        children: [
-          SizedBox(
-            width: 64,
-            height: 64,
-            child: Assets.images.appLogo.image(
+    final compact = MediaQuery.sizeOf(context).width < 650;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Assets.images.appLogo.image(
+              key: const Key('update-flat-logo'),
+              width: compact ? 64 : 80,
+              height: compact ? 72 : 88,
               fit: BoxFit.contain,
-              isAntiAlias: true,
-              filterQuality: FilterQuality.high,
+              semanticLabel: 'Anoxia',
             ),
-          ),
-          const SizedBox(height: SpacingToken.lg),
-          Text(
-            'update_new_version'.tr(),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface,
-            ),
-          ),
-          if (isForceUpdate) ...[
-            const SizedBox(height: SpacingToken.sm),
-            const UpdateForceBadge(),
-          ],
-          const SizedBox(height: SpacingToken.sm),
-          Text(
-            (isForceUpdate ? 'update_hero_subtitle_force' : 'update_hero_subtitle')
-                .tr(),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: cs.onSurfaceVariant,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: SpacingToken.xl),
-          Row(
-            children: [
-              Expanded(
-                child: _VersionPill(
-                  label: 'update_current_version'.tr(),
-                  version: currentVersion,
-                  highlight: false,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingToken.md,
-                ),
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedArrowRight01,
-                  size: 18,
-                  color: cs.outline,
-                ),
-              ),
-              Expanded(
-                child: _VersionPill(
-                  label: 'update_latest_version'.tr(),
-                  version: latestVersion,
-                  highlight: true,
-                ),
-              ),
-            ],
-          ),
-          if (isForceUpdate) ...[
-            const SizedBox(height: SpacingToken.lg),
-            const UpdateForceNotice(),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// 强制更新标识（本地化，替代原先写死的 FORCE 角标）
-class UpdateForceBadge extends StatelessWidget {
-  const UpdateForceBadge({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: cs.errorContainer,
-        borderRadius: BorderRadius.circular(RadiusToken.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedAlert02,
-            size: 13,
-            color: cs.onErrorContainer,
-          ),
-          const SizedBox(width: 5),
-          Text(
-            'update_force_badge'.tr(),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: cs.onErrorContainer,
-              fontWeight: FontWeight.w700,
-              letterSpacing: .3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 强制更新说明条：明确告知不可跳过
-class UpdateForceNotice extends StatelessWidget {
-  const UpdateForceNotice({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(SpacingToken.md),
-      decoration: BoxDecoration(
-        color: cs.errorContainer,
-        borderRadius: BorderRadius.circular(RadiusToken.lg),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedAlert02,
-              size: 18,
-              color: cs.onErrorContainer,
-            ),
-          ),
-          const SizedBox(width: SpacingToken.sm),
-          Expanded(
-            child: Text(
-              'update_force_notice'.tr(),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.onErrorContainer,
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 版本号展示块
-class _VersionPill extends StatelessWidget {
-  final String label;
-  final String version;
-  final bool highlight;
-
-  const _VersionPill({
-    required this.label,
-    required this.version,
-    required this.highlight,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final fg = highlight ? cs.onPrimaryContainer : cs.onSurface;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: SpacingToken.md),
-      decoration: BoxDecoration(
-        color: highlight ? cs.primaryContainer : cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(RadiusToken.lg),
-        border: highlight
-            ? null
-            : Border.all(color: cs.outlineVariant.withValues(alpha: .6)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: fg.withValues(alpha: .72),
-            ),
-          ),
-          const SizedBox(height: SpacingToken.xs),
-          Text(
-            _versionLabel(version),
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 更新日志卡片组件
-///
-/// 显示新版本的更新内容列表
-class UpdateReleaseNotesCard extends StatelessWidget {
-  final List<String> notes;
-
-  const UpdateReleaseNotesCard({super.key, required this.notes});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(SpacingToken.xl),
-      decoration: updateCardDecoration(cs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedFile01,
-                size: 16,
-                color: cs.primary,
-              ),
-              const SizedBox(width: SpacingToken.xs),
-              Text(
-                'update_release_notes'.tr(),
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingToken.sm,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(RadiusToken.pill),
-                  color: cs.secondaryContainer,
-                ),
-                child: Text(
-                  '${notes.length}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: cs.onSecondaryContainer,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: SpacingToken.md),
-          Divider(height: 1, color: cs.outlineVariant.withValues(alpha: .6)),
-          const SizedBox(height: SpacingToken.md),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 220),
-            child: SingleChildScrollView(
+            const SizedBox(width: SpacingToken.xl),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: notes.map((line) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: cs.primary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            line,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: cs.onSurfaceVariant,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                      ],
+                children: [
+                  Text(
+                    'Anoxia',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      letterSpacing: 1.2,
                     ),
-                  );
-                }).toList(),
+                  ),
+                  const SizedBox(height: SpacingToken.xs),
+                  Text(
+                    'update_new_version'.tr(),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: SpacingToken.sm),
+                  Text(
+                    'update_download_intro'.tr(),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
+          ],
+        ),
+        const SizedBox(height: SpacingToken.xl),
+        Wrap(
+          spacing: SpacingToken.md,
+          runSpacing: SpacingToken.sm,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            if (currentVersion.isNotEmpty)
+              Text(
+                '${'update_current_version'.tr()} $currentVersion',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 16),
+            Text(latestVersion, style: theme.textTheme.titleSmall),
+            if (isForceUpdate) const UpdateForceBadge(),
+          ],
+        ),
+        const SizedBox(height: SpacingToken.lg),
+        Divider(
+          height: 1,
+          color: theme.colorScheme.outlineVariant.withValues(alpha: .5),
+        ),
+        if (isForceUpdate) ...[
+          const SizedBox(height: SpacingToken.lg),
+          const UpdateForceNotice(),
         ],
-      ),
+      ],
     );
   }
 }
 
-/// 更新操作区域组件
-///
-/// 四种状态：
-/// - 下载中：展示进度条与百分比
-/// - 已就绪：安装包下载完成，主按钮变「立即安装」
-/// - 移动端已跳转浏览器：提示用户到浏览器完成安装，可重新打开
-/// - 默认：主按钮「立即升级」（失败重试时变为「重试下载」）
+class UpdateForceBadge extends StatelessWidget {
+  const UpdateForceBadge({super.key});
+  @override
+  Widget build(BuildContext context) => Text(
+    'update_force_badge'.tr(),
+    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+      color: Theme.of(context).colorScheme.error,
+    ),
+  );
+}
+
+class UpdateForceNotice extends StatelessWidget {
+  const UpdateForceNotice({super.key});
+  @override
+  Widget build(BuildContext context) => Text(
+    'update_force_notice'.tr(),
+    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+      height: 1.7,
+    ),
+  );
+}
+
+class UpdateReleaseNotesCard extends StatelessWidget {
+  const UpdateReleaseNotesCard({super.key, required this.notes});
+  final List<String> notes;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('update_release_notes'.tr(), style: theme.textTheme.titleSmall),
+        const SizedBox(height: SpacingToken.xl),
+        for (var i = 0; i < notes.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: SpacingToken.lg),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 32,
+                  child: Text(
+                    '${i + 1}'.padLeft(2, '0'),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 2,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    notes[i],
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.8,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+String formatUpdateBytes(int bytes) {
+  if (bytes < 1024) return '${bytes.clamp(0, 1024)} B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+  if (bytes < 1024 * 1024 * 1024) {
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+  return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+}
+
+/// 每个阶段只有一个主要操作。下载中与暂停态共用同一任务。
 class UpdateActionArea extends StatelessWidget {
-  final bool isDownloading;
-  final bool hasStarted;
-  final bool openedInBrowser;
-  final bool downloadFinished;
-  final double progress;
-
-  /// 安装包已就绪（后台静默下载完成），可直接安装
-  final bool isReady;
-
-  /// 一键安装回调（[isReady] 为 true 时生效）
-  final VoidCallback? onInstall;
-
-  final VoidCallback onStartDownload;
-
   const UpdateActionArea({
     super.key,
     required this.isDownloading,
@@ -393,236 +182,197 @@ class UpdateActionArea extends StatelessWidget {
     required this.progress,
     required this.onStartDownload,
     this.isReady = false,
+    this.isPaused = false,
     this.onInstall,
+    this.onPause,
+    this.onResume,
+    this.receivedBytes = 0,
+    this.totalBytes = 0,
+    this.errorMessage,
+    this.installing = false,
   });
-
-  String _downloadText() {
-    if (downloadFinished) {
-      return 'update_preparing_install'.tr();
-    }
-    return 'update_downloading'.tr();
-  }
-
+  final bool isDownloading;
+  final bool isPaused;
+  final bool hasStarted;
+  final bool openedInBrowser;
+  final bool downloadFinished;
+  final bool isReady;
+  final bool installing;
+  final double progress;
+  final int receivedBytes;
+  final int totalBytes;
+  final String? errorMessage;
+  final VoidCallback onStartDownload;
+  final VoidCallback? onInstall;
+  final VoidCallback? onPause;
+  final VoidCallback? onResume;
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    if (isDownloading) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final theme = Theme.of(context);
+      final cs = theme.colorScheme;
+      final compact = box.maxWidth < 600;
+      final active = isDownloading || isPaused;
+      final showProgress =
+          active || isReady || (errorMessage != null && receivedBytes > 0);
+      final percentage = (progress.clamp(0.0, 1.0) * 100).toInt();
+      final title = openedInBrowser
+          ? 'update_opened_in_browser'.tr()
+          : errorMessage != null
+          ? errorMessage!
+          : isReady
+          ? 'update_ready_state'.tr()
+          : isPaused
+          ? 'update_paused'.tr()
+          : isDownloading
+          ? 'update_download_active'.tr()
+          : 'update_download_available'.tr();
+      final action = openedInBrowser
+          ? onStartDownload
+          : isReady
+          ? onInstall
+          : isPaused
+          ? onResume
+          : isDownloading
+          ? onPause
+          : onStartDownload;
+      final label = openedInBrowser
+          ? 'update_reopen_browser'
+          : isReady
+          ? 'update_install_now'
+          : isPaused
+          ? 'update_resume_download'
+          : isDownloading
+          ? 'update_pause_download'
+          : errorMessage != null || hasStarted
+          ? 'update_retry_download'
+          : 'update_start_download';
+      final icon = isDownloading
+          ? HugeIcons.strokeRoundedPause
+          : isReady
+          ? HugeIcons.strokeRoundedTick01
+          : HugeIcons.strokeRoundedDownload01;
       return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(SpacingToken.lg),
-        decoration: updateCardDecoration(cs),
+        key: const Key('update-download-panel'),
+        padding: EdgeInsets.symmetric(
+          vertical: SpacingToken.xl,
+          horizontal: compact && active ? 0 : SpacingToken.xl,
+        ),
+        decoration: BoxDecoration(
+          color: compact && active
+              ? Colors.transparent
+              : cs.surfaceContainerLow,
+          borderRadius: compact && active
+              ? null
+              : BorderRadius.circular(RadiusToken.lg),
+          border: compact && active
+              ? Border.symmetric(
+                  horizontal: BorderSide(
+                    color: cs.outlineVariant.withValues(alpha: .5),
+                  ),
+                )
+              : Border.all(color: cs.outlineVariant.withValues(alpha: .5)),
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                HugeIcon(
-                  icon: downloadFinished
-                      ? HugeIcons.strokeRoundedSmartPhone01
-                      : HugeIcons.strokeRoundedDownload04,
-                  size: 18,
-                  color: cs.primary,
-                ),
-                const SizedBox(width: SpacingToken.sm),
-                Expanded(
-                  child: Text(
-                    _downloadText(),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurface,
+            Semantics(
+              liveRegion: true,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: errorMessage == null ? cs.onSurface : cs.error,
+                      ),
                     ),
                   ),
-                ),
-                Text(
-                  '${(progress * 100).clamp(0, 100).toInt()}%',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: cs.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: SpacingToken.sm),
-            LinearProgressIndicator(
-              value: progress <= 0 ? null : progress,
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(RadiusToken.pill),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // 安装包已就绪：主按钮变「立即安装」，一键拉起安装器
-    if (isReady) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(SpacingToken.md),
-            decoration: BoxDecoration(
-              color: cs.primaryContainer.withValues(alpha: .45),
-              borderRadius: BorderRadius.circular(RadiusToken.lg),
-              border: Border.all(
-                color: cs.primary.withValues(alpha: .35),
-              ),
-            ),
-            child: Row(
-              children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedTick01,
-                  size: 18,
-                  color: cs.primary,
-                ),
-                const SizedBox(width: SpacingToken.sm),
-                Expanded(
-                  child: Text(
-                    'update_ready_state'.tr(),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w600,
+                  if (showProgress) ...[
+                    const SizedBox(width: SpacingToken.md),
+                    Text(
+                      '$percentage%',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: SpacingToken.md),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(RadiusToken.lg),
-                ),
-                textStyle: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              onPressed: onInstall,
-              icon: const HugeIcon(
-                icon: HugeIcons.strokeRoundedRocket,
-              ),
-              label: Text('update_install_now'.tr()),
-            ),
-          ),
-        ],
-      );
-    }
-
-    // 移动端跳浏览器安装：不要回落成「重试下载」，避免用户以为下载失败
-    if (openedInBrowser) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(SpacingToken.lg),
-        decoration: updateCardDecoration(cs),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedTick01,
-                  size: 18,
-                  color: cs.primary,
-                ),
-                const SizedBox(width: SpacingToken.sm),
-                Expanded(
-                  child: Text(
-                    'update_opened_in_browser'.tr(),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: cs.onSurfaceVariant,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: SpacingToken.sm),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: onStartDownload,
-                icon: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedDownload01,
-                  size: 16,
-                ),
-                label: Text('update_reopen_browser'.tr()),
+                  ],
+                ],
               ),
             ),
-          ],
-        ),
-      );
-    }
-
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: FilledButton.icon(
-        style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(RadiusToken.lg),
-          ),
-          textStyle: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        onPressed: onStartDownload,
-        icon: const HugeIcon(icon: HugeIcons.strokeRoundedDownload01),
-        label: Text(hasStarted ? 'update_retry_download'.tr() : 'update_now'.tr()),
-      ),
-    );
-  }
-}
-
-/// 更新错误提示卡片组件
-///
-/// 显示更新过程中的错误信息
-class UpdateErrorCard extends StatelessWidget {
-  final String message;
-
-  const UpdateErrorCard({super.key, required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(SpacingToken.md),
-      decoration: BoxDecoration(
-        color: cs.errorContainer,
-        borderRadius: BorderRadius.circular(RadiusToken.lg),
-        border: Border.all(color: cs.error.withValues(alpha: .30)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedAlertCircle,
-              color: cs.onErrorContainer,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: SpacingToken.sm),
-          Expanded(
-            child: Text(
-              message,
+            const SizedBox(height: SpacingToken.lg),
+            if (showProgress) ...[
+              LinearProgressIndicator(
+                key: const Key('update-download-progress'),
+                value: isPaused || isReady || totalBytes > 0 || progress > 0
+                    ? progress.clamp(0.0, 1.0)
+                    : null,
+                minHeight: 6,
+                borderRadius: BorderRadius.circular(RadiusToken.pill),
+                color: isPaused ? cs.onSurfaceVariant : cs.primary,
+                semanticsLabel: 'update_downloading'.tr(),
+                semanticsValue: '$percentage%',
+              ),
+              const SizedBox(height: SpacingToken.md),
+            ],
+            Text(
+              showProgress
+                  ? totalBytes > 0
+                        ? '${formatUpdateBytes(receivedBytes)} / ${formatUpdateBytes(totalBytes)}'
+                        : 'update_size_unknown'.tr(
+                            args: [formatUpdateBytes(receivedBytes)],
+                          )
+                  : totalBytes > 0
+                  ? 'update_package_size'.tr(
+                      args: [formatUpdateBytes(totalBytes)],
+                    )
+                  : 'update_package_unknown'.tr(),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.onErrorContainer,
-                height: 1.5,
+                color: cs.onSurfaceVariant,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+            if (isReady) ...[
+              const SizedBox(height: SpacingToken.md),
+              Text(
+                'update_install_integrity'.tr(),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  height: 1.7,
+                ),
+              ),
+            ],
+            const SizedBox(height: SpacingToken.xl),
+            FilledButton.tonalIcon(
+              key: const Key('update-primary-action'),
+              onPressed: installing ? null : action,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 48),
+                backgroundColor: active
+                    ? cs.primaryContainer.withValues(alpha: .45)
+                    : cs.primary,
+                foregroundColor: active ? cs.primary : cs.onPrimary,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingToken.lg,
+                  vertical: SpacingToken.md,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
+                ),
+              ),
+              icon: installing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : HugeIcon(icon: icon, size: 18),
+              label: Text(label.tr(), textAlign: TextAlign.center),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }

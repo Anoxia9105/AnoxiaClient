@@ -6,7 +6,7 @@ class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     let windowFrame = self.frame
-    self.title = "anoxia Im"
+    self.title = "Anoxia"
     self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
 

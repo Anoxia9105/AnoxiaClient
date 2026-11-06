@@ -23,7 +23,6 @@ import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart'
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/ai/smart_reply_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/edit_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/mobile_chat_ai_panel.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
@@ -524,13 +523,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               },
             ),
           ),
-        // 智能回复建议条（手动触发，点击 chip 填入输入框）
-        SmartReplyBar(
-          roomId: widget.roomId,
-          draftListenable: _inputController.textController,
-          readDraft: () => _inputController.textController.text,
-          onPick: (text) => _inputController.replaceAllText(text, cursorOffset: text.length),
-        ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
           child: Row(
