@@ -13,6 +13,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:anoxia/common/widgets/quill_web_ime_anchor.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pasteboard/pasteboard.dart';
 
@@ -424,55 +425,58 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
                                   constraints: BoxConstraints(
                                     minHeight: constraints.maxHeight,
                                   ),
-                                  child: QuillEditor.basic(
-                                    focusNode: _focusNode,
+                                  child: QuillWebImeAnchor(
+                                    editorKey: _editorKey,
                                     controller: controller,
-                                    scrollController: _scrollController,
-                                    config: QuillEditorConfig(
-                                      scrollable: false,
-                                      onKeyPressed: (event, node) =>
-                                          _handleEditorKeyPressed(
-                                            event,
-                                            controller,
-                                          ),
-                                      enableSelectionToolbar: false,
-                                      placeholder: 'note_content_placeholder'
-                                          .tr(),
-                                      autoFocus: false,
-                                      padding: const EdgeInsets.fromLTRB(
-                                        20,
-                                        12,
-                                        20,
-                                        12,
-                                      ),
-                                      customStyles: QuillStyleConfig.get(
-                                        context,
-                                        forEditing: true,
-                                        checkboxBuilder:
-                                            const NoteTaskCheckboxBuilder(),
-                                        listLineSpacing: const VerticalSpacing(
-                                          3,
-                                          3,
+                                    focusNode: _focusNode,
+                                    child: QuillEditor.basic(
+                                      focusNode: _focusNode,
+                                      controller: controller,
+                                      scrollController: _scrollController,
+                                      config: QuillEditorConfig(
+                                        scrollable: false,
+                                        onKeyPressed: (event, node) =>
+                                            _handleEditorKeyPressed(
+                                              event,
+                                              controller,
+                                            ),
+                                        enableSelectionToolbar: false,
+                                        placeholder: 'note_content_placeholder'
+                                            .tr(),
+                                        autoFocus: false,
+                                        padding: const EdgeInsets.fromLTRB(
+                                          20,
+                                          12,
+                                          20,
+                                          12,
                                         ),
+                                        customStyles: QuillStyleConfig.get(
+                                          context,
+                                          forEditing: true,
+                                          checkboxBuilder:
+                                              const NoteTaskCheckboxBuilder(),
+                                          listLineSpacing:
+                                              const VerticalSpacing(3, 3),
+                                        ),
+                                        textSpanBuilder: noteTextSpanBuilder,
+                                        editorKey: _editorKey,
+                                        embedBuilders: [
+                                          NoteQuillImageBuild(),
+                                          NoteQuillDividerBuild(),
+                                        ],
+                                        customShortcuts: const {
+                                          // 关闭 flutter_quill 自带的查找弹窗（带遮罩），
+                                          // Ctrl+F 交由外层 Focus 切换右侧查找面板。
+                                          SingleActivator(
+                                            LogicalKeyboardKey.keyF,
+                                            control: true,
+                                          ): DoNothingIntent(),
+                                          SingleActivator(
+                                            LogicalKeyboardKey.keyF,
+                                            meta: true,
+                                          ): DoNothingIntent(),
+                                        },
                                       ),
-                                      textSpanBuilder: noteTextSpanBuilder,
-                                      editorKey: _editorKey,
-                                      embedBuilders: [
-                                        NoteQuillImageBuild(),
-                                        NoteQuillDividerBuild(),
-                                      ],
-                                      customShortcuts: const {
-                                        // 关闭 flutter_quill 自带的查找弹窗（带遮罩），
-                                        // Ctrl+F 交由外层 Focus 切换右侧查找面板。
-                                        SingleActivator(
-                                          LogicalKeyboardKey.keyF,
-                                          control: true,
-                                        ): DoNothingIntent(),
-                                        SingleActivator(
-                                          LogicalKeyboardKey.keyF,
-                                          meta: true,
-                                        ): DoNothingIntent(),
-                                      },
                                     ),
                                   ),
                                 ),

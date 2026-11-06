@@ -9,6 +9,7 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/common/widgets/quill_web_ime_anchor.dart';
 import 'package:anoxia/common/constants/storage_keys.dart';
 import 'package:anoxia/common/utils/sp_util.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -57,6 +58,7 @@ class DesktopChatInput extends ConsumerStatefulWidget {
 class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
   /// Quill 编辑器的 GlobalKey
   final GlobalKey<QuillEditorState> _editorKey = GlobalKey();
+  final GlobalKey<EditorState> _imeEditorKey = GlobalKey();
 
   /// @提及弹窗的关闭函数
   Function? _cancelMentionToast;
@@ -358,37 +360,44 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
         ConstrainedBox(
           /// 限制输入框的最小和最大高度，确保在内容较少时不会过于紧凑，内容较多时不会无限扩展
           constraints: const BoxConstraints(maxHeight: 200, minHeight: 50),
-          child: QuillEditor.basic(
-            key: _editorKey,
-            focusNode: focusNode,
+          child: QuillWebImeAnchor(
+            editorKey: _imeEditorKey,
             controller: controller,
-            config: QuillEditorConfig(
-              enableSelectionToolbar: false,
-              placeholder: 'chat_input_placeholder'.tr(),
-              autoFocus: false,
-              padding: const EdgeInsets.all(8),
-              customStyles: QuillStyleConfig.get(context, forEditing: true),
-              // flutter_quill 的 onKeyPressed 仍是 experimental，但这是当前版本
-              // 处理键盘快捷键（Ctrl+B/I/U 等）的唯一入口，故忽略该提示。
-              // ignore: experimental_member_use
-              onKeyPressed: (event, node) => _handleKeyPress(event, controller),
-              embedBuilders: [
-                QuillImageBuild(),
-                QuillFileBuild(),
-                QuillMentionBuild(),
-              ],
-              customShortcuts: const {
-                // 关闭 Ctrl+K / Cmd+K
-                SingleActivator(LogicalKeyboardKey.keyK, control: true):
-                    DoNothingIntent(),
-                SingleActivator(LogicalKeyboardKey.keyK, meta: true):
-                    DoNothingIntent(),
-                // 关闭 Ctrl+F / Cmd+F
-                SingleActivator(LogicalKeyboardKey.keyF, control: true):
-                    DoNothingIntent(),
-                SingleActivator(LogicalKeyboardKey.keyF, meta: true):
-                    DoNothingIntent(),
-              },
+            focusNode: focusNode,
+            child: QuillEditor.basic(
+              key: _editorKey,
+              focusNode: focusNode,
+              controller: controller,
+              config: QuillEditorConfig(
+                editorKey: _imeEditorKey,
+                enableSelectionToolbar: false,
+                placeholder: 'chat_input_placeholder'.tr(),
+                autoFocus: false,
+                padding: const EdgeInsets.all(8),
+                customStyles: QuillStyleConfig.get(context, forEditing: true),
+                // flutter_quill 的 onKeyPressed 仍是 experimental，但这是当前版本
+                // 处理键盘快捷键（Ctrl+B/I/U 等）的唯一入口，故忽略该提示。
+                // ignore: experimental_member_use
+                onKeyPressed: (event, node) =>
+                    _handleKeyPress(event, controller),
+                embedBuilders: [
+                  QuillImageBuild(),
+                  QuillFileBuild(),
+                  QuillMentionBuild(),
+                ],
+                customShortcuts: const {
+                  // 关闭 Ctrl+K / Cmd+K
+                  SingleActivator(LogicalKeyboardKey.keyK, control: true):
+                      DoNothingIntent(),
+                  SingleActivator(LogicalKeyboardKey.keyK, meta: true):
+                      DoNothingIntent(),
+                  // 关闭 Ctrl+F / Cmd+F
+                  SingleActivator(LogicalKeyboardKey.keyF, control: true):
+                      DoNothingIntent(),
+                  SingleActivator(LogicalKeyboardKey.keyF, meta: true):
+                      DoNothingIntent(),
+                },
+              ),
             ),
           ),
         ),
