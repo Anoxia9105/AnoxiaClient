@@ -1,4 +1,3 @@
-import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
@@ -207,13 +206,11 @@ class _SettingsAboutSupportSectionState
               const AboutBrandHeader(),
               AboutVersionRow(
                 version: widget.appVersionText,
-                status: DeviceUtil.isWeb ? '' : status,
+                status: status,
                 checking: widget.pageState.checkingUpdate,
                 hasUpdate: hasUpdate,
                 onVersionTap: _handleVersionTap,
-                onCheck: DeviceUtil.isWeb
-                    ? null
-                    : hasUpdate && updateInfo != null
+                onCheck: hasUpdate && updateInfo != null
                     ? () => widget.onNavigateToUpdatePage(updateInfo)
                     : widget.onCheckUpdate,
                 progress: matches && download.isBusy ? download.progress : null,

@@ -312,7 +312,19 @@ class AboutVersionRow extends StatelessWidget {
               ),
             ),
           if (onCheck != null)
-            TextButton(
+            FilledButton(
+              key: const Key('about-check-update-button'),
+              style: FilledButton.styleFrom(
+                elevation: 0,
+                minimumSize: const Size(0, 44),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingToken.lg,
+                  vertical: SpacingToken.sm,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
+                ),
+              ),
               onPressed: checking ? null : onCheck,
               child: Text(
                 (checking

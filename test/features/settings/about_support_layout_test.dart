@@ -95,6 +95,7 @@ void main() {
           );
           addTearDown(container.dispose);
           var feedback = 0;
+          var updateChecks = 0;
           final captureKey = GlobalKey();
           await tester.pumpWidget(
             designTestApp(
@@ -109,7 +110,7 @@ void main() {
                     appVersionText: '2.5.2+57',
                     hasAppUpdate: false,
                     pageState: const SettingsPageState(),
-                    onCheckUpdate: () {},
+                    onCheckUpdate: () => updateChecks++,
                     onNavigateToUpdatePage: (_) {},
                     onOpenOpenSourceLicenses: () {},
                     onOpenDeveloperTribute: () {},
@@ -121,6 +122,13 @@ void main() {
           );
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
+          final updateButton = find.byKey(
+            const Key('about-check-update-button'),
+          );
+          expect(tester.widget(updateButton), isA<FilledButton>());
+          await tester.ensureVisible(updateButton);
+          await tester.tap(updateButton);
+          expect(updateChecks, 1);
           final action = find.byKey(const Key('about-feedback-action'));
           await tester.ensureVisible(action);
           await tester.tap(action);
