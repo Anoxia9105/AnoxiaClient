@@ -3,6 +3,7 @@
 // 展示所有待处理、已批准和已拒绝的入群申请，管理员可以批准或拒绝申请。
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
+import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
@@ -36,13 +37,8 @@ class _GroupJoinRequestsPageState extends ConsumerState<GroupJoinRequestsPage> {
   void _reload() => setState(() => _future = _requests());
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Theme.of(context).colorScheme.surface,
-    appBar: AppBar(
-      title: Text('group_join_requests_title'.tr()),
-      centerTitle: DeviceUtil.isRealMobile(),
-    ),
-    body: FutureBuilder<List<Map<String, dynamic>>>(
+  Widget build(BuildContext context) {
+    final body = FutureBuilder<List<Map<String, dynamic>>>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -106,8 +102,28 @@ class _GroupJoinRequestsPageState extends ConsumerState<GroupJoinRequestsPage> {
           },
         );
       },
-    ),
-  );
+    );
+    final isDesktop =
+        DeviceUtil.isRealDesktop() ||
+        (DeviceUtil.isWeb && DeviceUtil.isDesktop(context));
+    if (!isDesktop) {
+      return AppScaffold(
+        showMobileNavigationBar: true,
+        showWebNavigationBar: true,
+        enableGlobalSearchHotkey: false,
+        title: Text('group_join_requests_title'.tr()),
+        body: body,
+      );
+    }
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(
+        title: Text('group_join_requests_title'.tr()),
+        centerTitle: false,
+      ),
+      body: body,
+    );
+  }
 
   /// 处理入群申请（批准或拒绝）。
   ///
@@ -168,7 +184,12 @@ class _JoinRequestTileSkeleton extends StatelessWidget {
       trailing: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SkeletonBox(width: 22, height: 22, radius: 6, margin: EdgeInsets.only(right: 10)),
+          SkeletonBox(
+            width: 22,
+            height: 22,
+            radius: 6,
+            margin: EdgeInsets.only(right: 10),
+          ),
           SkeletonBox(width: 22, height: 22, radius: 6),
         ],
       ),

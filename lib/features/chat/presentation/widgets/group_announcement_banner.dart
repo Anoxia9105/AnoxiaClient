@@ -1,6 +1,7 @@
 // 群组公告横幅组件，在聊天页面顶部以横幅形式展示群组公告。
 //
 // 支持查看公告详情和关闭横幅，关闭后相同内容的公告不再显示。
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_announcement_detail_page.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/room/group_announcement_dismissal_provider.dart';
@@ -24,12 +25,11 @@ class GroupAnnouncementBanner extends ConsumerWidget {
     required this.announcement,
   });
 
-  /// 打开公告详情页面。
+  /// 桌面 / Web PC 弹窗展示，手机 / Web SP 推入详情页。
   void _openDetail(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => GroupAnnouncementDetailPage(roomId: roomId),
-      ),
+    presentAdaptivePage<void>(
+      context,
+      builder: (_) => GroupAnnouncementDetailPage(roomId: roomId),
     );
   }
 
@@ -79,7 +79,10 @@ class GroupAnnouncementBanner extends ConsumerWidget {
                   .read(groupAnnouncementDismissalProvider.notifier)
                   .dismiss(roomId, content),
               tooltip: 'chat_group_announcement_close'.tr(),
-              icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 18),
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedCancel01,
+                size: 18,
+              ),
               color: colorScheme.onSecondaryContainer,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(width: 40, height: 40),

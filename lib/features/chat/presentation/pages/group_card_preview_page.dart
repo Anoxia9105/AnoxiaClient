@@ -2,8 +2,10 @@
 //
 // 展示群组名称、头像、简介、管理员列表，并根据群组的加入策略和当前状态
 // 提供加入、申请加入或直接进入群组的操作入口。
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
+import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/group_preview.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
@@ -36,10 +38,8 @@ class _GroupCardPreviewPageState extends ConsumerState<GroupCardPreviewPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Theme.of(context).colorScheme.surface,
-    appBar: AppBar(title: Text('group_card_preview_title'.tr())),
-    body: FutureBuilder<GroupPreview>(
+  Widget build(BuildContext context) {
+    final body = FutureBuilder<GroupPreview>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
@@ -123,8 +123,25 @@ class _GroupCardPreviewPageState extends ConsumerState<GroupCardPreviewPage> {
           ],
         );
       },
-    ),
-  );
+    );
+    final isDesktop =
+        DeviceUtil.isRealDesktop() ||
+        (DeviceUtil.isWeb && DeviceUtil.isDesktop(context));
+    if (!isDesktop) {
+      return AppScaffold(
+        showMobileNavigationBar: true,
+        showWebNavigationBar: true,
+        enableGlobalSearchHotkey: false,
+        title: Text('group_card_preview_title'.tr()),
+        body: body,
+      );
+    }
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(title: Text('group_card_preview_title'.tr())),
+      body: body,
+    );
+  }
 
   /// 加入群组。
   ///
